@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { getPresignedUrlAction } from "@/actions/upload";
-import { createPost, getPosts, deletePost } from "@/actions/post";
+import { createPost, getPosts, deletePost, updatePost, getTrendingPosts, TrendingPeriod, toggleLike } from "@/actions/post";
 import styles from "./community.module.css";
 
 export default function CommunityPage() {
@@ -20,6 +20,17 @@ export default function CommunityPage() {
   const [activeTab, setActiveTab] = useState("전체");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [editingPostId, setEditingPostId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState("");
+  const [editImages, setEditImages] = useState<string[]>([]);
+  const [isEditUploading, setIsEditUploading] = useState(false);
+  const [isEditDragging, setIsEditDragging] = useState(false);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [trendingPosts, setTrendingPosts] = useState<any[]>([]);
+  const [trendingPeriod, setTrendingPeriod] = useState<TrendingPeriod>('week');
   const MAX_IMAGES = 5;
 
   useEffect(() => {
@@ -30,6 +41,10 @@ export default function CommunityPage() {
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, [activeTab]); // Reload when tab changes
+
+  useEffect(() => {
+    loadTrendingPosts();
+  }, [trendingPeriod]);
 
   // Debounce search
   useEffect(() => {
@@ -43,6 +58,13 @@ export default function CommunityPage() {
     const result = await getPosts(1, 20, activeTab, searchQuery);
     if (result.success) {
       setPosts(result.posts);
+    }
+  };
+
+  const loadTrendingPosts = async () => {
+    const result = await getTrendingPosts(trendingPeriod, 5);
+    if (result.success) {
+      setTrendingPosts(result.posts);
     }
   };
 
@@ -197,19 +219,186 @@ export default function CommunityPage() {
     }
   };
 
-  const handleDelete = async (e: React.MouseEvent, postId: string) => {
+  const handleDeleteClick = (e: React.MouseEvent, postId: string) => {
     e.stopPropagation();
-    if (!confirm("정말 삭제하시겠습니까?")) return;
+    setDeleteTargetId(postId);
+    setShowDeleteModal(true);
+    setActiveDropdown(null);
+  };
 
-    const result = await deletePost(postId);
-    
+  const handleDeleteConfirm = async () => {
+    if (!deleteTargetId) return;
+
+    setIsDeleting(true);
+
+    const result = await deletePost(deleteTargetId);
+
     if (result.success) {
-      alert("게시글이 삭제되었습니다.");
       loadPosts();
     } else {
       alert(result.error || "삭제에 실패했습니다.");
     }
+
+    setIsDeleting(false);
+    setShowDeleteModal(false);
+    setDeleteTargetId(null);
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteModal(false);
+    setDeleteTargetId(null);
+  };
+
+  const handleLike = async (e: React.MouseEvent, postId: string) => {
+    e.stopPropagation();
+
+    if (!session?.user) {
+      alert("로그인이 필요합니다.");
+      return;
+    }
+
+    const result = await toggleLike(postId);
+
+    if (result.success) {
+      // Update local state
+      setPosts(posts.map(post => {
+        if (post._id === postId) {
+          const userId = (session.user as any).id;
+          const isCurrentlyLiked = post.likedBy?.includes(userId);
+          return {
+            ...post,
+            likes: isCurrentlyLiked ? post.likes - 1 : post.likes + 1,
+            likedBy: isCurrentlyLiked
+              ? post.likedBy.filter((id: string) => id !== userId)
+              : [...(post.likedBy || []), userId]
+          };
+        }
+        return post;
+      }));
+    } else {
+      alert(result.error || "좋아요 처리에 실패했습니다.");
+    }
+  };
+
+  const handleStartEdit = (e: React.MouseEvent, post: any) => {
+    e.stopPropagation();
+    setEditingPostId(post._id);
+    setEditContent(post.content);
+    setEditImages(post.images || []);
     setActiveDropdown(null);
+  };
+
+  const handleCancelEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingPostId(null);
+    setEditContent("");
+    setEditImages([]);
+  };
+
+  const uploadEditImages = async (imageFiles: File[]) => {
+    if (imageFiles.length === 0) return;
+
+    if (editImages.length + imageFiles.length > MAX_IMAGES) {
+      alert(`이미지는 최대 ${MAX_IMAGES}장까지 첨부할 수 있습니다.`);
+      return;
+    }
+
+    setIsEditUploading(true);
+
+    try {
+      const uploadPromises = imageFiles.map(async (file) => {
+        const { success, signedUrl, publicUrl, error } = await getPresignedUrlAction(file.name, file.type);
+
+        if (!success || !signedUrl || !publicUrl) {
+          console.error("Failed to get presigned URL:", error);
+          return null;
+        }
+
+        const uploadResponse = await fetch(signedUrl, {
+          method: 'PUT',
+          body: file,
+          headers: {
+            'Content-Type': file.type,
+          },
+        });
+
+        if (!uploadResponse.ok) {
+          console.error("Failed to upload to S3");
+          return null;
+        }
+
+        return publicUrl;
+      });
+
+      const results = await Promise.all(uploadPromises);
+      const successfulUploads = results.filter((url): url is string => url !== null);
+
+      setEditImages(prev => [...prev, ...successfulUploads]);
+    } catch (error) {
+      console.error("Upload error:", error);
+      alert("이미지 업로드 중 오류가 발생했습니다.");
+    } finally {
+      setIsEditUploading(false);
+    }
+  };
+
+  const handleEditImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+    const files = Array.from(e.target.files);
+    const imageFiles = files.filter(file => file.type.startsWith('image/'));
+    await uploadEditImages(imageFiles);
+    e.target.value = '';
+  };
+
+  const handleEditDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsEditDragging(true);
+  };
+
+  const handleEditDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsEditDragging(false);
+  };
+
+  const handleEditDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsEditDragging(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    const imageFiles = files.filter(file => file.type.startsWith('image/'));
+    await uploadEditImages(imageFiles);
+  };
+
+  const handleSaveEdit = async (e: React.MouseEvent, postId: string) => {
+    e.stopPropagation();
+
+    if (!editContent.trim()) {
+      alert("내용을 입력해주세요.");
+      return;
+    }
+
+    setIsSavingEdit(true);
+
+    try {
+      const result = await updatePost(postId, editContent, editImages);
+
+      if (result.success) {
+        setEditingPostId(null);
+        setEditContent("");
+        setEditImages([]);
+        loadPosts();
+      } else {
+        alert(result.error || "수정에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("Edit error:", error);
+      alert("오류가 발생했습니다.");
+    } finally {
+      setIsSavingEdit(false);
+    }
   };
 
   const renderContentWithHashtags = (text: string) => {
@@ -435,21 +624,22 @@ export default function CommunityPage() {
                     
                     {activeDropdown === post._id && (
                       <div className={styles.dropdown}>
-                        <button 
-                          className={styles.dropdownItem} 
+                        <button
+                          className={styles.dropdownItem}
                           onClick={(e) => {
                             e.stopPropagation();
                             e.nativeEvent.stopImmediatePropagation();
+                            handleStartEdit(e, post);
                           }}
                         >
                           수정
                         </button>
-                        <button 
+                        <button
                           className={`${styles.dropdownItem} ${styles.delete}`}
                           onClick={(e) => {
                             e.stopPropagation();
                             e.nativeEvent.stopImmediatePropagation();
-                            handleDelete(e, post._id);
+                            handleDeleteClick(e, post._id);
                           }}
                         >
                           삭제
@@ -459,9 +649,89 @@ export default function CommunityPage() {
                   </div>
                 )}
               </div>
-              <div className={styles.postContent}>
-                {renderContentWithHashtags(post.content)}
-              </div>
+{editingPostId === post._id ? (
+                <div
+                  className={`${styles.editWrapper} ${isEditDragging ? styles.editDragging : ''}`}
+                  onClick={(e) => e.stopPropagation()}
+                  onDragOver={handleEditDragOver}
+                  onDragLeave={handleEditDragLeave}
+                  onDrop={handleEditDrop}
+                >
+                  <textarea
+                    className={styles.editInput}
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    placeholder="내용을 입력하세요 (이미지를 드래그해서 첨부할 수 있습니다)"
+                    autoFocus
+                  />
+
+                  {/* Edit Images Preview */}
+                  {editImages.length > 0 && (
+                    <div className={styles.imagePreviewArea}>
+                      {editImages.map((url, index) => (
+                        <div key={index} className={styles.previewImageWrapper}>
+                          <img src={url} alt={`Image ${index}`} className={styles.previewImage} />
+                          <button
+                            className={styles.removeImageBtn}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditImages(prev => prev.filter((_, i) => i !== index));
+                            }}
+                          >
+                            <i className="fa-solid fa-xmark"></i>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {isEditUploading && (
+                    <div className={styles.editUploadingIndicator}>
+                      <i className="fa-solid fa-spinner fa-spin"></i> 업로드 중...
+                    </div>
+                  )}
+
+                  <div className={styles.editActions}>
+                    <div className={styles.editImageUpload}>
+                      <input
+                        type="file"
+                        id={`edit-image-${post._id}`}
+                        multiple
+                        accept="image/*"
+                        className={styles.hiddenInput}
+                        onChange={handleEditImageUpload}
+                        disabled={editImages.length >= MAX_IMAGES}
+                      />
+                      <label
+                        htmlFor={`edit-image-${post._id}`}
+                        className={`${styles.imageUploadBtn} ${editImages.length >= MAX_IMAGES ? styles.disabled : ''}`}
+                      >
+                        <i className="fa-regular fa-image"></i>
+                        <span className={styles.imageCount}>{editImages.length}/{MAX_IMAGES}</span>
+                      </label>
+                    </div>
+                    <div className={styles.editBtns}>
+                      <button
+                        className={styles.cancelBtn}
+                        onClick={handleCancelEdit}
+                      >
+                        취소
+                      </button>
+                      <button
+                        className={styles.saveBtn}
+                        onClick={(e) => handleSaveEdit(e, post._id)}
+                        disabled={isSavingEdit || isEditUploading}
+                      >
+                        {isSavingEdit ? "저장 중..." : "저장"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className={styles.postContent}>
+                  {renderContentWithHashtags(post.content)}
+                </div>
+              )}
               
               {post.images && post.images.length > 0 && (
                 <div className={styles.imagePlaceholder} style={{ background: 'none', height: 'auto', display: 'block' }}>
@@ -475,8 +745,19 @@ export default function CommunityPage() {
               )}
 
               <div className={styles.cardFooter}>
-                <span className={styles.statItem}>댓글 {post.commentCount || 0}</span>
-                <span className={styles.statItem}>좋아요 {post.likes || 0}</span>
+                <span className={styles.statItem}>
+                  <i className="fa-regular fa-comment"></i> {post.commentCount || 0}
+                </span>
+                <button
+                  className={`${styles.likeBtn} ${post.likedBy?.includes((session?.user as any)?.id) ? styles.liked : ''}`}
+                  onClick={(e) => handleLike(e, post._id)}
+                >
+                  <i className={post.likedBy?.includes((session?.user as any)?.id) ? "fa-solid fa-heart" : "fa-regular fa-heart"}></i>
+                  <span>{post.likes || 0}</span>
+                </button>
+                <span className={styles.statItem}>
+                  <i className="fa-regular fa-eye"></i> {post.viewCount || 0}
+                </span>
               </div>
             </article>
           ))}
@@ -486,31 +767,60 @@ export default function CommunityPage() {
         {/* Sidebar (Trending) */}
         <aside className={styles.sidebar}>
           <div className={styles.widget}>
-            <div className={styles.widgetH}>실시간 인기글</div>
-            
-            <div className={styles.trendRow}>
-              <div>
-                <span className={styles.tTitle}>류트 서버 1채널 마비됐나요?</span>
-                <span className={styles.tMeta}>조회 1.2k · 댓글 45</span>
+            <div className={styles.widgetHeader}>
+              <div className={styles.widgetH}>실시간 인기글</div>
+              <div className={styles.periodSelector}>
+                <button
+                  className={`${styles.periodBtn} ${trendingPeriod === 'week' ? styles.active : ''}`}
+                  onClick={() => setTrendingPeriod('week')}
+                >
+                  주간
+                </button>
+                <button
+                  className={`${styles.periodBtn} ${trendingPeriod === 'month' ? styles.active : ''}`}
+                  onClick={() => setTrendingPeriod('month')}
+                >
+                  월간
+                </button>
               </div>
-              <span className={styles.tBadge}>잡담</span>
-            </div>
-            
-            <div className={styles.trendRow}>
-              <div>
-                <span className={styles.tTitle}>이번 키트 의상 염색 코드 공유 (리블)</span>
-                <span className={styles.tMeta}>조회 800 · 좋아요 120</span>
-              </div>
-              <span className={styles.tBadge} style={{background:'#E8F5FD', color:'var(--accent)'}}>정보</span>
             </div>
 
-            <div className={styles.trendRow}>
-              <div>
-                <span className={styles.tTitle}>정령 밥 줄 때 주의사항 (필독)</span>
-                <span className={styles.tMeta}>조회 500 · 답변 12</span>
+            {trendingPosts.length > 0 ? (
+              trendingPosts.map((post, index) => (
+                <div
+                  key={post._id}
+                  className={styles.trendRow}
+                  onClick={() => router.push(`/community/${post._id}`)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <div className={styles.trendRank}>{index + 1}</div>
+                  <div className={styles.trendContent}>
+                    <span className={styles.tTitle}>
+                      {post.content.length > 25 ? post.content.slice(0, 25) + '...' : post.content}
+                    </span>
+                    <span className={styles.tMeta}>
+                      조회 {post.recentViewCount || 0} · 댓글 {post.commentCount || 0}
+                    </span>
+                  </div>
+                  <span
+                    className={styles.tBadge}
+                    style={
+                      post.type === '정보'
+                        ? { background: '#E8F5FD', color: 'var(--accent)' }
+                        : post.type === '질문'
+                        ? { background: '#FFF4E5', color: 'var(--warning)' }
+                        : {}
+                    }
+                  >
+                    {post.type}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <div className={styles.emptyTrending}>
+                아직 인기글이 없습니다
               </div>
-              <span className={styles.tBadge} style={{background:'#FFF4E5', color:'var(--warning)'}}>질문</span>
-            </div>
+            )}
           </div>
 
           <div className={styles.widget}>
@@ -529,6 +839,37 @@ export default function CommunityPage() {
         </aside>
 
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className={styles.modalOverlay} onClick={handleDeleteCancel}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3 className={styles.modalTitle}>게시글 삭제</h3>
+            </div>
+            <div className={styles.modalBody}>
+              <p>정말 이 게시글을 삭제하시겠습니까?</p>
+              <p className={styles.modalWarning}>삭제된 게시글은 복구할 수 없습니다.</p>
+            </div>
+            <div className={styles.modalFooter}>
+              <button
+                className={styles.modalCancelBtn}
+                onClick={handleDeleteCancel}
+                disabled={isDeleting}
+              >
+                취소
+              </button>
+              <button
+                className={styles.modalDeleteBtn}
+                onClick={handleDeleteConfirm}
+                disabled={isDeleting}
+              >
+                {isDeleting ? "삭제 중..." : "삭제"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

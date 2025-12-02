@@ -3,7 +3,8 @@
 import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { getPost, incrementViewCount, deletePost, updatePost } from "@/actions/post";
+import { getPost, incrementViewCount, deletePost, updatePost, toggleLike, getTrendingPosts, TrendingPeriod } from "@/actions/post";
+import { getComments, createComment, deleteComment, toggleCommentLike } from "@/actions/comment";
 import styles from "../community.module.css";
 
 export default function PostDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -17,16 +18,153 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [trendingPosts, setTrendingPosts] = useState<any[]>([]);
+  const [trendingPeriod, setTrendingPeriod] = useState<TrendingPeriod>('week');
+  const [comments, setComments] = useState<any[]>([]);
+  const [newComment, setNewComment] = useState("");
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyContent, setReplyContent] = useState("");
+  const [showCommentDeleteModal, setShowCommentDeleteModal] = useState(false);
+  const [deleteCommentTargetId, setDeleteCommentTargetId] = useState<string | null>(null);
+  const [isDeletingComment, setIsDeletingComment] = useState(false);
 
   useEffect(() => {
-    loadPost();
-    incrementViewCount(id);
+    const init = async () => {
+      // Increment view count first, then load post to get updated count
+      await incrementViewCount(id);
+      await loadPost();
+      await loadComments();
+    };
+    init();
+    loadTrendingPosts();
 
     // Close dropdown when clicking outside
     const handleClickOutside = () => setShowDropdown(false);
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, [id]);
+
+  useEffect(() => {
+    loadTrendingPosts();
+  }, [trendingPeriod]);
+
+  const loadTrendingPosts = async () => {
+    const result = await getTrendingPosts(trendingPeriod, 5);
+    if (result.success) {
+      setTrendingPosts(result.posts);
+    }
+  };
+
+  const loadComments = async () => {
+    const result = await getComments(id);
+    if (result.success) {
+      setComments(result.comments);
+    }
+  };
+
+  const handleSubmitComment = async () => {
+    if (!newComment.trim()) return;
+    if (!session?.user) {
+      alert("로그인이 필요합니다.");
+      return;
+    }
+
+    setIsSubmittingComment(true);
+    const result = await createComment(id, newComment);
+
+    if (result.success) {
+      setNewComment("");
+      await loadComments();
+      // Update post comment count locally
+      setPost({ ...post, commentCount: (post.commentCount || 0) + 1 });
+    } else {
+      alert(result.error || "댓글 작성에 실패했습니다.");
+    }
+    setIsSubmittingComment(false);
+  };
+
+  const handleSubmitReply = async (parentId: string) => {
+    if (!replyContent.trim()) return;
+    if (!session?.user) {
+      alert("로그인이 필요합니다.");
+      return;
+    }
+
+    const result = await createComment(id, replyContent, parentId);
+
+    if (result.success) {
+      setReplyContent("");
+      setReplyingTo(null);
+      await loadComments();
+      setPost({ ...post, commentCount: (post.commentCount || 0) + 1 });
+    } else {
+      alert(result.error || "답글 작성에 실패했습니다.");
+    }
+  };
+
+  const handleDeleteCommentClick = (commentId: string) => {
+    setDeleteCommentTargetId(commentId);
+    setShowCommentDeleteModal(true);
+  };
+
+  const handleDeleteCommentConfirm = async () => {
+    if (!deleteCommentTargetId) return;
+
+    setIsDeletingComment(true);
+
+    const result = await deleteComment(deleteCommentTargetId, id);
+
+    if (result.success) {
+      await loadComments();
+      const deletedCount = result.deletedCount || 1;
+      setPost({ ...post, commentCount: Math.max((post.commentCount || deletedCount) - deletedCount, 0) });
+    } else {
+      alert(result.error || "삭제에 실패했습니다.");
+    }
+
+    setIsDeletingComment(false);
+    setShowCommentDeleteModal(false);
+    setDeleteCommentTargetId(null);
+  };
+
+  const handleDeleteCommentCancel = () => {
+    setShowCommentDeleteModal(false);
+    setDeleteCommentTargetId(null);
+  };
+
+  const handleCommentLike = async (commentId: string) => {
+    if (!session?.user) {
+      alert("로그인이 필요합니다.");
+      return;
+    }
+
+    const result = await toggleCommentLike(commentId);
+
+    if (result.success) {
+      // Update local state
+      const updateCommentLike = (comments: any[]): any[] => {
+        return comments.map(comment => {
+          if (comment._id === commentId) {
+            const userId = (session.user as any).id;
+            const isLiked = comment.likedBy?.includes(userId);
+            return {
+              ...comment,
+              likes: isLiked ? comment.likes - 1 : comment.likes + 1,
+              likedBy: isLiked
+                ? comment.likedBy.filter((uid: string) => uid !== userId)
+                : [...(comment.likedBy || []), userId]
+            };
+          }
+          if (comment.replies?.length > 0) {
+            return { ...comment, replies: updateCommentLike(comment.replies) };
+          }
+          return comment;
+        });
+      };
+      setComments(updateCommentLike(comments));
+    }
+  };
 
   const loadPost = async () => {
     const result = await getPost(id);
@@ -76,6 +214,29 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
       alert(result.error || "수정에 실패했습니다.");
     }
     setIsSaving(false);
+  };
+
+  const handleLike = async () => {
+    if (!session?.user) {
+      alert("로그인이 필요합니다.");
+      return;
+    }
+
+    const result = await toggleLike(id);
+
+    if (result.success) {
+      const userId = (session.user as any).id;
+      const isCurrentlyLiked = post.likedBy?.includes(userId);
+      setPost({
+        ...post,
+        likes: isCurrentlyLiked ? post.likes - 1 : post.likes + 1,
+        likedBy: isCurrentlyLiked
+          ? post.likedBy.filter((uid: string) => uid !== userId)
+          : [...(post.likedBy || []), userId]
+      });
+    } else {
+      alert(result.error || "좋아요 처리에 실패했습니다.");
+    }
   };
 
   const renderContentWithHashtags = (text: string) => {
@@ -211,16 +372,289 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
           ))}
 
           <div className={styles.cardFooter}>
-            <span className={styles.statItem}>댓글 {post.commentCount || 0}</span>
-            <span className={styles.statItem}>좋아요 {post.likes || 0}</span>
-            <span className={styles.statItem}>조회 {post.views || 0}</span>
+            <span className={styles.statItem}>
+              <i className="fa-regular fa-comment"></i> {post.commentCount || 0}
+            </span>
+            <button
+              className={`${styles.likeBtn} ${post.likedBy?.includes((session?.user as any)?.id) ? styles.liked : ''}`}
+              onClick={handleLike}
+            >
+              <i className={post.likedBy?.includes((session?.user as any)?.id) ? "fa-solid fa-heart" : "fa-regular fa-heart"}></i>
+              <span>{post.likes || 0}</span>
+            </button>
+            <span className={styles.statItem}>
+              <i className="fa-regular fa-eye"></i> {post.viewCount || 0}
+            </span>
           </div>
         </article>
         
+        {/* Comment Section */}
+        <div className={styles.commentSection}>
+          <h3 className={styles.commentTitle}>
+            댓글 <span className={styles.commentCount}>{post.commentCount || 0}</span>
+          </h3>
+
+          {/* Comment Input */}
+          <div className={styles.commentInputWrapper}>
+            <img
+              src={session?.user?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=anonymous`}
+              className={styles.commentAvatar}
+              alt="Your Avatar"
+            />
+            <div className={styles.commentInputBox}>
+              <textarea
+                className={styles.commentInput}
+                placeholder={session?.user ? "댓글을 작성하세요..." : "로그인 후 댓글을 작성할 수 있습니다."}
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                disabled={!session?.user}
+                rows={3}
+              />
+              <button
+                className={styles.commentSubmitBtn}
+                onClick={handleSubmitComment}
+                disabled={!session?.user || isSubmittingComment || !newComment.trim()}
+              >
+                {isSubmittingComment ? "등록 중..." : "등록"}
+              </button>
+            </div>
+          </div>
+
+          {/* Comments List */}
+          <div className={styles.commentList}>
+            {comments.map((comment) => (
+                <div key={comment._id} className={styles.commentItem}>
+                  {/* Main Comment */}
+                  <div className={styles.commentContent}>
+                    <img
+                      src={comment.author.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.author.id}`}
+                      className={styles.commentAvatar}
+                      alt="Commenter"
+                    />
+                    <div className={styles.commentBody}>
+                      <div className={styles.commentHeader}>
+                        <span className={styles.commentAuthor}>{comment.author.name}</span>
+                        <span className={styles.commentTime}>
+                          {new Date(comment.createdAt).toLocaleString()}
+                        </span>
+                      </div>
+                      <p className={styles.commentText}>{comment.content}</p>
+                      <div className={styles.commentActions}>
+                        <button
+                          className={`${styles.commentLikeBtn} ${comment.likedBy?.includes((session?.user as any)?.id) ? styles.liked : ''}`}
+                          onClick={() => handleCommentLike(comment._id)}
+                        >
+                          <i className={comment.likedBy?.includes((session?.user as any)?.id) ? "fa-solid fa-heart" : "fa-regular fa-heart"}></i>
+                          <span>{comment.likes || 0}</span>
+                        </button>
+                        <button
+                          className={styles.replyBtn}
+                          onClick={() => {
+                            setReplyingTo(replyingTo === comment._id ? null : comment._id);
+                            setReplyContent("");
+                          }}
+                        >
+                          <i className="fa-regular fa-comment"></i> 답글
+                        </button>
+                        {(session?.user as any)?.id === comment.author.id && (
+                          <button
+                            className={styles.deleteCommentBtn}
+                            onClick={() => handleDeleteCommentClick(comment._id)}
+                          >
+                            삭제
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Reply Input */}
+                      {replyingTo === comment._id && (
+                        <div className={styles.replyInputWrapper}>
+                          <textarea
+                            className={styles.replyInput}
+                            placeholder="답글을 작성하세요..."
+                            value={replyContent}
+                            onChange={(e) => setReplyContent(e.target.value)}
+                            rows={2}
+                          />
+                          <div className={styles.replyBtns}>
+                            <button
+                              className={styles.cancelReplyBtn}
+                              onClick={() => {
+                                setReplyingTo(null);
+                                setReplyContent("");
+                              }}
+                            >
+                              취소
+                            </button>
+                            <button
+                              className={styles.submitReplyBtn}
+                              onClick={() => handleSubmitReply(comment._id)}
+                              disabled={!replyContent.trim()}
+                            >
+                              등록
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Replies */}
+                  {comment.replies?.length > 0 && (
+                    <div className={styles.repliesList}>
+                      {comment.replies.map((reply: any) => (
+                        <div key={reply._id} className={styles.replyItem}>
+                          <img
+                            src={reply.author.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${reply.author.id}`}
+                            className={styles.replyAvatar}
+                            alt="Replier"
+                          />
+                          <div className={styles.commentBody}>
+                            <div className={styles.commentHeader}>
+                              <span className={styles.commentAuthor}>{reply.author.name}</span>
+                              <span className={styles.commentTime}>
+                                {new Date(reply.createdAt).toLocaleString()}
+                              </span>
+                            </div>
+                            <p className={styles.commentText}>{reply.content}</p>
+                            <div className={styles.commentActions}>
+                              <button
+                                className={`${styles.commentLikeBtn} ${reply.likedBy?.includes((session?.user as any)?.id) ? styles.liked : ''}`}
+                                onClick={() => handleCommentLike(reply._id)}
+                              >
+                                <i className={reply.likedBy?.includes((session?.user as any)?.id) ? "fa-solid fa-heart" : "fa-regular fa-heart"}></i>
+                                <span>{reply.likes || 0}</span>
+                              </button>
+                              {(session?.user as any)?.id === reply.author.id && (
+                                <button
+                                  className={styles.deleteCommentBtn}
+                                  onClick={() => handleDeleteCommentClick(reply._id)}
+                                >
+                                  삭제
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+          </div>
+        </div>
+
         <button className={styles.postBtn} onClick={() => router.back()} style={{ width: 'fit-content', marginTop: '20px' }}>
           목록으로
         </button>
       </main>
+
+      {/* Sidebar */}
+      <aside className={styles.sidebar}>
+        <div className={styles.widget}>
+          <div className={styles.widgetHeader}>
+            <div className={styles.widgetH}>실시간 인기글</div>
+            <div className={styles.periodSelector}>
+              <button
+                className={`${styles.periodBtn} ${trendingPeriod === 'week' ? styles.active : ''}`}
+                onClick={() => setTrendingPeriod('week')}
+              >
+                주간
+              </button>
+              <button
+                className={`${styles.periodBtn} ${trendingPeriod === 'month' ? styles.active : ''}`}
+                onClick={() => setTrendingPeriod('month')}
+              >
+                월간
+              </button>
+            </div>
+          </div>
+
+          {trendingPosts.length > 0 ? (
+            trendingPosts.map((trendPost, index) => (
+              <div
+                key={trendPost._id}
+                className={`${styles.trendRow} ${trendPost._id === id ? styles.currentPost : ''}`}
+                onClick={() => router.push(`/community/${trendPost._id}`)}
+                style={{ cursor: 'pointer' }}
+              >
+                <div className={styles.trendRank}>{index + 1}</div>
+                <div className={styles.trendContent}>
+                  <span className={styles.tTitle}>
+                    {trendPost.content.length > 25 ? trendPost.content.slice(0, 25) + '...' : trendPost.content}
+                  </span>
+                  <span className={styles.tMeta}>
+                    조회 {trendPost.recentViewCount || 0} · 댓글 {trendPost.commentCount || 0}
+                  </span>
+                </div>
+                <span
+                  className={styles.tBadge}
+                  style={
+                    trendPost.type === '정보'
+                      ? { background: '#E8F5FD', color: 'var(--accent)' }
+                      : trendPost.type === '질문'
+                      ? { background: '#FFF4E5', color: 'var(--warning)' }
+                      : {}
+                  }
+                >
+                  {trendPost.type}
+                </span>
+              </div>
+            ))
+          ) : (
+            <div className={styles.emptyTrending}>
+              아직 인기글이 없습니다
+            </div>
+          )}
+        </div>
+
+        <div className={styles.widget}>
+          <div className={styles.widgetH}>작성자 정보</div>
+          <div className={styles.authorInfo}>
+            <img
+              src={post.author.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.author.id}`}
+              className={styles.authorAvatar}
+              alt="Author"
+            />
+            <div className={styles.authorDetails}>
+              <span className={styles.authorName}>{post.author.name}</span>
+              <span className={styles.authorDate}>
+                작성일: {new Date(post.createdAt).toLocaleDateString()}
+              </span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {/* Comment Delete Confirmation Modal */}
+      {showCommentDeleteModal && (
+        <div className={styles.modalOverlay} onClick={handleDeleteCommentCancel}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3 className={styles.modalTitle}>댓글 삭제</h3>
+            </div>
+            <div className={styles.modalBody}>
+              <p>정말 이 댓글을 삭제하시겠습니까?</p>
+            </div>
+            <div className={styles.modalFooter}>
+              <button
+                className={styles.modalCancelBtn}
+                onClick={handleDeleteCommentCancel}
+                disabled={isDeletingComment}
+              >
+                취소
+              </button>
+              <button
+                className={styles.modalDeleteBtn}
+                onClick={handleDeleteCommentConfirm}
+                disabled={isDeletingComment}
+              >
+                {isDeletingComment ? "삭제 중..." : "삭제"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

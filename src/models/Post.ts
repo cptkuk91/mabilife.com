@@ -1,6 +1,10 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 import { connectToDatabase } from '@/lib/mongodb';
 
+export interface IViewRecord {
+  viewedAt: Date;
+}
+
 export interface IPost extends Document {
   content: string;
   type: '잡담' | '질문' | '정보';
@@ -14,6 +18,8 @@ export interface IPost extends Document {
   likes: number;
   likedBy: string[];
   commentCount: number;
+  viewCount: number;
+  viewHistory: IViewRecord[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -31,6 +37,10 @@ const PostSchema: Schema = new Schema({
   likes: { type: Number, default: 0 },
   likedBy: [{ type: String }],
   commentCount: { type: Number, default: 0 },
+  viewCount: { type: Number, default: 0 },
+  viewHistory: [{
+    viewedAt: { type: Date, default: Date.now }
+  }],
 }, {
   timestamps: true,
 });
