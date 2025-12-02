@@ -35,6 +35,10 @@ export default function Navbar() {
         <Link href="/" className="nav-logo">
           <i className="fa-solid fa-leaf"></i> Mabi Life
         </Link>
+        <div className="nav-links">
+          <Link href="#">한국어</Link>
+          <Link href="#">일본어</Link>
+        </div>
         <div className="nav-menu">
           <Link href="/guide" className={pathname === "/guide" ? "active" : ""}>공략</Link>
           <Link href="/community" className={pathname === "/community" ? "active" : ""}>커뮤니티</Link>
