@@ -1,0 +1,229 @@
+/* --- Hero Section (Title Area) --- */
+.hero {
+  max-width: var(--max-width);
+  margin: 100px auto 40px;
+  padding: 0 20px;
+  text-align: center;
+}
+
+.hero h1 {
+  font-size: 48px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 10px;
+  color: var(--text-title);
+}
+
+.hero p {
+  font-size: 21px;
+  color: var(--text-body);
+  font-weight: 400;
+  max-width: 600px;
+  margin: 0 auto 30px;
+  line-height: 1.4;
+}
+
+/* Input Area (Clean & Centered) */
+.writeWrapper {
+  background: var(--card-bg);
+  max-width: 600px;
+  margin: 0 auto;
+  border-radius: var(--radius-md);
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  transition: 0.3s;
+}
+
+.writeWrapper:focus-within {
+  transform: scale(1.02);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.writeInput {
+  flex: 1;
+  border: none;
+  font-size: 16px;
+  padding: 10px;
+  outline: none;
+}
+
+.writeBtn {
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 99px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* --- Dashboard Grid (Bento Grid) --- */
+.dashboardGrid {
+  max-width: var(--max-width);
+  margin: 0 auto 60px;
+  padding: 0 20px;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  grid-auto-rows: minmax(200px, auto);
+  gap: 24px;
+}
+
+/* Common Card Style */
+.card {
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  padding: 30px;
+  box-shadow: var(--shadow-card);
+  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+}
+
+.card:hover {
+  transform: scale(1.02) translateY(-5px);
+  box-shadow: var(--shadow-hover);
+  z-index: 10;
+}
+
+.cardCategory {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-body);
+  margin-bottom: 8px;
+  letter-spacing: 0.5px;
+}
+
+.cardTitle {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 10px;
+  color: var(--text-title);
+}
+
+.cardDesc {
+  font-size: 16px;
+  color: var(--text-body);
+  line-height: 1.5;
+  margin-bottom: auto; /* Push footer down */
+}
+
+/* Grid Spans */
+/* Featured Post: Full Width or Large */
+.colSpan8 {
+  grid-column: span 8;
+}
+
+.colSpan6 {
+  grid-column: span 6;
+}
+
+.colSpan4 {
+  grid-column: span 4;
+}
+
+.rowSpan2 {
+  grid-row: span 2;
+}
+
+/* Specific Card Styling */
+
+/* Image Card (Visual Heavy) */
+.imgCard {
+  color: white;
+  background-size: cover;
+  background-position: center;
+}
+
+.imgCard .cardCategory {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.imgCard .cardTitle {
+  color: white;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.imgCard .cardDesc {
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.3);
+}
+
+/* User Profile in Card */
+.cardFooter {
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  padding-top: 15px;
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #eee;
+  object-fit: cover;
+}
+
+.userInfo {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-title);
+}
+
+.likes {
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--text-body);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.likes i {
+  color: #FF2D55;
+}
+
+/* --- Tags / Quick Menu --- */
+.tagsBar {
+  max-width: var(--max-width);
+  margin: 0 auto 30px;
+  padding: 0 20px;
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+  /* Hide scrollbar */
+  scrollbar-width: none;
+}
+
+.tagsBar::-webkit-scrollbar {
+  display: none;
+}
+
+.tagPill {
+  background: rgba(0, 0, 0, 0.04);
+  padding: 8px 18px;
+  border-radius: 99px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-title);
+  white-space: nowrap;
+  transition: 0.2s;
+}
+
+.tagPill:hover,
+.tagPill.active {
+  background: var(--text-title);
+  color: white;
+}

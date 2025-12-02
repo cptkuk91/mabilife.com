@@ -1,0 +1,175 @@
+"use server";
+
+import { auth } from "@/lib/auth";
+import getPostModel from "@/models/Post";
+import { revalidatePath } from "next/cache";
+
+export type CreatePostInput = {
+  content: string;
+  type: '잡담' | '질문' | '정보';
+  images?: string[];
+};
+
+export type PostResponse = {
+  success: boolean;
+  id?: string;
+  error?: string;
+};
+
+export async function createPost(input: CreatePostInput): Promise<PostResponse> {
+  try {
+    const session = await auth();
+
+    if (!session?.user) {
+      return { success: false, error: "로그인이 필요합니다." };
+    }
+
+    const Post = await getPostModel();
+
+    const post = await Post.create({
+      content: input.content,
+      type: input.type,
+      images: input.images || [],
+      author: {
+        id: (session.user as any).id,
+        name: session.user.name || "익명",
+        image: session.user.image || undefined,
+      },
+      isSolved: input.type === '질문' ? false : undefined,
+    });
+
+    revalidatePath("/community");
+
+    return {
+      success: true,
+      id: post._id.toString(),
+    };
+  } catch (error) {
+    console.error("Create post error:", error);
+    return { success: false, error: "게시글 작성에 실패했습니다." };
+  }
+}
+
+export async function getPosts(page = 1, limit = 20, type?: string, search?: string) {
+  try {
+    const Post = await getPostModel();
+    const query: any = {};
+    
+    if (type && type !== '전체') {
+      query.type = type;
+    }
+
+    if (search) {
+      query.content = { $regex: search, $options: 'i' };
+    }
+
+    const posts = await Post.find(query)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .lean();
+
+    // Convert _id to string
+    const serializedPosts = posts.map((post) => ({
+      ...post,
+      _id: post._id.toString(),
+      createdAt: post.createdAt.toISOString(),
+      updatedAt: post.updatedAt.toISOString(),
+    }));
+
+    return { success: true, posts: serializedPosts };
+  } catch (error) {
+    console.error("Get posts error:", error);
+    return { success: false, error: "게시글을 불러오는데 실패했습니다.", posts: [] };
+  }
+}
+
+export async function getPost(id: string) {
+  try {
+    const Post = await getPostModel();
+    const post = await Post.findById(id).lean();
+
+    if (!post) {
+      return { success: false, error: "게시글을 찾을 수 없습니다." };
+    }
+
+    return { 
+      success: true, 
+      post: {
+        ...post,
+        _id: post._id.toString(),
+        createdAt: post.createdAt.toISOString(),
+        updatedAt: post.updatedAt.toISOString(),
+      }
+    };
+  } catch (error) {
+    console.error("Get post error:", error);
+    return { success: false, error: "게시글을 불러오는데 실패했습니다." };
+  }
+}
+
+export async function incrementViewCount(id: string) {
+  try {
+    const Post = await getPostModel();
+    return { success: true };
+  } catch (error) {
+    console.error("Increment view error:", error);
+    return { success: false };
+  }
+}
+
+export async function deletePost(id: string) {
+  try {
+    const session = await auth();
+    if (!session?.user) {
+      return { success: false, error: "로그인이 필요합니다." };
+    }
+
+    const Post = await getPostModel();
+    const post = await Post.findById(id);
+
+    if (!post) {
+      return { success: false, error: "게시글을 찾을 수 없습니다." };
+    }
+
+    if (post.author.id !== (session.user as any).id) {
+      return { success: false, error: "삭제 권한이 없습니다." };
+    }
+
+    await Post.findByIdAndDelete(id);
+    revalidatePath("/community");
+    
+    return { success: true };
+  } catch (error) {
+    console.error("Delete post error:", error);
+    return { success: false, error: "게시글 삭제에 실패했습니다." };
+  }
+}
+
+export async function updatePost(id: string, content: string) {
+  try {
+    const session = await auth();
+    if (!session?.user) {
+      return { success: false, error: "로그인이 필요합니다." };
+    }
+
+    const Post = await getPostModel();
+    const post = await Post.findById(id);
+
+    if (!post) {
+      return { success: false, error: "게시글을 찾을 수 없습니다." };
+    }
+
+    if (post.author.id !== (session.user as any).id) {
+      return { success: false, error: "수정 권한이 없습니다." };
+    }
+
+    await Post.findByIdAndUpdate(id, { content });
+    revalidatePath("/community");
+    
+    return { success: true };
+  } catch (error) {
+    console.error("Update post error:", error);
+    return { success: false, error: "게시글 수정에 실패했습니다." };
+  }
+}

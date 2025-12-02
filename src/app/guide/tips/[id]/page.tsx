@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import styles from "./tipDetail.module.css";
 
 export default function TipDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -40,27 +41,27 @@ export default function TipDetailPage({ params }: { params: { id: string } }) {
   };
 
   return (
-    <div className="tip-detail-container">
+    <div className={styles.tipDetailContainer}>
       {/* Header */}
-      <div className="tip-header">
-        <div className="tip-category-badge">{tip.category}</div>
-        <h1 className="tip-title">{tip.title}</h1>
+      <div className={styles.tipHeader}>
+        <div className={styles.tipCategoryBadge}>{tip.category}</div>
+        <h1 className={styles.tipTitle}>{tip.title}</h1>
         
-        <div className="tip-meta">
-          <div className="author-info">
-            <img src={tip.authorImg} alt="Author" className="author-img" />
-            <div className="author-text">
-              <span className="author-name">{tip.author}</span>
-              <span className="post-date">{tip.date}</span>
+        <div className={styles.tipMeta}>
+          <div className={styles.authorInfo}>
+            <img src={tip.authorImg} alt="Author" className={styles.authorImg} />
+            <div className={styles.authorText}>
+              <span className={styles.authorName}>{tip.author}</span>
+              <span className={styles.postDate}>{tip.date}</span>
             </div>
           </div>
           
-          <div className="tip-actions">
-            <button className={`action-btn like ${isLiked ? 'active' : ''}`} onClick={toggleLike}>
+          <div className={styles.tipActions}>
+            <button className={`${styles.actionBtn} ${styles.like} ${isLiked ? styles.active : ''}`} onClick={toggleLike}>
               <i className={`fa-${isLiked ? 'solid' : 'regular'} fa-heart`}></i>
               {likeCount}
             </button>
-            <button className="action-btn">
+            <button className={styles.actionBtn}>
               <i className="fa-regular fa-share-from-square"></i>
               공유
             </button>
@@ -69,25 +70,25 @@ export default function TipDetailPage({ params }: { params: { id: string } }) {
       </div>
 
       {/* Content */}
-      <div className="tip-content" dangerouslySetInnerHTML={{ __html: tip.content }}></div>
+      <div className={styles.tipContent} dangerouslySetInnerHTML={{ __html: tip.content }}></div>
 
       {/* Comments */}
-      <div className="comments-section">
-        <div className="comments-header">댓글 {tip.comments.length}</div>
+      <div className={styles.commentsSection}>
+        <div className={styles.commentsHeader}>댓글 {tip.comments.length}</div>
         
-        <div className="comment-input-area">
-          <input type="text" className="comment-input" placeholder="댓글을 남겨보세요..." />
-          <button className="comment-submit">등록</button>
+        <div className={styles.commentInputArea}>
+          <input type="text" className={styles.commentInput} placeholder="댓글을 남겨보세요..." />
+          <button className={styles.commentSubmit}>등록</button>
         </div>
 
-        <div className="comment-list">
+        <div className={styles.commentList}>
           {tip.comments.map(comment => (
-            <div key={comment.id} className="comment-item">
-              <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.author}`} alt="User" className="author-img" style={{width: '32px', height: '32px'}} />
-              <div className="comment-bubble">
-                <div className="comment-author">{comment.author}</div>
-                <div className="comment-text">{comment.text}</div>
-                <div className="comment-date">{comment.date}</div>
+            <div key={comment.id} className={styles.commentItem}>
+              <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.author}`} alt="User" className={styles.authorImg} style={{width: '32px', height: '32px'}} />
+              <div className={styles.commentBubble}>
+                <div className={styles.commentAuthor}>{comment.author}</div>
+                <div className={styles.commentText}>{comment.text}</div>
+                <div className={styles.commentDate}>{comment.date}</div>
               </div>
             </div>
           ))}

@@ -1,0 +1,263 @@
+/* --- Search Page Styles --- */
+
+/* Search Bar Area */
+.searchHero {
+  max-width: var(--max-width);
+  margin: 80px auto 20px; /* Adjusted top margin for fixed nav */
+  padding: 0 20px;
+}
+
+.searchInputWrapper {
+  position: relative;
+  max-width: 100%;
+}
+
+.searchInput {
+  width: 100%;
+  height: 60px;
+  font-size: 28px;
+  font-weight: 700;
+  border: none;
+  background: transparent;
+  color: var(--text-title);
+  outline: none;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+  transition: 0.3s;
+  padding-right: 40px;
+}
+
+.searchInput:focus {
+  border-bottom-color: var(--accent);
+}
+
+.searchInput::placeholder {
+  color: #D2D2D7;
+}
+
+.clearBtn {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 20px;
+  color: #D2D2D7;
+  cursor: pointer;
+}
+
+/* Filter Tabs (Segment Control) */
+.filterBar {
+  max-width: var(--max-width);
+  margin: 0 auto 30px;
+  padding: 0 20px;
+  display: flex;
+  gap: 15px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.filterItem {
+  padding: 8px 16px;
+  border-radius: 99px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-body);
+  background: rgba(0, 0, 0, 0.04);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: 0.2s;
+}
+
+.filterItem.active {
+  background: var(--text-title);
+  color: white;
+}
+
+/* Result Grid */
+.resultGrid {
+  max-width: var(--max-width);
+  margin: 0 auto 80px;
+  padding: 0 20px;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 24px;
+}
+
+/* Top Hit Card */
+.topHitCard {
+  grid-column: span 12;
+  display: flex;
+  flex-direction: row;
+  background: white;
+  padding: 0;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.topHitImage {
+  width: 40%;
+  background-image: url('https://picsum.photos/id/10/800/600');
+  background-size: cover;
+  background-position: center;
+}
+
+.topHitContent {
+  width: 60%;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.badge {
+  display: inline-block;
+  background: #EAF4FF;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  width: fit-content;
+  text-transform: uppercase;
+}
+
+.topHitTitle {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.topHitDesc {
+  font-size: 17px;
+  color: var(--text-body);
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+.statRow {
+  display: flex;
+  gap: 40px;
+}
+
+.statItem h4 {
+  font-size: 13px;
+  color: var(--text-body);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.statItem p {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-title);
+}
+
+/* Additional Card Styles for Search Results */
+.cardImgTop {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+
+.resultMeta {
+  font-size: 13px;
+  color: var(--text-body);
+  margin-bottom: 6px;
+}
+
+.resultTitle {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  line-height: 1.3;
+}
+
+.resultSnippet {
+  font-size: 15px;
+  color: var(--text-body);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.userRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 16px;
+}
+
+.userAvatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #eee;
+}
+
+.userName {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Section Divider */
+.sectionHeader {
+  grid-column: span 12;
+  font-size: 22px;
+  font-weight: 700;
+  margin-top: 20px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.seeAll {
+  font-size: 15px;
+  color: var(--accent);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* Nav Styles duplicated for Search Page */
+.navContent {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  height: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+}
+
+.navLogo { font-weight: 600; font-size: 19px; letter-spacing: -0.5px; }
+.navLogo i { margin-right: 6px; }
+
+/* Card Styles duplicated */
+.card {
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  padding: 30px;
+  box-shadow: var(--shadow-card);
+  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+}
+
+.card:hover {
+  transform: scale(1.02) translateY(-5px);
+  box-shadow: var(--shadow-hover);
+  z-index: 10;
+}
+
+.colSpan4 { grid-column: span 4; }
+.colSpan6 { grid-column: span 6; }
+

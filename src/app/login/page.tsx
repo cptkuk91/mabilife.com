@@ -2,26 +2,27 @@
 
 import { signIn } from "next-auth/react";
 import Link from "next/link";
+import styles from "./login.module.css";
 
 export default function LoginPage() {
   return (
-    <div className="login-container">
-      <div className="login-card">
+    <div className={styles.container}>
+      <div className={styles.card}>
         <div>
-          <div className="login-logo" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+          <div className={styles.logo} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
             <i className="fa-solid fa-leaf"></i> MabiLife 
             <span style={{ fontSize: '0.8em', opacity: 0.5, margin: '0 4px' }}>X</span>
             <img src="/assets/logo/kakao-logo.webp" alt="GG FACTORY" style={{ height: '24px' }} />
             <span style={{ color: '#F7A51A' }}>GG FACTORY</span>
           </div>
-          <p className="login-desc">에린의 모험가들과 함께하세요.</p>
+          <p className={styles.desc}>에린의 모험가들과 함께하세요.</p>
         </div>
 
-        <button className="google-btn" onClick={() => signIn("google", { callbackUrl: "/" })}>
+        <button className={styles.googleBtn} onClick={() => signIn("google", { callbackUrl: "/" })}>
           <img 
             src="https://www.svgrepo.com/show/475656/google-color.svg" 
             alt="Google Logo" 
-            className="google-icon" 
+            className={styles.googleIcon} 
           />
           Google 계정으로 계속하기
         </button>

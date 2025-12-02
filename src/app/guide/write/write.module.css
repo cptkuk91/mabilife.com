@@ -1,0 +1,139 @@
+/* --- Guide Write Page Styles --- */
+.pageContainer {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 100px 20px 80px;
+}
+
+/* Header */
+.hubHeader {
+  margin-bottom: 30px;
+}
+
+.hubTitle {
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin-bottom: 5px;
+  color: var(--text-title);
+}
+
+.hubSubtitle {
+  color: var(--text-body);
+  font-size: 20px;
+}
+
+/* Form Layout */
+.writeForm {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: var(--text-title);
+}
+
+/* Category Selection */
+.categorySelect {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.categoryBtn {
+  padding: 8px 16px;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+  background: white;
+  color: var(--text-title);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.categoryBtn:hover {
+  background: #F5F5F7;
+}
+
+.categoryBtn.active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: white;
+}
+
+/* Title Input */
+.titleInput {
+  width: 100%;
+  padding: 16px 0;
+  font-size: 24px;
+  font-weight: 700;
+  border: none;
+  border-bottom: 2px solid var(--border);
+  outline: none;
+  background: transparent;
+  color: var(--text-title);
+  transition: border-color 0.2s;
+}
+
+.titleInput:focus {
+  border-bottom-color: var(--accent);
+}
+
+.titleInput::placeholder {
+  color: #D2D2D7;
+}
+
+/* Action Buttons */
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.cancelBtn {
+  padding: 12px 24px;
+  border-radius: 12px;
+  border: none;
+  background: var(--bg-color);
+  color: var(--text-title);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.cancelBtn:hover {
+  background: #E5E5EA;
+}
+
+.submitBtn {
+  padding: 12px 24px;
+  border-radius: 12px;
+  border: none;
+  background: var(--accent);
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.submitBtn:hover {
+  background: var(--accent-hover);
+}
+
+.submitBtn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}

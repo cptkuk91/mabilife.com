@@ -4,6 +4,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useState, useEffect, Suspense } from "react";
 
+import styles from "./tips.module.css";
+
 function TipsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -111,25 +113,27 @@ function TipsContent() {
 
   const categories = ["전체", "초보 가이드", "전투/던전", "메인스트림", "생활/알바", "패션/뷰티", "돈벌기"];
 
+
+
   return (
-    <div className="page-container">
-      <header className="hub-header" style={{ marginBottom: '20px' }}>
+    <div className={styles.pageContainer}>
+      <header className={styles.hubHeader}>
         <div>
-          <div className="hub-title">실시간 유저 팁</div>
-          <div className="hub-subtitle">유저들이 공유하는 따끈따끈한 에린 소식</div>
+          <div className={styles.hubTitle}>실시간 유저 팁</div>
+          <div className={styles.hubSubtitle}>유저들이 공유하는 따끈따끈한 에린 소식</div>
         </div>
-        <button className="write-btn" onClick={() => router.push('/guide/write')}>
+        <button className={styles.writeBtn} onClick={() => router.push('/guide/write')}>
           <i className="fa-solid fa-pen-to-square" style={{marginRight: '6px'}}></i>
           팁 작성
         </button>
       </header>
 
       {/* Filter Tabs */}
-      <div className="filter-bar" style={{ marginBottom: '30px' }}>
+      <div className={styles.filterBar}>
         {categories.map((cat) => (
           <div 
             key={cat} 
-            className={`filter-item ${activeTab === cat ? 'active' : ''}`}
+            className={`${styles.filterItem} ${activeTab === cat ? styles.active : ''}`}
             onClick={() => {
               setActiveTab(cat);
               const newUrl = cat === "전체" ? "/guide/tips" : `/guide/tips?category=${cat}`;
@@ -141,17 +145,17 @@ function TipsContent() {
         ))}
       </div>
 
-      <div className="list-group">
+      <div className={styles.listGroup}>
         {tips.map((tip) => (
-          <Link href={`/guide/tips/${tip.id}`} key={tip.id} className="list-item">
-            <div className="list-icon" style={{background: tip.bg, color: tip.color}}>
+          <Link href={`/guide/tips/${tip.id}`} key={tip.id} className={styles.listItem}>
+            <div className={styles.listIcon} style={{background: tip.bg, color: tip.color}}>
               <i className={`fa-solid ${tip.icon}`}></i>
             </div>
-            <div className="list-content">
-              <div className="list-title">{tip.title}</div>
-              <div className="list-desc">{tip.desc}</div>
+            <div className={styles.listContent}>
+              <div className={styles.listTitle}>{tip.title}</div>
+              <div className={styles.listDesc}>{tip.desc}</div>
             </div>
-            <div className="list-meta">{tip.time}</div>
+            <div className={styles.listMeta}>{tip.time}</div>
           </Link>
         ))}
       </div>
