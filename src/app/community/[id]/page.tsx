@@ -4,7 +4,7 @@ import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { getPost, incrementViewCount, deletePost, updatePost, toggleLike, getTrendingPosts, TrendingPeriod } from "@/actions/post";
-import { getComments, createComment, deleteComment, toggleCommentLike } from "@/actions/comment";
+import { getComments, createComment, deleteComment, toggleCommentLike, acceptComment } from "@/actions/comment";
 import styles from "../community.module.css";
 
 export default function PostDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -28,6 +28,9 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
   const [showCommentDeleteModal, setShowCommentDeleteModal] = useState(false);
   const [deleteCommentTargetId, setDeleteCommentTargetId] = useState<string | null>(null);
   const [isDeletingComment, setIsDeletingComment] = useState(false);
+  const [showAcceptModal, setShowAcceptModal] = useState(false);
+  const [acceptTargetId, setAcceptTargetId] = useState<string | null>(null);
+  const [isAccepting, setIsAccepting] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -131,6 +134,40 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
   const handleDeleteCommentCancel = () => {
     setShowCommentDeleteModal(false);
     setDeleteCommentTargetId(null);
+  };
+
+  const handleAcceptClick = (commentId: string) => {
+    setAcceptTargetId(commentId);
+    setShowAcceptModal(true);
+  };
+
+  const handleAcceptConfirm = async () => {
+    if (!acceptTargetId) return;
+
+    setIsAccepting(true);
+
+    const result = await acceptComment(acceptTargetId, id);
+
+    if (result.success) {
+      // 로컬 상태 업데이트
+      setPost({ ...post, isSolved: true, acceptedCommentId: acceptTargetId });
+      setComments(comments.map(comment =>
+        comment._id === acceptTargetId
+          ? { ...comment, isAccepted: true }
+          : comment
+      ));
+    } else {
+      alert(result.error || "채택에 실패했습니다.");
+    }
+
+    setIsAccepting(false);
+    setShowAcceptModal(false);
+    setAcceptTargetId(null);
+  };
+
+  const handleAcceptCancel = () => {
+    setShowAcceptModal(false);
+    setAcceptTargetId(null);
   };
 
   const handleCommentLike = async (commentId: string) => {
@@ -423,7 +460,13 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
           {/* Comments List */}
           <div className={styles.commentList}>
             {comments.map((comment) => (
-                <div key={comment._id} className={styles.commentItem}>
+                <div key={comment._id} className={`${styles.commentItem} ${comment.isAccepted ? styles.acceptedComment : ''}`}>
+                  {/* Accepted Badge */}
+                  {comment.isAccepted && (
+                    <div className={styles.acceptedBadge}>
+                      <i className="fa-solid fa-check-circle"></i> 채택된 답변
+                    </div>
+                  )}
                   {/* Main Comment */}
                   <div className={styles.commentContent}>
                     <img
@@ -456,6 +499,18 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
                         >
                           <i className="fa-regular fa-comment"></i> 답글
                         </button>
+                        {/* 채택 버튼: 질문 게시글이고, 작성자이고, 아직 채택 안됐고, 자기 댓글이 아닌 경우 */}
+                        {post.type === '질문' &&
+                          !post.isSolved &&
+                          (session?.user as any)?.id === post.author.id &&
+                          (session?.user as any)?.id !== comment.author.id && (
+                          <button
+                            className={styles.acceptBtn}
+                            onClick={() => handleAcceptClick(comment._id)}
+                          >
+                            <i className="fa-solid fa-check"></i> 채택
+                          </button>
+                        )}
                         {(session?.user as any)?.id === comment.author.id && (
                           <button
                             className={styles.deleteCommentBtn}
@@ -650,6 +705,37 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
                 disabled={isDeletingComment}
               >
                 {isDeletingComment ? "삭제 중..." : "삭제"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Accept Comment Confirmation Modal */}
+      {showAcceptModal && (
+        <div className={styles.modalOverlay} onClick={handleAcceptCancel}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3 className={styles.modalTitle}>답변 채택</h3>
+            </div>
+            <div className={styles.modalBody}>
+              <p>이 답변을 채택하시겠습니까?</p>
+              <p className={styles.modalWarning}>채택 후에는 변경할 수 없습니다.</p>
+            </div>
+            <div className={styles.modalFooter}>
+              <button
+                className={styles.modalCancelBtn}
+                onClick={handleAcceptCancel}
+                disabled={isAccepting}
+              >
+                취소
+              </button>
+              <button
+                className={styles.modalAcceptBtn}
+                onClick={handleAcceptConfirm}
+                disabled={isAccepting}
+              >
+                {isAccepting ? "채택 중..." : "채택"}
               </button>
             </div>
           </div>

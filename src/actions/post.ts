@@ -2,6 +2,7 @@
 
 import { auth } from "@/lib/auth";
 import getPostModel from "@/models/Post";
+import getCommentModel from "@/models/Comment";
 import { revalidatePath } from "next/cache";
 
 export type CreatePostInput = {
@@ -53,8 +54,9 @@ export async function createPost(input: CreatePostInput): Promise<PostResponse> 
 export async function getPosts(page = 1, limit = 20, type?: string, search?: string) {
   try {
     const Post = await getPostModel();
+    const Comment = await getCommentModel();
     const query: any = {};
-    
+
     if (type && type !== '전체') {
       query.type = type;
     }
@@ -69,14 +71,40 @@ export async function getPosts(page = 1, limit = 20, type?: string, search?: str
       .limit(limit)
       .lean();
 
+    // 채택된 댓글 ID들 수집
+    const acceptedCommentIds = posts
+      .filter(post => post.acceptedCommentId)
+      .map(post => post.acceptedCommentId);
+
+    // 채택된 댓글들 한번에 조회
+    const acceptedComments = acceptedCommentIds.length > 0
+      ? await Comment.find({ _id: { $in: acceptedCommentIds } }).lean()
+      : [];
+
+    // 댓글 맵 생성
+    const commentMap = new Map(
+      acceptedComments.map(comment => [comment._id.toString(), comment])
+    );
+
     // Convert _id to string and exclude viewHistory (not needed on client)
-    const serializedPosts = posts.map((post) => ({
-      ...post,
-      _id: post._id.toString(),
-      createdAt: post.createdAt.toISOString(),
-      updatedAt: post.updatedAt.toISOString(),
-      viewHistory: undefined,
-    }));
+    const serializedPosts = posts.map((post) => {
+      const acceptedComment = post.acceptedCommentId
+        ? commentMap.get(post.acceptedCommentId)
+        : null;
+
+      return {
+        ...post,
+        _id: post._id.toString(),
+        createdAt: post.createdAt.toISOString(),
+        updatedAt: post.updatedAt.toISOString(),
+        viewHistory: undefined,
+        acceptedComment: acceptedComment ? {
+          _id: acceptedComment._id.toString(),
+          content: acceptedComment.content,
+          author: acceptedComment.author,
+        } : null,
+      };
+    });
 
     return { success: true, posts: serializedPosts };
   } catch (error) {

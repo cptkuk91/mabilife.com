@@ -744,6 +744,30 @@ export default function CommunityPage() {
                 </div>
               )}
 
+              {/* 채택된 답변 미리보기 */}
+              {post.acceptedComment && (
+                <div className={styles.acceptedAnswerPreview}>
+                  <div className={styles.acceptedAnswerHeader}>
+                    <i className="fa-solid fa-check-circle"></i>
+                    <span>채택된 답변</span>
+                  </div>
+                  <div className={styles.acceptedAnswerContent}>
+                    <img
+                      src={post.acceptedComment.author.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.acceptedComment.author.id}`}
+                      className={styles.acceptedAnswerAvatar}
+                      alt="Answerer"
+                    />
+                    <div className={styles.acceptedAnswerText}>
+                      <span className={styles.acceptedAnswerAuthor}>{post.acceptedComment.author.name}</span>
+                      <p>{post.acceptedComment.content.length > 100
+                        ? post.acceptedComment.content.slice(0, 100) + '...'
+                        : post.acceptedComment.content}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className={styles.cardFooter}>
                 <span className={styles.statItem}>
                   <i className="fa-regular fa-comment"></i> {post.commentCount || 0}

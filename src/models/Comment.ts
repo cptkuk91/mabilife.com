@@ -12,6 +12,7 @@ export interface IComment extends Document {
   parentId?: string; // For replies
   likes: number;
   likedBy: string[];
+  isAccepted: boolean; // 채택된 답변 여부
   createdAt: Date;
   updatedAt: Date;
 }
@@ -27,6 +28,7 @@ const CommentSchema: Schema = new Schema({
   parentId: { type: String, default: null, index: true },
   likes: { type: Number, default: 0 },
   likedBy: [{ type: String }],
+  isAccepted: { type: Boolean, default: false },
 }, {
   timestamps: true,
 });

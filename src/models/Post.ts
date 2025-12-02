@@ -15,6 +15,7 @@ export interface IPost extends Document {
     image?: string;
   };
   isSolved?: boolean; // Only for '질문'
+  acceptedCommentId?: string; // 채택된 댓글 ID
   likes: number;
   likedBy: string[];
   commentCount: number;
@@ -34,6 +35,7 @@ const PostSchema: Schema = new Schema({
     image: { type: String },
   },
   isSolved: { type: Boolean, default: false },
+  acceptedCommentId: { type: String, default: null },
   likes: { type: Number, default: 0 },
   likedBy: [{ type: String }],
   commentCount: { type: Number, default: 0 },

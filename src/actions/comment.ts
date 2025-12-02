@@ -56,6 +56,8 @@ export async function getComments(postId: string) {
       .sort({ createdAt: 1 })
       .lean();
 
+    console.log("Raw comments from DB:", comments.map(c => ({ _id: c._id, isAccepted: c.isAccepted })));
+
     // Organize comments into tree structure
     const commentMap = new Map();
     const rootComments: any[] = [];
@@ -168,5 +170,90 @@ export async function toggleCommentLike(commentId: string) {
   } catch (error) {
     console.error("Toggle comment like error:", error);
     return { success: false, error: "좋아요 처리에 실패했습니다." };
+  }
+}
+
+export async function acceptComment(commentId: string, postId: string) {
+  try {
+    const session = await auth();
+    if (!session?.user) {
+      return { success: false, error: "로그인이 필요합니다." };
+    }
+
+    const userId = (session.user as any).id;
+    const Comment = await getCommentModel();
+    const Post = await getPostModel();
+
+    // 게시글 확인
+    const post = await Post.findById(postId);
+    if (!post) {
+      return { success: false, error: "게시글을 찾을 수 없습니다." };
+    }
+
+    // 질문 타입인지 확인
+    if (post.type !== '질문') {
+      return { success: false, error: "질문 게시글에서만 채택이 가능합니다." };
+    }
+
+    // 게시글 작성자인지 확인
+    if (post.author.id !== userId) {
+      return { success: false, error: "게시글 작성자만 채택할 수 있습니다." };
+    }
+
+    // 이미 채택된 답변이 있는지 확인
+    if (post.isSolved) {
+      console.log("Already solved - rejecting accept request");
+      return { success: false, error: "이미 채택된 답변이 있습니다." };
+    }
+
+    console.log("Proceeding with accept for comment:", commentId);
+
+    // 댓글 확인
+    const comment = await Comment.findById(commentId);
+    if (!comment) {
+      return { success: false, error: "댓글을 찾을 수 없습니다." };
+    }
+
+    // 자기 댓글은 채택 불가
+    if (comment.author.id === userId) {
+      return { success: false, error: "자신의 댓글은 채택할 수 없습니다." };
+    }
+
+    // 대댓글은 채택 불가
+    if (comment.parentId) {
+      return { success: false, error: "답글은 채택할 수 없습니다." };
+    }
+
+    // 기존 댓글에 isAccepted 필드가 없을 수 있으므로 먼저 초기화
+    await Comment.updateOne(
+      { _id: commentId, isAccepted: { $exists: false } },
+      { $set: { isAccepted: false } }
+    );
+
+    // 댓글 채택 처리
+    const updatedComment = await Comment.findByIdAndUpdate(
+      commentId,
+      { $set: { isAccepted: true } },
+      { new: true }
+    );
+
+    console.log("Comment accepted:", updatedComment?._id, "isAccepted:", updatedComment?.isAccepted);
+
+    // 게시글 해결됨 표시
+    const updatedPost = await Post.findByIdAndUpdate(
+      postId,
+      { $set: { isSolved: true, acceptedCommentId: commentId } },
+      { new: true }
+    );
+
+    console.log("Post updated:", updatedPost?._id, "isSolved:", updatedPost?.isSolved, "acceptedCommentId:", updatedPost?.acceptedCommentId);
+
+    revalidatePath(`/community/${postId}`);
+    revalidatePath("/community");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Accept comment error:", error);
+    return { success: false, error: "채택 처리에 실패했습니다." };
   }
 }
