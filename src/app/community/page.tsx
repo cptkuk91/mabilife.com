@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { getPresignedUrlAction } from "@/actions/upload";
 import { createPost, getPosts, deletePost, updatePost, getTrendingPosts, TrendingPeriod, toggleLike } from "@/actions/post";
+import { getWeeklyTopAnswerers } from "@/actions/comment";
 import styles from "./community.module.css";
 
 export default function CommunityPage() {
@@ -31,10 +32,12 @@ export default function CommunityPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [trendingPosts, setTrendingPosts] = useState<any[]>([]);
   const [trendingPeriod, setTrendingPeriod] = useState<TrendingPeriod>('week');
+  const [topAnswerers, setTopAnswerers] = useState<any[]>([]);
   const MAX_IMAGES = 5;
 
   useEffect(() => {
     loadPosts();
+    loadTopAnswerers();
 
     // Close dropdown when clicking outside
     const handleClickOutside = () => setActiveDropdown(null);
@@ -65,6 +68,13 @@ export default function CommunityPage() {
     const result = await getTrendingPosts(trendingPeriod, 5);
     if (result.success) {
       setTrendingPosts(result.posts);
+    }
+  };
+
+  const loadTopAnswerers = async () => {
+    const result = await getWeeklyTopAnswerers(5);
+    if (result.success) {
+      setTopAnswerers(result.answerers);
     }
   };
 
@@ -847,19 +857,27 @@ export default function CommunityPage() {
             )}
           </div>
 
-          <div className={styles.widget}>
-            <div className={styles.widgetH}>이번 주 지식인</div>
-            <div style={{display:'flex', alignItems:'center', gap:'10px', marginBottom:'10px'}}>
-              <span style={{fontWeight:700, color:'#FFD700'}}>1</span>
-              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Master" style={{width:'30px', borderRadius:'50%'}} alt="Rank 1" />
-              <span style={{fontSize:'14px', fontWeight:600}}>마비박사</span>
+          {topAnswerers.length > 0 && (
+            <div className={styles.widget}>
+              <div className={styles.widgetH}>이번 주 지식인</div>
+              {topAnswerers.map((answerer, index) => (
+                <div key={answerer.userId} className={styles.answererRow}>
+                  <span className={styles.answererRank} style={{
+                    color: index === 0 ? '#FFD700' : index === 1 ? '#C0C0C0' : index === 2 ? '#CD7F32' : 'var(--text-sub)'
+                  }}>
+                    {index + 1}
+                  </span>
+                  <img
+                    src={answerer.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${answerer.userId}`}
+                    className={styles.answererAvatar}
+                    alt={answerer.name}
+                  />
+                  <span className={styles.answererName}>{answerer.name}</span>
+                  <span className={styles.answererCount}>{answerer.acceptCount}회 채택</span>
+                </div>
+              ))}
             </div>
-            <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
-              <span style={{fontWeight:700, color:'#C0C0C0'}}>2</span>
-              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Help" style={{width:'30px', borderRadius:'50%'}} alt="Rank 2" />
-              <span style={{fontSize:'14px', fontWeight:600}}>친절한시민</span>
-            </div>
-          </div>
+          )}
         </aside>
 
       </div>

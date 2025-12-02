@@ -178,6 +178,7 @@ export async function deletePost(id: string) {
     }
 
     const Post = await getPostModel();
+    const Comment = await getCommentModel();
     const post = await Post.findById(id);
 
     if (!post) {
@@ -188,9 +189,13 @@ export async function deletePost(id: string) {
       return { success: false, error: "삭제 권한이 없습니다." };
     }
 
+    // 게시글에 달린 모든 댓글 삭제
+    await Comment.deleteMany({ postId: id });
+
+    // 게시글 삭제
     await Post.findByIdAndDelete(id);
     revalidatePath("/community");
-    
+
     return { success: true };
   } catch (error) {
     console.error("Delete post error:", error);

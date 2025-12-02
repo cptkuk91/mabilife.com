@@ -173,6 +173,56 @@ export async function toggleCommentLike(commentId: string) {
   }
 }
 
+export async function getWeeklyTopAnswerers(limit: number = 5) {
+  try {
+    const Comment = await getCommentModel();
+
+    // 이번 주 시작일 (일요일 또는 월요일 기준)
+    const now = new Date();
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - now.getDay()); // 일요일 기준
+    weekStart.setHours(0, 0, 0, 0);
+
+    // 이번 주에 채택된 댓글을 작성자별로 집계
+    const topAnswerers = await Comment.aggregate([
+      {
+        $match: {
+          isAccepted: true,
+          acceptedAt: { $gte: weekStart }
+        }
+      },
+      {
+        $group: {
+          _id: '$author.id',
+          name: { $first: '$author.name' },
+          image: { $first: '$author.image' },
+          acceptCount: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { acceptCount: -1 }
+      },
+      {
+        $limit: limit
+      },
+      {
+        $project: {
+          _id: 0,
+          userId: '$_id',
+          name: 1,
+          image: 1,
+          acceptCount: 1
+        }
+      }
+    ]);
+
+    return { success: true, answerers: topAnswerers };
+  } catch (error) {
+    console.error("Get weekly top answerers error:", error);
+    return { success: false, error: "지식인 랭킹을 불러오는데 실패했습니다.", answerers: [] };
+  }
+}
+
 export async function acceptComment(commentId: string, postId: string) {
   try {
     const session = await auth();
@@ -230,10 +280,10 @@ export async function acceptComment(commentId: string, postId: string) {
       { $set: { isAccepted: false } }
     );
 
-    // 댓글 채택 처리
+    // 댓글 채택 처리 (채택 시간 기록)
     const updatedComment = await Comment.findByIdAndUpdate(
       commentId,
-      { $set: { isAccepted: true } },
+      { $set: { isAccepted: true, acceptedAt: new Date() } },
       { new: true }
     );
 

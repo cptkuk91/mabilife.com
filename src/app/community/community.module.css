@@ -1363,3 +1363,54 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* Weekly Top Answerers */
+.answererRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+}
+
+.answererRow:not(:last-child) {
+  border-bottom: 1px solid var(--border);
+}
+
+.answererRank {
+  width: 20px;
+  font-weight: 700;
+  font-size: 14px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.answererAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.answererName {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.answererCount {
+  font-size: 12px;
+  color: var(--success);
+  font-weight: 600;
+  background: rgba(52, 199, 89, 0.1);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.emptyAnswerers {
+  text-align: center;
+  padding: 20px;
+  color: var(--text-sub);
+  font-size: 13px;
+}
