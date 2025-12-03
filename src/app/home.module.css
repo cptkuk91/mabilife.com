@@ -379,8 +379,145 @@
   font-weight: 400;
 }
 
-/* Responsive */
-@media (max-width: 600px) {
+/* Responsive - Tablet */
+@media (max-width: 900px) {
+  .dashboardGrid {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 16px;
+  }
+
+  .colSpan8 {
+    grid-column: span 6;
+  }
+
+  .colSpan6 {
+    grid-column: span 6;
+  }
+
+  .colSpan4 {
+    grid-column: span 3;
+  }
+
+  .rowSpan2 {
+    grid-row: span 1;
+    min-height: 280px;
+  }
+}
+
+/* Responsive - Mobile */
+@media (max-width: 768px) {
+  .hero {
+    margin: 80px auto 30px;
+    padding: 0 16px;
+  }
+
+  .hero h1 {
+    font-size: 32px;
+    margin-bottom: 8px;
+  }
+
+  .hero p {
+    font-size: 16px;
+    margin-bottom: 24px;
+    line-height: 1.5;
+  }
+
+  .hero p br {
+    display: none;
+  }
+
+  .writeWrapper {
+    padding: 6px 12px;
+    border-radius: 14px;
+  }
+
+  .writeWrapper:focus-within {
+    transform: none;
+  }
+
+  .writeInput {
+    font-size: 15px;
+    padding: 8px;
+  }
+
+  .quickTags {
+    gap: 8px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+
+  .tagPill {
+    padding: 6px 14px;
+    font-size: 13px;
+  }
+
+  .dashboardGrid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-bottom: 40px;
+  }
+
+  .colSpan8,
+  .colSpan6,
+  .colSpan4 {
+    grid-column: span 1;
+  }
+
+  .rowSpan2 {
+    grid-row: span 1;
+    min-height: 240px;
+  }
+
+  .card {
+    padding: 20px;
+    border-radius: 20px;
+  }
+
+  .card:hover {
+    transform: none;
+  }
+
+  .cardTitle {
+    font-size: 18px !important;
+  }
+
+  .cardDesc {
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  .cardFooter {
+    margin-top: 16px;
+    padding-top: 12px;
+  }
+
+  .avatar {
+    width: 28px;
+    height: 28px;
+  }
+
+  .userInfo {
+    font-size: 12px;
+  }
+
+  .likes {
+    font-size: 12px;
+  }
+
+  /* Search Results Mobile */
+  .searchResults {
+    margin-bottom: 40px;
+  }
+
+  .searchInfo {
+    font-size: 15px;
+    margin-bottom: 24px;
+  }
+
+  .resultSection {
+    margin-bottom: 32px;
+  }
+
   .resultItem {
     padding: 16px;
   }
@@ -403,5 +540,46 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;
+  }
+
+  .emptyState {
+    padding: 60px 20px;
+  }
+
+  .emptyState i {
+    font-size: 48px;
+  }
+
+  .emptyState p {
+    font-size: 16px;
+  }
+
+  .loading {
+    padding: 40px 20px;
+    font-size: 15px;
+  }
+}
+
+/* Small Mobile */
+@media (max-width: 375px) {
+  .hero h1 {
+    font-size: 28px;
+  }
+
+  .hero p {
+    font-size: 14px;
+  }
+
+  .tagPill {
+    padding: 5px 12px;
+    font-size: 12px;
+  }
+
+  .cardTitle {
+    font-size: 16px !important;
+  }
+
+  .cardDesc {
+    font-size: 13px;
   }
 }
