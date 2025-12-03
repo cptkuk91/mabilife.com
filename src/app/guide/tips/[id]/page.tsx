@@ -131,7 +131,7 @@ export default function TipDetailPage({ params }: { params: Promise<{ id: string
     setIsDeleting(true);
     const result = await deleteGuide(id);
     if (result.success) {
-      router.push("/guide/tips");
+      router.push("/guide");
     } else {
       alert(result.error || "삭제에 실패했습니다.");
     }

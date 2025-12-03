@@ -4,8 +4,11 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import styles from "./home.module.css";
 import EventList from "@/components/EventList";
-import { getGuides } from "@/actions/guide";
+import { getGuides, getGuideById } from "@/actions/guide";
 import { getPosts } from "@/actions/post";
+
+// Editor's Choice 고정 ID
+const EDITORS_CHOICE_ID = "692fbf2c9e1c94a15a09f963";
 
 // 카테고리별 아이콘 매핑 (모노크롬)
 const categoryIcons: Record<string, string> = {
@@ -22,6 +25,30 @@ const postTypeIcons: Record<string, string> = {
   "질문": "fa-circle-question",
   "정보": "fa-circle-info",
   "잡담": "fa-comment",
+};
+
+// 카테고리별 색상
+const categoryColors: Record<string, string> = {
+  "초보 가이드": "#0071E3",
+  "전투/던전": "#F44336",
+  "메인스트림": "#FF9800",
+  "생활/알바": "#00BA7C",
+  "패션/뷰티": "#9C27B0",
+  "돈벌기": "#FF9500",
+  "질문": "#FF9500",
+  "정보": "#0071E3",
+  "잡담": "#666",
+};
+
+// Placeholder 이미지
+const placeholderImages = [
+  '/assets/placeholder/mm1.webp',
+  '/assets/placeholder/mm2.jpg',
+  '/assets/placeholder/mm3.jpg',
+];
+
+const getPlaceholderImage = (index: number) => {
+  return placeholderImages[index % placeholderImages.length];
 };
 
 // 상대적 시간 포맷
@@ -50,16 +77,48 @@ const extractText = (html: string, maxLength: number = 100) => {
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
-  const [guides, setGuides] = useState<any[]>([]);
-  const [posts, setPosts] = useState<any[]>([]);
+  const [searchGuides, setSearchGuides] = useState<any[]>([]);
+  const [searchPosts, setSearchPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // 피드용 데이터
+  const [feedGuides, setFeedGuides] = useState<any[]>([]);
+  const [feedPosts, setFeedPosts] = useState<any[]>([]);
+  const [editorsChoice, setEditorsChoice] = useState<any>(null);
+  const [feedLoading, setFeedLoading] = useState(true);
+
+  // 피드 데이터 로드
+  useEffect(() => {
+    loadFeedData();
+  }, []);
+
+  const loadFeedData = async () => {
+    setFeedLoading(true);
+    const [guideResult, postResult, editorsChoiceResult] = await Promise.all([
+      getGuides({ limit: 4, sort: 'latest' }),
+      getPosts(1, 4),
+      getGuideById(EDITORS_CHOICE_ID)
+    ]);
+
+    if (guideResult.success && guideResult.data) {
+      setFeedGuides(guideResult.data as any[]);
+    }
+    if (postResult.success) {
+      setFeedPosts(postResult.posts);
+    }
+    if (editorsChoiceResult.success && editorsChoiceResult.data) {
+      setEditorsChoice(editorsChoiceResult.data);
+    }
+    setFeedLoading(false);
+  };
+
+  // 검색
   useEffect(() => {
     if (searchQuery.trim()) {
       performSearch();
     } else {
-      setGuides([]);
-      setPosts([]);
+      setSearchGuides([]);
+      setSearchPosts([]);
       setIsSearching(false);
     }
   }, [searchQuery]);
@@ -74,10 +133,10 @@ export default function Home() {
     ]);
 
     if (guideResult.success && guideResult.data) {
-      setGuides(guideResult.data as any[]);
+      setSearchGuides(guideResult.data as any[]);
     }
     if (postResult.success) {
-      setPosts(postResult.posts);
+      setSearchPosts(postResult.posts);
     }
 
     setLoading(false);
@@ -85,12 +144,20 @@ export default function Home() {
 
   const handleClear = () => {
     setSearchQuery("");
-    setGuides([]);
-    setPosts([]);
+    setSearchGuides([]);
+    setSearchPosts([]);
     setIsSearching(false);
   };
 
-  const totalResults = guides.length + posts.length;
+  const totalResults = searchGuides.length + searchPosts.length;
+
+  // 피드 아이템들 조합 (공략 + 커뮤니티 섞기)
+  const feedItems: any[] = [];
+  const maxItems = Math.max(feedGuides.length, feedPosts.length);
+  for (let i = 0; i < maxItems; i++) {
+    if (feedGuides[i]) feedItems.push({ ...feedGuides[i], _type: 'guide' });
+    if (feedPosts[i]) feedItems.push({ ...feedPosts[i], _type: 'post' });
+  }
 
   return (
     <>
@@ -147,7 +214,7 @@ export default function Home() {
           ) : (
             <>
               {/* 공략 결과 */}
-              {guides.length > 0 && (
+              {searchGuides.length > 0 && (
                 <div className={styles.resultSection}>
                   <div className={styles.sectionHeader}>
                     <span>공략</span>
@@ -156,7 +223,7 @@ export default function Home() {
                     </Link>
                   </div>
                   <div className={styles.resultList}>
-                    {guides.map((guide) => {
+                    {searchGuides.map((guide) => {
                       const icon = categoryIcons[guide.category] || "fa-lightbulb";
                       return (
                         <Link href={`/guide/tips/${guide._id}`} key={guide._id} className={styles.resultItem}>
@@ -182,7 +249,7 @@ export default function Home() {
               )}
 
               {/* 커뮤니티 결과 */}
-              {posts.length > 0 && (
+              {searchPosts.length > 0 && (
                 <div className={styles.resultSection}>
                   <div className={styles.sectionHeader}>
                     <span>커뮤니티</span>
@@ -191,7 +258,7 @@ export default function Home() {
                     </Link>
                   </div>
                   <div className={styles.resultList}>
-                    {posts.map((post) => {
+                    {searchPosts.map((post) => {
                       const icon = postTypeIcons[post.type] || "fa-comment";
                       return (
                         <Link href={`/community/${post._id}`} key={post._id} className={styles.resultItem}>
@@ -224,68 +291,61 @@ export default function Home() {
           {/* Main Feed (Bento Grid Layout) */}
           <section className={styles.dashboardGrid}>
 
-            {/* Card 1: Featured Strategy (Large) */}
-            <article className={`${styles.card} ${styles.colSpan8} ${styles.rowSpan2} ${styles.imgCard}`} style={{backgroundImage: "linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.7)), url('https://picsum.photos/id/122/800/600')"}}>
-              <div className={styles.cardCategory}>Editor's Choice</div>
-              <div className={styles.cardTitle}>G1 여신강림: 글라스 기브넨<br />완벽 공략 가이드</div>
-              <div className={styles.cardDesc}>메인스트림의 마지막 관문, 글라스 기브넨의 패턴 분석과 추천 장비 세팅을 확인하세요.</div>
-              <div className={styles.cardFooter} style={{borderTopColor: 'rgba(255,255,255,0.2)'}}>
-                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin" className={styles.avatar} alt="User Avatar" />
-                <span className={styles.userInfo} style={{color:'white'}}>GM나오</span>
-                <span className={styles.likes} style={{color:'white'}}><i className="fa-solid fa-heart"></i> 1,240</span>
-              </div>
-            </article>
+            {/* Card 1: Editor's Choice (Large) */}
+            {editorsChoice && (
+              <Link href={`/guide/tips/${editorsChoice._id}`} className={`${styles.card} ${styles.colSpan8} ${styles.rowSpan2} ${styles.imgCard}`} style={{backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.35), rgba(0,0,0,0.85)), url('${editorsChoice.thumbnail || getPlaceholderImage(0)}')`}}>
+                <div className={styles.cardCategory}>Editor's Choice</div>
+                <div className={styles.cardTitle}>{editorsChoice.title}</div>
+                <div className={styles.cardDesc}>{extractText(editorsChoice.content, 80)}</div>
+                <div className={styles.cardFooter} style={{borderTopColor: 'rgba(255,255,255,0.2)'}}>
+                  <img src={editorsChoice.author?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${editorsChoice.author?.id}`} className={styles.avatar} alt="User Avatar" />
+                  <span className={styles.userInfo} style={{color:'white'}}>{editorsChoice.author?.name || '익명'}</span>
+                  <span className={styles.likes} style={{color:'white'}}><i className="fa-solid fa-heart"></i> {editorsChoice.likes || 0}</span>
+                </div>
+              </Link>
+            )}
 
-            {/* Card 2: Q&A (Small) */}
-            <article className={`${styles.card} ${styles.colSpan4}`}>
-              <div className={styles.cardCategory} style={{color:'#FF9500'}}>Q&A</div>
-              <div className={styles.cardTitle}>정령 무기 질문이요!</div>
-              <div className={styles.cardDesc}>사회 레벨 20 찍으려면 보석 어떤거 먹이는게 제일 가성비 좋나요?</div>
-              <div className={styles.cardFooter}>
-                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Quser" className={styles.avatar} alt="User Avatar" />
-                <span className={styles.userInfo}>뉴비1호</span>
-                <span className={styles.likes}><i className="fa-regular fa-comment"></i> 5</span>
+            {feedLoading ? (
+              <div className={`${styles.card} ${styles.colSpan4}`}>
+                <div className={styles.cardDesc}>로딩 중...</div>
               </div>
-            </article>
+            ) : (
+              <>
+                {/* 실제 데이터 카드들 */}
+                {feedItems.slice(0, 4).map((item, index) => {
+                  const isGuide = item._type === 'guide';
+                  const category = isGuide ? item.category : item.type;
+                  const color = categoryColors[category] || '#666';
+                  const title = isGuide ? item.title : extractText(item.content, 40);
+                  const desc = extractText(isGuide ? item.content : item.content, 60);
+                  const link = isGuide ? `/guide/tips/${item._id}` : `/community/${item._id}`;
+                  const authorName = item.author?.name || '익명';
+                  const authorImage = item.author?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${item.author?.id || index}`;
+                  const likes = isGuide ? (item.likes || 0) : (item.likes || 0);
+                  const comments = !isGuide ? (item.commentCount || 0) : null;
 
-            {/* Card 3: Item DB (Small - Image Focus) */}
-            <article className={`${styles.card} ${styles.colSpan4}`}>
-              <div className={styles.cardCategory} style={{color:'#30D158'}}>득템 제보</div>
-              <div className={styles.cardTitle} style={{fontSize: '20px'}}>켈틱 로열 나이트 소드</div>
-              <div className={styles.cardDesc}>와.. 알상하에서 드랍됐습니다. 옵션 상급이네요.</div>
-              {/* Item Image Placeholder */}
-              <div style={{marginTop:'10px', height:'120px', background:'#f0f0f0', borderRadius:'12px', display:'flex', alignItems:'center', justifyContent:'center'}}>
-                <i className="fa-solid fa-khanda" style={{fontSize:'40px', color:'#ccc'}}></i>
-              </div>
-              <div className={styles.cardFooter}>
-                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Lucker" className={styles.avatar} alt="User Avatar" />
-                <span className={styles.userInfo}>될놈될</span>
-              </div>
-            </article>
+                  // 그리드 배치: 0,1은 colSpan4, 2,3은 colSpan6
+                  const spanClass = index < 2 ? styles.colSpan4 : styles.colSpan6;
 
-            {/* Card 4: Normal Post (Wide) */}
-            <article className={`${styles.card} ${styles.colSpan6}`}>
-              <div className={styles.cardCategory} style={{color:'#AF52DE'}}>팁 & 노하우</div>
-              <div className={styles.cardTitle}>양털 깎기 매크로 없이 하는 법</div>
-              <div className={styles.cardDesc}>채집 속도 개조된 단검 두 자루 끼고 풍년가 불면 생각보다 빠릅니다. 영상 첨부합니다.</div>
-              <div className={styles.cardFooter}>
-                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Sheep" className={styles.avatar} alt="User Avatar" />
-                <span className={styles.userInfo}>양치기소년</span>
-                <span className={styles.likes}><i className="fa-solid fa-heart"></i> 84</span>
-              </div>
-            </article>
-
-            {/* Card 5: Fashion (Wide) */}
-            <article className={`${styles.card} ${styles.colSpan6}`}>
-              <div className={styles.cardCategory} style={{color:'#FF2D55'}}>패션 / 코디</div>
-              <div className={styles.cardTitle}>오늘의 지향색: 리블 & 리화</div>
-              <div className={styles.cardDesc}>역시 마비노기의 근본은 리얼 블랙과 리얼 화이트죠. 이번 키트 의상 염색 공유합니다.</div>
-              <div className={styles.cardFooter}>
-                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Fashion" className={styles.avatar} alt="User Avatar" />
-                <span className={styles.userInfo}>패션리더</span>
-                <span className={styles.likes}><i className="fa-solid fa-heart"></i> 320</span>
-              </div>
-            </article>
+                  return (
+                    <Link href={link} key={item._id} className={`${styles.card} ${spanClass}`}>
+                      <div className={styles.cardCategory} style={{color}}>{category}</div>
+                      <div className={styles.cardTitle} style={{fontSize: index < 2 ? '18px' : '20px'}}>{title}</div>
+                      <div className={styles.cardDesc}>{desc}</div>
+                      <div className={styles.cardFooter}>
+                        <img src={authorImage} className={styles.avatar} alt="User Avatar" />
+                        <span className={styles.userInfo}>{authorName}</span>
+                        {comments !== null ? (
+                          <span className={styles.likes}><i className="fa-regular fa-comment"></i> {comments}</span>
+                        ) : (
+                          <span className={styles.likes}><i className="fa-solid fa-heart"></i> {likes}</span>
+                        )}
+                      </div>
+                    </Link>
+                  );
+                })}
+              </>
+            )}
 
           </section>
 

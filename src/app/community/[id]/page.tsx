@@ -28,6 +28,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
   const [showCommentDeleteModal, setShowCommentDeleteModal] = useState(false);
   const [deleteCommentTargetId, setDeleteCommentTargetId] = useState<string | null>(null);
   const [isDeletingComment, setIsDeletingComment] = useState(false);
+  const [showPostDeleteModal, setShowPostDeleteModal] = useState(false);
   const [showAcceptModal, setShowAcceptModal] = useState(false);
   const [acceptTargetId, setAcceptTargetId] = useState<string | null>(null);
   const [isAccepting, setIsAccepting] = useState(false);
@@ -266,18 +267,26 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
     setLoading(false);
   };
 
-  const handleDelete = async () => {
-    if (!confirm("정말 삭제하시겠습니까?")) return;
+  const handleDeleteClick = () => {
+    setShowPostDeleteModal(true);
+    setShowDropdown(false);
+  };
 
+  const handleDeleteConfirm = async () => {
     setIsDeleting(true);
     const result = await deletePost(id);
-    
+
     if (result.success) {
       router.push("/community");
     } else {
       alert(result.error || "삭제에 실패했습니다.");
       setIsDeleting(false);
     }
+    setShowPostDeleteModal(false);
+  };
+
+  const handleDeleteCancel = () => {
+    setShowPostDeleteModal(false);
   };
 
   const handleEdit = () => {
@@ -401,18 +410,15 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
                     >
                       수정
                     </button>
-                    <button 
+                    <button
                       className={`${styles.dropdownItem} ${styles.delete}`}
                       onClick={(e) => {
-                        e.stopPropagation(); // Prevent bubbling
-                        // Note: We don't need stopImmediatePropagation here because handleDelete navigates away or alerts
-                        // But for consistency:
+                        e.stopPropagation();
                         e.nativeEvent.stopImmediatePropagation();
-                        handleDelete();
+                        handleDeleteClick();
                       }}
-                      disabled={isDeleting}
                     >
-                      {isDeleting ? '삭제 중...' : '삭제'}
+                      삭제
                     </button>
                   </div>
                 )}
@@ -906,6 +912,37 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
                 disabled={isAccepting}
               >
                 {isAccepting ? "채택 중..." : "채택"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Post Delete Confirmation Modal */}
+      {showPostDeleteModal && (
+        <div className={styles.modalOverlay} onClick={handleDeleteCancel}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3 className={styles.modalTitle}>게시글 삭제</h3>
+            </div>
+            <div className={styles.modalBody}>
+              <p>정말 이 게시글을 삭제하시겠습니까?</p>
+              <p className={styles.modalWarning}>삭제된 게시글은 복구할 수 없습니다.</p>
+            </div>
+            <div className={styles.modalFooter}>
+              <button
+                className={styles.modalCancelBtn}
+                onClick={handleDeleteCancel}
+                disabled={isDeleting}
+              >
+                취소
+              </button>
+              <button
+                className={styles.modalDeleteBtn}
+                onClick={handleDeleteConfirm}
+                disabled={isDeleting}
+              >
+                {isDeleting ? "삭제 중..." : "삭제"}
               </button>
             </div>
           </div>
