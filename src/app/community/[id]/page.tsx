@@ -4,7 +4,7 @@ import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { getPost, incrementViewCount, deletePost, updatePost, toggleLike, getTrendingPosts, TrendingPeriod } from "@/actions/post";
-import { getComments, createComment, deleteComment, toggleCommentLike, acceptComment } from "@/actions/comment";
+import { getComments, createComment, deleteComment, updateComment, toggleCommentLike, acceptComment } from "@/actions/comment";
 import styles from "../community.module.css";
 
 export default function PostDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -31,6 +31,10 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
   const [showAcceptModal, setShowAcceptModal] = useState(false);
   const [acceptTargetId, setAcceptTargetId] = useState<string | null>(null);
   const [isAccepting, setIsAccepting] = useState(false);
+  const [activeCommentDropdown, setActiveCommentDropdown] = useState<string | null>(null);
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editCommentContent, setEditCommentContent] = useState("");
+  const [isSavingComment, setIsSavingComment] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -43,7 +47,10 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
     loadTrendingPosts();
 
     // Close dropdown when clicking outside
-    const handleClickOutside = () => setShowDropdown(false);
+    const handleClickOutside = () => {
+      setShowDropdown(false);
+      setActiveCommentDropdown(null);
+    };
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, [id]);
@@ -170,6 +177,50 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
     setAcceptTargetId(null);
   };
 
+  const handleStartEditComment = (comment: any) => {
+    setEditingCommentId(comment._id);
+    setEditCommentContent(comment.content);
+    setActiveCommentDropdown(null);
+  };
+
+  const handleCancelEditComment = () => {
+    setEditingCommentId(null);
+    setEditCommentContent("");
+  };
+
+  const handleSaveEditComment = async (commentId: string) => {
+    if (!editCommentContent.trim()) {
+      alert("내용을 입력해주세요.");
+      return;
+    }
+
+    setIsSavingComment(true);
+
+    const result = await updateComment(commentId, id, editCommentContent);
+
+    if (result.success) {
+      // Update local state
+      const updateCommentContent = (comments: any[]): any[] => {
+        return comments.map(comment => {
+          if (comment._id === commentId) {
+            return { ...comment, content: editCommentContent };
+          }
+          if (comment.replies?.length > 0) {
+            return { ...comment, replies: updateCommentContent(comment.replies) };
+          }
+          return comment;
+        });
+      };
+      setComments(updateCommentContent(comments));
+      setEditingCommentId(null);
+      setEditCommentContent("");
+    } else {
+      alert(result.error || "수정에 실패했습니다.");
+    }
+
+    setIsSavingComment(false);
+  };
+
   const handleCommentLike = async (commentId: string) => {
     if (!session?.user) {
       alert("로그인이 필요합니다.");
@@ -222,7 +273,6 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
     const result = await deletePost(id);
     
     if (result.success) {
-      alert("게시글이 삭제되었습니다.");
       router.push("/community");
     } else {
       alert(result.error || "삭제에 실패했습니다.");
@@ -480,8 +530,76 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
                         <span className={styles.commentTime}>
                           {new Date(comment.createdAt).toLocaleString()}
                         </span>
+                        {/* 케밥 메뉴 */}
+                        {(session?.user as any)?.id === comment.author.id && (
+                          <div
+                            className={styles.commentMenuWrapper}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.nativeEvent.stopImmediatePropagation();
+                            }}
+                          >
+                            <button
+                              className={styles.commentMenuBtn}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                e.nativeEvent.stopImmediatePropagation();
+                                setActiveCommentDropdown(activeCommentDropdown === comment._id ? null : comment._id);
+                              }}
+                            >
+                              <i className="fa-solid fa-ellipsis-vertical"></i>
+                            </button>
+                            {activeCommentDropdown === comment._id && (
+                              <div className={styles.commentDropdown}>
+                                <button
+                                  className={styles.dropdownItem}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleStartEditComment(comment);
+                                  }}
+                                >
+                                  수정
+                                </button>
+                                <button
+                                  className={`${styles.dropdownItem} ${styles.delete}`}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveCommentDropdown(null);
+                                    handleDeleteCommentClick(comment._id);
+                                  }}
+                                >
+                                  삭제
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
-                      <p className={styles.commentText}>{comment.content}</p>
+                      {editingCommentId === comment._id ? (
+                        <div className={styles.editCommentWrapper}>
+                          <textarea
+                            className={styles.editCommentInput}
+                            value={editCommentContent}
+                            onChange={(e) => setEditCommentContent(e.target.value)}
+                            rows={3}
+                            autoFocus
+                          />
+                          <div className={styles.editCommentBtns}>
+                            <button className={styles.cancelBtn} onClick={handleCancelEditComment}>
+                              취소
+                            </button>
+                            <button
+                              className={styles.saveBtn}
+                              onClick={() => handleSaveEditComment(comment._id)}
+                              disabled={isSavingComment}
+                            >
+                              {isSavingComment ? "저장 중..." : "저장"}
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className={styles.commentText}>{comment.content}</p>
+                      )}
                       <div className={styles.commentActions}>
                         <button
                           className={`${styles.commentLikeBtn} ${comment.likedBy?.includes((session?.user as any)?.id) ? styles.liked : ''}`}
@@ -509,14 +627,6 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
                             onClick={() => handleAcceptClick(comment._id)}
                           >
                             <i className="fa-solid fa-check"></i> 채택
-                          </button>
-                        )}
-                        {(session?.user as any)?.id === comment.author.id && (
-                          <button
-                            className={styles.deleteCommentBtn}
-                            onClick={() => handleDeleteCommentClick(comment._id)}
-                          >
-                            삭제
                           </button>
                         )}
                       </div>
@@ -570,8 +680,76 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
                               <span className={styles.commentTime}>
                                 {new Date(reply.createdAt).toLocaleString()}
                               </span>
+                              {/* 대댓글 케밥 메뉴 */}
+                              {(session?.user as any)?.id === reply.author.id && (
+                                <div
+                                  className={styles.commentMenuWrapper}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    e.nativeEvent.stopImmediatePropagation();
+                                  }}
+                                >
+                                  <button
+                                    className={styles.commentMenuBtn}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      e.nativeEvent.stopImmediatePropagation();
+                                      setActiveCommentDropdown(activeCommentDropdown === reply._id ? null : reply._id);
+                                    }}
+                                  >
+                                    <i className="fa-solid fa-ellipsis-vertical"></i>
+                                  </button>
+                                  {activeCommentDropdown === reply._id && (
+                                    <div className={styles.commentDropdown}>
+                                      <button
+                                        className={styles.dropdownItem}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleStartEditComment(reply);
+                                        }}
+                                      >
+                                        수정
+                                      </button>
+                                      <button
+                                        className={`${styles.dropdownItem} ${styles.delete}`}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setActiveCommentDropdown(null);
+                                          handleDeleteCommentClick(reply._id);
+                                        }}
+                                      >
+                                        삭제
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                             </div>
-                            <p className={styles.commentText}>{reply.content}</p>
+                            {editingCommentId === reply._id ? (
+                              <div className={styles.editCommentWrapper}>
+                                <textarea
+                                  className={styles.editCommentInput}
+                                  value={editCommentContent}
+                                  onChange={(e) => setEditCommentContent(e.target.value)}
+                                  rows={3}
+                                  autoFocus
+                                />
+                                <div className={styles.editCommentBtns}>
+                                  <button className={styles.cancelBtn} onClick={handleCancelEditComment}>
+                                    취소
+                                  </button>
+                                  <button
+                                    className={styles.saveBtn}
+                                    onClick={() => handleSaveEditComment(reply._id)}
+                                    disabled={isSavingComment}
+                                  >
+                                    {isSavingComment ? "저장 중..." : "저장"}
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <p className={styles.commentText}>{reply.content}</p>
+                            )}
                             <div className={styles.commentActions}>
                               <button
                                 className={`${styles.commentLikeBtn} ${reply.likedBy?.includes((session?.user as any)?.id) ? styles.liked : ''}`}
@@ -580,14 +758,6 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
                                 <i className={reply.likedBy?.includes((session?.user as any)?.id) ? "fa-solid fa-heart" : "fa-regular fa-heart"}></i>
                                 <span>{reply.likes || 0}</span>
                               </button>
-                              {(session?.user as any)?.id === reply.author.id && (
-                                <button
-                                  className={styles.deleteCommentBtn}
-                                  onClick={() => handleDeleteCommentClick(reply._id)}
-                                >
-                                  삭제
-                                </button>
-                              )}
                             </div>
                           </div>
                         </div>

@@ -363,6 +363,11 @@
   color: var(--text-sub);
 }
 
+.edited {
+  color: var(--text-sub);
+  font-style: italic;
+}
+
 /* Badge Styles */
 .badge {
   font-size: 11px;
@@ -759,6 +764,69 @@
   align-items: center;
   gap: 8px;
   margin-bottom: 6px;
+  position: relative;
+}
+
+/* 댓글 케밥 메뉴 */
+.commentMenuWrapper {
+  position: relative;
+  margin-left: auto;
+}
+
+.commentMenuBtn {
+  background: none;
+  border: none;
+  color: var(--text-sub);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.commentMenuBtn:hover {
+  background: var(--bg-sub);
+  color: var(--text-main);
+}
+
+.commentDropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: var(--card-bg);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 100px;
+  z-index: 100;
+  overflow: hidden;
+}
+
+/* 댓글 수정 */
+.editCommentWrapper {
+  margin: 8px 0;
+}
+
+.editCommentInput {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  resize: none;
+  font-family: inherit;
+  background: var(--bg-sub);
+  color: var(--text-main);
+}
+
+.editCommentInput:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.editCommentBtns {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 .commentAuthor {

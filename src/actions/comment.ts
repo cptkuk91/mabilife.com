@@ -137,6 +137,35 @@ export async function deleteComment(commentId: string, postId: string) {
   }
 }
 
+export async function updateComment(commentId: string, postId: string, content: string) {
+  try {
+    const session = await auth();
+    if (!session?.user) {
+      return { success: false, error: "로그인이 필요합니다." };
+    }
+
+    const Comment = await getCommentModel();
+    const comment = await Comment.findById(commentId);
+
+    if (!comment) {
+      return { success: false, error: "댓글을 찾을 수 없습니다." };
+    }
+
+    if (comment.author.id !== (session.user as any).id) {
+      return { success: false, error: "수정 권한이 없습니다." };
+    }
+
+    await Comment.findByIdAndUpdate(commentId, { content });
+
+    revalidatePath(`/community/${postId}`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Update comment error:", error);
+    return { success: false, error: "댓글 수정에 실패했습니다." };
+  }
+}
+
 export async function toggleCommentLike(commentId: string) {
   try {
     const session = await auth();

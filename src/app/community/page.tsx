@@ -599,7 +599,10 @@ export default function CommunityPage() {
                   <img src={post.author.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.author.id}`} className={styles.uAvatar} alt="User Avatar" />
                   <div className={styles.uInfo}>
                     <span className={styles.uName}>{post.author.name}</span>
-                    <span className={styles.uTime}>{new Date(post.createdAt).toLocaleString()}</span>
+                    <span className={styles.uTime}>
+                      {new Date(post.createdAt).toLocaleString()}
+                      {post.updatedAt !== post.createdAt && <span className={styles.edited}> · 수정됨</span>}
+                    </span>
                   </div>
                 </div>
                 <div className={`${styles.badge} ${
