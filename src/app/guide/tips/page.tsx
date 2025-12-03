@@ -3,115 +3,88 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useState, useEffect, Suspense } from "react";
+import { getGuides } from "@/actions/guide";
 
 import styles from "./tips.module.css";
+
+// 카테고리별 아이콘 및 색상 매핑
+const categoryStyles: Record<string, { icon: string; bg: string; color: string }> = {
+  "초보 가이드": { icon: "fa-graduation-cap", bg: "#EAF4FF", color: "#0071E3" },
+  "전투/던전": { icon: "fa-dungeon", bg: "#FFEBEE", color: "#F44336" },
+  "메인스트림": { icon: "fa-book-open", bg: "#FFF3E0", color: "#FF9800" },
+  "생활/알바": { icon: "fa-hammer", bg: "#E8FAEB", color: "#00BA7C" },
+  "패션/뷰티": { icon: "fa-shirt", bg: "#F3E5F5", color: "#9C27B0" },
+  "돈벌기": { icon: "fa-sack-dollar", bg: "#FFF8E1", color: "#FF9500" },
+};
+
+// 상대적 시간 포맷
+const formatRelativeTime = (dateString: string) => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+
+  if (minutes < 1) return "방금 전";
+  if (minutes < 60) return `${minutes}분 전`;
+  if (hours < 24) return `${hours}시간 전`;
+  if (days < 7) return `${days}일 전`;
+  return date.toLocaleDateString();
+};
+
+// HTML 태그 제거하여 설명 추출
+const extractDescription = (html: string, maxLength: number = 80) => {
+  const text = html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ');
+  return text.length > maxLength ? text.slice(0, maxLength) + '...' : text;
+};
 
 function TipsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialCategory = searchParams.get("category") || "전체";
 
-  // Dummy data for tips
-  const tips = [
-    {
-      id: 1,
-      title: "오늘의 요일 효과 확인하세요 (화요일)",
-      desc: "던전 아이템 드랍률 증가 효과가 있으니 오늘은 룬상하 달리세요.",
-      time: "5분 전",
-      icon: "fa-lightbulb",
-      bg: "#EAF4FF",
-      color: "#0071E3"
-    },
-    {
-      id: 2,
-      title: "지향색 코드 공유합니다 (리블/리화)",
-      desc: "RGB 값 정확하게 찍어왔습니다. 염색 앰플 참고하세요.",
-      time: "20분 전",
-      icon: "fa-palette",
-      bg: "#FFF0F5",
-      color: "#FF2D55"
-    },
-    {
-      id: 3,
-      title: "간헐적으로 펫 소환 안되는 버그 해결법",
-      desc: "채널 이동하면 풀리긴 하는데, 임시 방편으로 재접속 추천합니다.",
-      time: "1시간 전",
-      icon: "fa-bug",
-      bg: "#F0F8FF",
-      color: "#4682B4"
-    },
-    {
-      id: 4,
-      title: "교역 시즌 초기화 전 필수 체크리스트",
-      desc: "두카트 미리 정산하시고, 보증서 남은거 확인하세요.",
-      time: "2시간 전",
-      icon: "fa-sack-dollar",
-      bg: "#FFF8E1",
-      color: "#FF9500"
-    },
-    {
-      id: 5,
-      title: "이번주 프리시즌 혜택 정리",
-      desc: "수리비 무료, 전투 경험치 2배입니다. 레벨업 달릴 기회!",
-      time: "3시간 전",
-      icon: "fa-calendar-check",
-      bg: "#E8FAEB",
-      color: "#00BA7C"
-    },
-    {
-      id: 6,
-      title: "신규 의장 '스페셜 윈터 니트' 염색 파트",
-      desc: "A, B, C 파트 구분해서 올립니다. 큰팟이 A팟이에요.",
-      time: "4시간 전",
-      icon: "fa-shirt",
-      bg: "#F3E5F5",
-      color: "#9C27B0"
-    },
-    {
-      id: 7,
-      title: "몽환의 라비 던전 퀸즈 룸 공략 팁",
-      desc: "팬텀 포효 타이밍에 맞춰서 앵커 러시 쓰면 피할 수 있습니다.",
-      time: "5시간 전",
-      icon: "fa-dungeon",
-      bg: "#ECEFF1",
-      color: "#455A64"
-    },
-    {
-      id: 8,
-      title: "정령 무기 육성 효율표 (최신)",
-      desc: "보석 종류별 경험치 효율 정리했습니다. 다이아몬드가 최고네요.",
-      time: "6시간 전",
-      icon: "fa-gem",
-      bg: "#E0F7FA",
-      color: "#00BCD4"
-    },
-    {
-      id: 9,
-      title: "블로니의 성장지원 4권 퀘스트 막히는 분들",
-      desc: "이멘 마하 공연장 퀘스트는 저녁 시간에만 가능합니다.",
-      time: "7시간 전",
-      icon: "fa-book-open",
-      bg: "#FFF3E0",
-      color: "#FF9800"
-    },
-    {
-      id: 10,
-      title: "길드전 참가 신청 마감 임박",
-      desc: "이번 주 길드전 참여하실 분들 오늘 자정까지 신청하세요.",
-      time: "8시간 전",
-      icon: "fa-flag",
-      bg: "#FFEBEE",
-      color: "#F44336"
-    }
-  ];
-
+  const [guides, setGuides] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(initialCategory);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+
+  const categories = ["전체", "초보 가이드", "전투/던전", "메인스트림", "생활/알바", "패션/뷰티", "돈벌기"];
 
   useEffect(() => {
     setActiveTab(initialCategory);
   }, [initialCategory]);
 
-  const categories = ["전체", "초보 가이드", "전투/던전", "메인스트림", "생활/알바", "패션/뷰티", "돈벌기"];
+  useEffect(() => {
+    loadGuides();
+  }, [activeTab, searchQuery]);
+
+  const loadGuides = async () => {
+    setLoading(true);
+    const result = await getGuides({
+      category: activeTab === "전체" ? undefined : activeTab,
+      search: searchQuery || undefined,
+      limit: 20,
+      sort: 'latest'
+    });
+
+    if (result.success && result.data) {
+      setGuides(result.data as any[]);
+    }
+    setLoading(false);
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSearchQuery(searchInput.trim());
+  };
+
+  const handleClearSearch = () => {
+    setSearchInput("");
+    setSearchQuery("");
+  };
 
 
 
@@ -131,8 +104,8 @@ function TipsContent() {
       {/* Filter Tabs */}
       <div className={styles.filterBar}>
         {categories.map((cat) => (
-          <div 
-            key={cat} 
+          <div
+            key={cat}
             className={`${styles.filterItem} ${activeTab === cat ? styles.active : ''}`}
             onClick={() => {
               setActiveTab(cat);
@@ -145,19 +118,70 @@ function TipsContent() {
         ))}
       </div>
 
+      {/* Search Bar */}
+      <form className={styles.searchBar} onSubmit={handleSearch}>
+        <i className="fa-solid fa-magnifying-glass"></i>
+        <input
+          type="text"
+          placeholder="공략 검색..."
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          className={styles.searchInput}
+        />
+        {searchInput && (
+          <button type="button" className={styles.clearBtn} onClick={handleClearSearch}>
+            <i className="fa-solid fa-xmark"></i>
+          </button>
+        )}
+        <button type="submit" className={styles.searchBtn}>검색</button>
+      </form>
+
+      {/* Search Result Info */}
+      {searchQuery && (
+        <div className={styles.searchInfo}>
+          <span>&quot;{searchQuery}&quot; 검색 결과 {guides.length}건</span>
+          <button onClick={handleClearSearch} className={styles.clearSearchBtn}>
+            검색 초기화
+          </button>
+        </div>
+      )}
+
       <div className={styles.listGroup}>
-        {tips.map((tip) => (
-          <Link href={`/guide/tips/${tip.id}`} key={tip.id} className={styles.listItem}>
-            <div className={styles.listIcon} style={{background: tip.bg, color: tip.color}}>
-              <i className={`fa-solid ${tip.icon}`}></i>
-            </div>
-            <div className={styles.listContent}>
-              <div className={styles.listTitle}>{tip.title}</div>
-              <div className={styles.listDesc}>{tip.desc}</div>
-            </div>
-            <div className={styles.listMeta}>{tip.time}</div>
-          </Link>
-        ))}
+        {loading ? (
+          <div className={styles.loading}>로딩 중...</div>
+        ) : guides.length === 0 ? (
+          <div className={styles.empty}>
+            <i className="fa-solid fa-file-circle-question"></i>
+            <p>아직 등록된 공략이 없습니다.</p>
+            <button onClick={() => router.push('/guide/write')} className={styles.writeBtn}>
+              첫 공략 작성하기
+            </button>
+          </div>
+        ) : (
+          guides.map((guide) => {
+            const style = categoryStyles[guide.category] || { icon: "fa-lightbulb", bg: "#EAF4FF", color: "#0071E3" };
+            return (
+              <Link href={`/guide/tips/${guide._id}`} key={guide._id} className={styles.listItem}>
+                {guide.thumbnail ? (
+                  <img src={guide.thumbnail} alt="" className={styles.listThumbnail} />
+                ) : (
+                  <div className={styles.listIcon} style={{ background: style.bg, color: style.color }}>
+                    <i className={`fa-solid ${style.icon}`}></i>
+                  </div>
+                )}
+                <div className={styles.listContent}>
+                  <div className={styles.listTitle}>{guide.title}</div>
+                  <div className={styles.listDesc}>{extractDescription(guide.content)}</div>
+                  <div className={styles.listStats}>
+                    <span><i className="fa-regular fa-eye"></i> {guide.views || 0}</span>
+                    <span><i className="fa-regular fa-heart"></i> {guide.likes || 0}</span>
+                  </div>
+                </div>
+                <div className={styles.listMeta}>{formatRelativeTime(guide.createdAt)}</div>
+              </Link>
+            );
+          })
+        )}
       </div>
     </div>
   );

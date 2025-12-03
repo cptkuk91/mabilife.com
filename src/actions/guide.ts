@@ -2,6 +2,7 @@
 
 import { auth } from "@/lib/auth";
 import getGuideModel, { IGuide } from "@/models/Guide";
+import getGuideCommentModel from "@/models/GuideComment";
 import { revalidatePath } from "next/cache";
 
 export interface CreateGuideInput {
@@ -59,6 +60,7 @@ export async function createGuide(input: CreateGuideInput): Promise<GuideRespons
 // Get all guides with optional filters
 export async function getGuides(options?: {
   category?: string;
+  search?: string;
   limit?: number;
   skip?: number;
   sort?: 'latest' | 'popular' | 'views';
@@ -69,6 +71,15 @@ export async function getGuides(options?: {
     const query: Record<string, unknown> = { isPublished: true };
     if (options?.category && options.category !== '전체') {
       query.category = options.category;
+    }
+
+    // 검색어가 있으면 제목과 내용에서 검색
+    if (options?.search && options.search.trim()) {
+      const searchRegex = new RegExp(options.search.trim(), 'i');
+      query.$or = [
+        { title: searchRegex },
+        { content: searchRegex },
+      ];
     }
 
     let sortOption: Record<string, 1 | -1> = { createdAt: -1 };
@@ -84,7 +95,15 @@ export async function getGuides(options?: {
       .limit(options?.limit || 20)
       .lean();
 
-    return { success: true, data: guides as IGuide[] };
+    // 직렬화하여 클라이언트로 전달
+    const serializedGuides = guides.map((guide) => ({
+      ...guide,
+      _id: guide._id.toString(),
+      createdAt: guide.createdAt.toISOString(),
+      updatedAt: guide.updatedAt.toISOString(),
+    }));
+
+    return { success: true, data: serializedGuides as any };
   } catch (error) {
     console.error("Get guides error:", error);
     return { success: false, error: "가이드 목록을 불러오는데 실패했습니다." };
@@ -99,14 +118,22 @@ export async function getGuideById(id: string): Promise<GuideResponse> {
     const guide = await Guide.findByIdAndUpdate(
       id,
       { $inc: { views: 1 } },
-      { new: true }
+      { new: true, timestamps: false }
     ).lean();
 
     if (!guide) {
       return { success: false, error: "가이드를 찾을 수 없습니다." };
     }
 
-    return { success: true, data: guide as IGuide };
+    // 직렬화하여 클라이언트로 전달
+    const serializedGuide = {
+      ...guide,
+      _id: guide._id.toString(),
+      createdAt: guide.createdAt.toISOString(),
+      updatedAt: guide.updatedAt.toISOString(),
+    };
+
+    return { success: true, data: serializedGuide as any };
   } catch (error) {
     console.error("Get guide error:", error);
     return { success: false, error: "가이드를 불러오는데 실패했습니다." };
@@ -172,6 +199,11 @@ export async function deleteGuide(id: string): Promise<GuideResponse> {
       return { success: false, error: "삭제 권한이 없습니다." };
     }
 
+    // 가이드에 달린 모든 댓글 삭제
+    const GuideComment = await getGuideCommentModel();
+    await GuideComment.deleteMany({ guideId: id });
+
+    // 가이드 삭제
     await Guide.findByIdAndDelete(id);
 
     revalidatePath("/guide");
@@ -204,15 +236,17 @@ export async function toggleGuideLike(id: string): Promise<GuideResponse> {
     const hasLiked = guide.likedBy.includes(userId);
 
     if (hasLiked) {
-      await Guide.findByIdAndUpdate(id, {
-        $pull: { likedBy: userId },
-        $inc: { likes: -1 },
-      });
+      await Guide.findByIdAndUpdate(
+        id,
+        { $pull: { likedBy: userId }, $inc: { likes: -1 } },
+        { timestamps: false }
+      );
     } else {
-      await Guide.findByIdAndUpdate(id, {
-        $push: { likedBy: userId },
-        $inc: { likes: 1 },
-      });
+      await Guide.findByIdAndUpdate(
+        id,
+        { $push: { likedBy: userId }, $inc: { likes: 1 } },
+        { timestamps: false }
+      );
     }
 
     revalidatePath(`/guide/tips/${id}`);
@@ -244,15 +278,17 @@ export async function toggleGuideBookmark(id: string): Promise<GuideResponse> {
     const hasBookmarked = guide.bookmarkedBy.includes(userId);
 
     if (hasBookmarked) {
-      await Guide.findByIdAndUpdate(id, {
-        $pull: { bookmarkedBy: userId },
-        $inc: { bookmarks: -1 },
-      });
+      await Guide.findByIdAndUpdate(
+        id,
+        { $pull: { bookmarkedBy: userId }, $inc: { bookmarks: -1 } },
+        { timestamps: false }
+      );
     } else {
-      await Guide.findByIdAndUpdate(id, {
-        $push: { bookmarkedBy: userId },
-        $inc: { bookmarks: 1 },
-      });
+      await Guide.findByIdAndUpdate(
+        id,
+        { $push: { bookmarkedBy: userId }, $inc: { bookmarks: 1 } },
+        { timestamps: false }
+      );
     }
 
     revalidatePath(`/guide/tips/${id}`);

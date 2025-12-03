@@ -61,6 +61,9 @@
 }
 
 .postDate {
+  display: flex;
+  align-items: center;
+  gap: 0;
   font-size: 13px;
   color: var(--text-body);
 }
@@ -115,51 +118,70 @@
 
 .commentsSection {
   margin-top: 60px;
-  padding-top: 40px;
-  border-top: 1px solid var(--border);
+  padding: 30px;
+  background: #F5F5F7;
+  border-radius: 16px;
 }
 
 .commentsHeader {
   font-size: 20px;
   font-weight: 700;
   margin-bottom: 20px;
+  color: var(--text-title);
 }
 
 .commentInputArea {
   display: flex;
-  gap: 16px;
-  margin-bottom: 30px;
+  gap: 12px;
+  margin-bottom: 24px;
+  background: white;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #E5E5EA;
 }
 
 .commentInput {
   flex: 1;
-  padding: 12px 16px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 8px;
   font-size: 15px;
   outline: none;
-  transition: 0.2s;
+  background: transparent;
 }
 
 .commentInput:focus {
-  border-color: var(--accent);
-  background: white;
+  background: transparent;
+}
+
+.commentInput::placeholder {
+  color: #999;
 }
 
 .commentSubmit {
-  padding: 0 20px;
+  padding: 10px 20px;
   background: var(--accent);
   color: white;
   border: none;
-  border-radius: 12px;
+  border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
+  transition: 0.2s;
+}
+
+.commentSubmit:hover:not(:disabled) {
+  background: #0062cc;
+}
+
+.commentSubmit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .commentList {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 }
 
 .commentItem {
@@ -169,10 +191,11 @@
 
 .commentBubble {
   flex: 1;
-  background: #F5F5F7;
-  padding: 12px 16px;
+  background: white;
+  padding: 14px 16px;
   border-radius: 12px;
-  border-top-left-radius: 2px;
+  border: 1px solid #E5E5EA;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .commentAuthor {
@@ -192,4 +215,437 @@
   color: var(--text-body);
   margin-top: 6px;
   text-align: right;
+}
+
+/* Loading & Error States */
+.loading,
+.notFound {
+  text-align: center;
+  padding: 100px 20px;
+  color: var(--text-sub);
+  font-size: 16px;
+}
+
+/* View Count */
+.viewCount {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--text-sub);
+}
+
+/* Bookmark Active */
+.actionBtn.active {
+  background: #FFF8E1;
+  color: #FF9500;
+}
+
+/* Thumbnail */
+.thumbnailWrapper {
+  margin-bottom: 30px;
+}
+
+.thumbnail {
+  width: 100%;
+  max-height: 400px;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+/* Back Button */
+.backBtnWrapper {
+  margin-top: 40px;
+  padding-top: 30px;
+  border-top: 1px solid var(--border);
+}
+
+.backBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: #F5F5F7;
+  color: var(--text-title);
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.backBtn:hover {
+  background: #E8E8ED;
+}
+
+/* Header Top with Kebab */
+.headerTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+/* Kebab Menu */
+.kebabWrapper {
+  position: relative;
+}
+
+.kebabBtn {
+  background: none;
+  border: none;
+  padding: 8px 12px;
+  cursor: pointer;
+  color: var(--text-sub);
+  font-size: 16px;
+  border-radius: 8px;
+  transition: 0.2s;
+}
+
+.kebabBtn:hover {
+  background: #F5F5F7;
+  color: var(--text-title);
+}
+
+.dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  min-width: 120px;
+  z-index: 100;
+  overflow: hidden;
+}
+
+.dropdown button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: none;
+  font-size: 14px;
+  cursor: pointer;
+  transition: 0.2s;
+  color: var(--text-title);
+}
+
+.dropdown button:hover {
+  background: #F5F5F7;
+}
+
+.dropdown .deleteBtn {
+  color: #FF3B30;
+}
+
+.dropdown .deleteBtn:hover {
+  background: #FFF0F0;
+}
+
+/* Edited indicator */
+.edited {
+  color: var(--text-sub);
+  font-size: 12px;
+}
+
+/* Delete Modal */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 400px;
+  width: 90%;
+}
+
+.modal h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.modal p {
+  font-size: 14px;
+  color: var(--text-body);
+  margin-bottom: 8px;
+}
+
+.modalWarning {
+  color: #FF3B30 !important;
+  font-size: 13px !important;
+}
+
+.modalActions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  justify-content: flex-end;
+}
+
+.modalActions button {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+}
+
+.modalActions button:first-child {
+  background: #F5F5F7;
+  color: var(--text-title);
+}
+
+.modalDeleteBtn {
+  background: #FF3B30 !important;
+  color: white !important;
+}
+
+.modalDeleteBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Comment Avatar */
+.commentAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #eee;
+  flex-shrink: 0;
+}
+
+/* Comment Header */
+.commentHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.commentDate {
+  font-size: 12px;
+  color: var(--text-sub);
+}
+
+/* Comment Kebab */
+.commentKebabWrapper {
+  position: relative;
+  margin-left: auto;
+}
+
+.commentKebabBtn {
+  background: none;
+  border: none;
+  padding: 4px 8px;
+  cursor: pointer;
+  color: var(--text-sub);
+  font-size: 12px;
+  border-radius: 4px;
+  transition: 0.2s;
+}
+
+.commentKebabBtn:hover {
+  background: #E8E8ED;
+  color: var(--text-title);
+}
+
+.commentDropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  min-width: 100px;
+  z-index: 100;
+  overflow: hidden;
+}
+
+.commentDropdown button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  background: none;
+  font-size: 13px;
+  cursor: pointer;
+  transition: 0.2s;
+  color: var(--text-title);
+}
+
+.commentDropdown button:hover {
+  background: #F5F5F7;
+}
+
+.commentDropdown .deleteBtn {
+  color: #FF3B30;
+}
+
+.commentDropdown .deleteBtn:hover {
+  background: #FFF0F0;
+}
+
+/* Comment Actions */
+.commentActions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.commentLikeBtn,
+.replyBtn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  font-size: 12px;
+  color: var(--text-sub);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: 0.2s;
+}
+
+.commentLikeBtn:hover,
+.replyBtn:hover {
+  background: #F5F5F7;
+  color: var(--text-title);
+}
+
+.commentLikeBtn.liked {
+  color: #FF2D55;
+}
+
+/* Edit Area */
+.editArea {
+  margin-top: 8px;
+}
+
+.editTextarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  resize: vertical;
+  min-height: 60px;
+  outline: none;
+}
+
+.editTextarea:focus {
+  border-color: var(--accent);
+}
+
+.editActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  justify-content: flex-end;
+}
+
+.editActions button {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  border: none;
+  background: #F5F5F7;
+  color: var(--text-title);
+}
+
+.editActions .saveBtn {
+  background: var(--accent);
+  color: white;
+}
+
+/* Reply Input Area */
+.replyInputArea {
+  display: flex;
+  gap: 8px;
+  margin-left: 48px;
+  margin-top: 12px;
+}
+
+.replyInput {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+}
+
+.replyInput:focus {
+  border-color: var(--accent);
+}
+
+.replySubmit,
+.replyCancel {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+}
+
+.replySubmit {
+  background: var(--accent);
+  color: white;
+}
+
+.replySubmit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.replyCancel {
+  background: #F5F5F7;
+  color: var(--text-title);
+}
+
+/* Replies Wrapper */
+.repliesWrapper {
+  margin-left: 48px;
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.replyItem {
+  display: flex;
+  gap: 10px;
+}
+
+/* Comment Thread */
+.commentThread {
+  margin-bottom: 20px;
+}
+
+/* No Comments */
+.noComments {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-sub);
+  font-size: 14px;
 }

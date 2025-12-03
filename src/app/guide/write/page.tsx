@@ -1,20 +1,125 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import RichTextEditorWrapper from "@/components/Editor/RichTextEditorWrapper";
-import { createGuide } from "@/actions/guide";
+import { createGuide, getGuideById, updateGuide } from "@/actions/guide";
+import { getPresignedUrlAction } from "@/actions/upload";
 
 import styles from "./write.module.css";
 
-export default function GuideWritePage() {
+function GuideWriteContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editId = searchParams.get("edit");
+  const isEditMode = !!editId;
+
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("초보 가이드");
   const [content, setContent] = useState("");
+  const [thumbnail, setThumbnail] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const categories = ["초보 가이드", "전투/던전", "메인스트림", "생활/알바", "패션/뷰티", "돈벌기"];
+
+  // 수정 모드일 때 기존 데이터 불러오기
+  useEffect(() => {
+    if (editId) {
+      loadGuideData(editId);
+    }
+  }, [editId]);
+
+  const loadGuideData = async (id: string) => {
+    setIsLoading(true);
+    const result = await getGuideById(id);
+
+    if (result.success && result.data) {
+      const guide = result.data as any;
+      setTitle(guide.title || "");
+      setCategory(guide.category || "초보 가이드");
+      setContent(guide.content || "");
+      setThumbnail(guide.thumbnail || null);
+    } else {
+      alert("가이드를 불러오는데 실패했습니다.");
+      router.push("/guide/tips");
+    }
+    setIsLoading(false);
+  };
+
+  const uploadThumbnail = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      alert("이미지 파일만 업로드할 수 있습니다.");
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const { success, signedUrl, publicUrl, error } = await getPresignedUrlAction(file.name, file.type);
+
+      if (!success || !signedUrl || !publicUrl) {
+        console.error("Failed to get presigned URL:", error);
+        alert("업로드에 실패했습니다.");
+        return;
+      }
+
+      const uploadResponse = await fetch(signedUrl, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': file.type,
+        },
+      });
+
+      if (!uploadResponse.ok) {
+        console.error("Failed to upload to S3");
+        alert("업로드에 실패했습니다.");
+        return;
+      }
+
+      setThumbnail(publicUrl);
+    } catch (error) {
+      console.error("Upload error:", error);
+      alert("업로드 중 오류가 발생했습니다.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      uploadThumbnail(file);
+    }
+    e.target.value = '';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      uploadThumbnail(file);
+    }
+  };
+
+  const handleRemoveThumbnail = () => {
+    setThumbnail(null);
+  };
 
   const handleSubmit = async () => {
     if (!title.trim() || !content.trim()) {
@@ -24,27 +129,52 @@ export default function GuideWritePage() {
 
     setIsSubmitting(true);
 
-    const result = await createGuide({
-      title: title.trim(),
-      content,
-      category,
-    });
+    let result;
+    if (isEditMode && editId) {
+      result = await updateGuide(editId, {
+        title: title.trim(),
+        content,
+        category,
+        thumbnail: thumbnail || undefined,
+      });
+    } else {
+      result = await createGuide({
+        title: title.trim(),
+        content,
+        category,
+        thumbnail: thumbnail || undefined,
+      });
+    }
 
     setIsSubmitting(false);
 
     if (result.success) {
-      router.push("/guide/tips");
+      if (isEditMode && editId) {
+        router.push(`/guide/tips/${editId}`);
+      } else {
+        router.push("/guide/tips");
+      }
     } else {
-      alert(result.error || "가이드 작성에 실패했습니다.");
+      alert(result.error || "가이드 저장에 실패했습니다.");
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className={styles.pageContainer}>
+        <div className={styles.loading}>로딩 중...</div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.pageContainer}>
       <header className={styles.hubHeader}>
         <div>
-          <div className={styles.hubTitle}>공략 작성</div>
-          <div className={styles.hubSubtitle}>나만의 꿀팁을 다른 유저들과 공유해보세요.</div>
+          <div className={styles.hubTitle}>{isEditMode ? "공략 수정" : "공략 작성"}</div>
+          <div className={styles.hubSubtitle}>
+            {isEditMode ? "공략 내용을 수정하세요." : "나만의 꿀팁을 다른 유저들과 공유해보세요."}
+          </div>
         </div>
       </header>
 
@@ -63,6 +193,53 @@ export default function GuideWritePage() {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* Thumbnail Upload */}
+        <div className={styles.formGroup}>
+          <label className={styles.label}>썸네일 이미지 (선택)</label>
+          {thumbnail ? (
+            <div className={styles.thumbnailPreview}>
+              <img src={thumbnail} alt="썸네일 미리보기" className={styles.thumbnailImage} />
+              <button
+                type="button"
+                onClick={handleRemoveThumbnail}
+                className={styles.removeThumbnailBtn}
+              >
+                <i className="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+          ) : (
+            <div
+              className={`${styles.thumbnailUpload} ${isDragging ? styles.dragging : ''}`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
+              <input
+                type="file"
+                id="thumbnail-upload"
+                accept="image/*"
+                onChange={handleFileSelect}
+                className={styles.hiddenInput}
+                disabled={isUploading}
+              />
+              <label htmlFor="thumbnail-upload" className={styles.uploadLabel}>
+                {isUploading ? (
+                  <>
+                    <i className="fa-solid fa-spinner fa-spin"></i>
+                    <span>업로드 중...</span>
+                  </>
+                ) : (
+                  <>
+                    <i className="fa-solid fa-image"></i>
+                    <span>클릭하거나 이미지를 드래그하세요</span>
+                    <span className={styles.uploadHint}>권장 크기: 1200 x 630px</span>
+                  </>
+                )}
+              </label>
+            </div>
+          )}
         </div>
 
         {/* Title Input */}
@@ -99,10 +276,18 @@ export default function GuideWritePage() {
             disabled={isSubmitting}
             className={styles.submitBtn}
           >
-            {isSubmitting ? '등록 중...' : '등록하기'}
+            {isSubmitting ? '저장 중...' : isEditMode ? '수정하기' : '등록하기'}
           </button>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function GuideWritePage() {
+  return (
+    <Suspense fallback={<div className={styles.pageContainer}><div className={styles.loading}>로딩 중...</div></div>}>
+      <GuideWriteContent />
+    </Suspense>
   );
 }
