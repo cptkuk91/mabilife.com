@@ -2,7 +2,7 @@ import TipDetailClient from "./TipDetailClient";
 import type { Metadata } from "next";
 import { getGuideById } from "@/actions/guide";
 
-const SITE_URL = "https://mabilife.com";
+const SITE_URL = "https://www.mabilife.com";
 
 // HTML 태그 제거 함수
 function stripHtml(html: string): string {

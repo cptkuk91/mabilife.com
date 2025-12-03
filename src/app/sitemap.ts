@@ -3,7 +3,7 @@ import { connectToDatabase } from "@/lib/mongodb";
 import getGuideModel from "@/models/Guide";
 import getPostModel from "@/models/Post";
 
-const SITE_URL = "https://mabilife.com";
+const SITE_URL = "https://www.mabilife.com";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // 정적 페이지

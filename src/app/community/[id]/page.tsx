@@ -2,7 +2,7 @@ import PostDetailClient from "./PostDetailClient";
 import type { Metadata } from "next";
 import { getPost } from "@/actions/post";
 
-const SITE_URL = "https://mabilife.com";
+const SITE_URL = "https://www.mabilife.com";
 
 // HTML 태그 제거 함수
 function stripHtml(html: string): string {

@@ -5,7 +5,7 @@ import Navbar from "@/components/Navbar";
 import AuthProvider from "@/components/AuthProvider";
 import Footer from "@/components/Footer";
 
-const SITE_URL = "https://mabilife.com";
+const SITE_URL = "https://www.mabilife.com";
 const SITE_NAME = "Mabi Life";
 const SITE_DESCRIPTION = "마비노기 모바일 공략, 팁, 커뮤니티. 에린의 모든 모험가들과 함께 정보를 공유하세요.";
 
