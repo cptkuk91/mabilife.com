@@ -13,9 +13,6 @@ export default function Navbar() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Hide Navbar on search and login page
-  if (pathname === "/search" || pathname === "/login") return null;
-
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -28,6 +25,9 @@ export default function Navbar() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  // Hide Navbar on login page
+  if (pathname === "/login") return null;
 
   return (
     <nav className="global-nav">

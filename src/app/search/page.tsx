@@ -1,128 +1,257 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { Suspense } from "react";
+import { getGuides } from "@/actions/guide";
+import { getPosts } from "@/actions/post";
 import styles from "./search.module.css";
 
-export default function SearchPage() {
+// 카테고리별 아이콘 매핑 (애플 스타일 - 모노크롬)
+const categoryIcons: Record<string, string> = {
+  "초보 가이드": "fa-graduation-cap",
+  "전투/던전": "fa-dungeon",
+  "메인스트림": "fa-book-open",
+  "생활/알바": "fa-hammer",
+  "패션/뷰티": "fa-shirt",
+  "돈벌기": "fa-sack-dollar",
+};
+
+// 게시글 타입별 아이콘
+const postTypeIcons: Record<string, string> = {
+  "질문": "fa-circle-question",
+  "정보": "fa-circle-info",
+  "잡담": "fa-comment",
+};
+
+// 상대적 시간 포맷
+const formatRelativeTime = (dateString: string) => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+
+  if (minutes < 1) return "방금 전";
+  if (minutes < 60) return `${minutes}분 전`;
+  if (hours < 24) return `${hours}시간 전`;
+  if (days < 7) return `${days}일 전`;
+  return date.toLocaleDateString();
+};
+
+// HTML 태그 제거
+const extractText = (html: string, maxLength: number = 100) => {
+  const text = html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ');
+  return text.length > maxLength ? text.slice(0, maxLength) + '...' : text;
+};
+
+type SearchTab = '통합' | '공략' | '커뮤니티';
+
+function SearchContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialQuery = searchParams.get("q") || "";
+
+  const [query, setQuery] = useState(initialQuery);
+  const [searchInput, setSearchInput] = useState(initialQuery);
+  const [activeTab, setActiveTab] = useState<SearchTab>('통합');
+  const [guides, setGuides] = useState<any[]>([]);
+  const [posts, setPosts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
+
+  useEffect(() => {
+    if (query.trim()) {
+      performSearch();
+    }
+  }, [query, activeTab]);
+
+  const performSearch = async () => {
+    if (!query.trim()) return;
+
+    setLoading(true);
+    setHasSearched(true);
+
+    if (activeTab === '통합' || activeTab === '공략') {
+      const guideResult = await getGuides({ search: query, limit: 10 });
+      if (guideResult.success && guideResult.data) {
+        setGuides(guideResult.data as any[]);
+      }
+    } else {
+      setGuides([]);
+    }
+
+    if (activeTab === '통합' || activeTab === '커뮤니티') {
+      const postResult = await getPosts(1, 10, undefined, query);
+      if (postResult.success) {
+        setPosts(postResult.posts);
+      }
+    } else {
+      setPosts([]);
+    }
+
+    setLoading(false);
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchInput.trim()) {
+      setQuery(searchInput.trim());
+      // URL 업데이트
+      window.history.pushState({}, "", `/search?q=${encodeURIComponent(searchInput.trim())}`);
+    }
+  };
+
+  const handleClear = () => {
+    setSearchInput("");
+    setQuery("");
+    setGuides([]);
+    setPosts([]);
+    setHasSearched(false);
+  };
+
+  const totalResults = guides.length + posts.length;
 
   return (
-    <>
-      {/* Nav */}
-      <nav className="global-nav">
-        <div className={styles.navContent}>
-          <a href="/" className={styles.navLogo}><i className="fa-solid fa-leaf"></i> Mabi Life</a>
-          <div style={{fontSize:'14px', color:'var(--accent)', cursor: 'pointer'}} onClick={() => router.back()}>닫기</div>
-        </div>
-      </nav>
-
-      {/* Search Input Hero */}
+    <div className={styles.pageContainer}>
+      {/* Search Input */}
       <section className={styles.searchHero}>
-        <div className={styles.searchInputWrapper}>
-          <input type="text" className={styles.searchInput} defaultValue="글라스 기브넨" autoFocus />
-          <i className={`fa-solid fa-circle-xmark ${styles.clearBtn}`}></i>
-        </div>
+        <form onSubmit={handleSearch} className={styles.searchInputWrapper}>
+          <i className={`fa-solid fa-magnifying-glass ${styles.searchIcon}`}></i>
+          <input
+            type="text"
+            className={styles.searchInput}
+            placeholder="공략, 게시글 검색..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            autoFocus
+          />
+          {searchInput && (
+            <button type="button" className={styles.clearBtn} onClick={handleClear}>
+              <i className="fa-solid fa-circle-xmark"></i>
+            </button>
+          )}
+        </form>
       </section>
 
       {/* Filter Tabs */}
       <div className={styles.filterBar}>
-        <div className={`${styles.filterItem} ${styles.active}`}>통합 검색</div>
-        <div className={styles.filterItem}>공략</div>
-        <div className={styles.filterItem}>아이템 (DB)</div>
-        <div className={styles.filterItem}>유저</div>
-        <div className={styles.filterItem}>Q&A</div>
+        {(['통합', '공략', '커뮤니티'] as SearchTab[]).map((tab) => (
+          <div
+            key={tab}
+            className={`${styles.filterItem} ${activeTab === tab ? styles.active : ''}`}
+            onClick={() => setActiveTab(tab)}
+          >
+            {tab}
+          </div>
+        ))}
       </div>
 
-      {/* Search Results Grid */}
-      <main className={styles.resultGrid}>
-
-        {/* 1. Top Hit (The "Wiki" Card) */}
-        {/* 검색어와 가장 일치하는 결과가 DB처럼 최상단에 뜹니다 */}
-        <div className={styles.topHitCard}>
-          <div className={styles.topHitImage} style={{backgroundImage: "url('https://picsum.photos/id/1025/800/600')"}}></div>
-          <div className={styles.topHitContent}>
-            <span className={styles.badge}>BOSS INFO</span>
-            <h1 className={styles.topHitTitle}>글라스 기브넨</h1>
-            <p className={styles.topHitDesc}>
-              G1 여신강림의 최종 보스이자, 이세계의 마수입니다. 
-              던바튼 북서쪽의 '저승' 지역, 바올 던전 마지막 층에서 등장합니다.
-              주요 드랍 아이템으로는 '글라스 기브넨의 뼈'가 있습니다.
-            </p>
-            <div className={styles.statRow}>
-              <div className={styles.statItem}>
-                <h4>출현 지역</h4>
-                <p>바올 던전</p>
-              </div>
-              <div className={styles.statItem}>
-                <h4>난이도</h4>
-                <p>Hard</p>
-              </div>
-              <div className={styles.statItem}>
-                <h4>속성</h4>
-                <p>무속성</p>
-              </div>
-            </div>
-          </div>
+      {/* Search Info */}
+      {hasSearched && query && (
+        <div className={styles.searchInfo}>
+          &quot;{query}&quot; 검색 결과 {totalResults}건
         </div>
+      )}
 
-        {/* 2. Strategy Section */}
-        <div className={styles.sectionHeader}>
-          관련 공략
-          <span className={styles.seeAll}>더 보기 <i className="fa-solid fa-chevron-right"></i></span>
-        </div>
-
-        <article className={`${styles.card} ${styles.colSpan4}`}>
-          <div className={styles.resultMeta}>공략 • 전투</div>
-          <div className={styles.resultTitle}>글기 솔플 5분 컷 영상 (전사)</div>
-          <div className={styles.resultSnippet}>스매시 타이밍만 잘 맞추면 쉽습니다. 패턴 분석해드림. 준비물은 물약 넉넉히...</div>
-          <div className={styles.userRow}>
-            <div className={styles.userAvatar}></div>
-            <span className={styles.userName}>칼잡이</span>
+      {/* Results */}
+      <main className={styles.resultContainer}>
+        {loading ? (
+          <div className={styles.loading}>검색 중...</div>
+        ) : !hasSearched ? (
+          <div className={styles.emptyState}>
+            <i className="fa-solid fa-magnifying-glass"></i>
+            <p>검색어를 입력해주세요</p>
           </div>
-        </article>
-
-        <article className={`${styles.card} ${styles.colSpan4}`}>
-          <div className={styles.resultMeta}>공략 • 파티</div>
-          <div className={styles.resultTitle}>초보자용 4인 파티 추천 조합</div>
-          <div className={styles.resultSnippet}>탱커1, 힐러1, 딜러2 조합이 가장 안정적입니다. 특히 힐러의 마나 관리가 중요합니다.</div>
-          <div className={styles.userRow}>
-            <div className={styles.userAvatar}></div>
-            <span className={styles.userName}>파티장</span>
+        ) : totalResults === 0 ? (
+          <div className={styles.emptyState}>
+            <i className="fa-solid fa-face-sad-tear"></i>
+            <p>검색 결과가 없습니다</p>
           </div>
-        </article>
+        ) : (
+          <>
+            {/* 공략 결과 */}
+            {guides.length > 0 && (
+              <section className={styles.resultSection}>
+                <div className={styles.sectionHeader}>
+                  <span>공략</span>
+                  <span className={styles.resultCount}>{guides.length}건</span>
+                </div>
+                <div className={styles.resultList}>
+                  {guides.map((guide) => {
+                    const icon = categoryIcons[guide.category] || "fa-lightbulb";
+                    return (
+                      <Link href={`/guide/tips/${guide._id}`} key={guide._id} className={styles.resultItem}>
+                        <div className={styles.resultIcon}>
+                          <i className={`fa-solid ${icon}`}></i>
+                        </div>
+                        <div className={styles.resultContent}>
+                          <div className={styles.resultMeta}>
+                            <span className={styles.resultCategory}>{guide.category}</span>
+                            <span className={styles.resultTime}>{formatRelativeTime(guide.createdAt)}</span>
+                          </div>
+                          <div className={styles.resultTitle}>{guide.title}</div>
+                          <div className={styles.resultSnippet}>{extractText(guide.content)}</div>
+                          <div className={styles.resultStats}>
+                            <span><i className="fa-regular fa-eye"></i> {guide.views || 0}</span>
+                            <span><i className="fa-regular fa-heart"></i> {guide.likes || 0}</span>
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
 
-        <article className={`${styles.card} ${styles.colSpan4}`}>
-          <div className={styles.resultMeta}>팁 • 버그</div>
-          <div className={styles.resultTitle}>가끔 공중에 껴서 안 내려올 때 해결법</div>
-          <div className={styles.resultSnippet}>로그아웃 했다가 재접속 하거나, 펫을 소환해서 어그로를 끄세요.</div>
-          <div className={styles.userRow}>
-            <div className={styles.userAvatar}></div>
-            <span className={styles.userName}>버그헌터</span>
-          </div>
-        </article>
-
-        {/* 3. Item & Drop Section (User Generated DB) */}
-        <div className={styles.sectionHeader}>
-          아이템 & 득템 제보 (#글라스기브넨)
-        </div>
-
-        <article className={`${styles.card} ${styles.colSpan6}`}>
-          <div className={styles.resultMeta} style={{color:'#FF2D55'}}>🔥 득템인증</div>
-          <div className={styles.resultTitle}>글라스 기브넨의 뼈 드랍 확률?</div>
-          <div className={styles.resultSnippet}>오늘 10릴 돌아서 딱 하나 먹었네요. 경매장 시세 50만 골드 정도 하는 듯.</div>
-          {/* Item Image Preview */}
-          <div style={{marginTop:'10px', height:'100px', background:'#f9f9f9', borderRadius:'8px', display:'flex', alignItems:'center', justifyContent:'center', color:'#ccc'}}>
-            <i className="fa-solid fa-bone"></i> &nbsp; Item Image
-          </div>
-        </article>
-
-        <article className={`${styles.card} ${styles.colSpan6}`}>
-          <div className={styles.resultMeta}>매입/매매</div>
-          <div className={styles.resultTitle}>글기 뼈 삽니다 (류트 서버)</div>
-          <div className={styles.resultSnippet}>개당 45숲에 무한 매입합니다. 친추 주세요. 대량 우대해드립니다.</div>
-        </article>
-
+            {/* 커뮤니티 결과 */}
+            {posts.length > 0 && (
+              <section className={styles.resultSection}>
+                <div className={styles.sectionHeader}>
+                  <span>커뮤니티</span>
+                  <span className={styles.resultCount}>{posts.length}건</span>
+                </div>
+                <div className={styles.resultList}>
+                  {posts.map((post) => {
+                    const icon = postTypeIcons[post.type] || "fa-comment";
+                    return (
+                      <Link href={`/community/${post._id}`} key={post._id} className={styles.resultItem}>
+                        <div className={styles.resultIcon}>
+                          <i className={`fa-solid ${icon}`}></i>
+                        </div>
+                        <div className={styles.resultContent}>
+                          <div className={styles.resultMeta}>
+                            <span className={styles.resultCategory}>{post.type}</span>
+                            <span className={styles.resultTime}>{formatRelativeTime(post.createdAt)}</span>
+                          </div>
+                          <div className={styles.resultTitle}>{extractText(post.content, 60)}</div>
+                          <div className={styles.resultSnippet}>{extractText(post.content, 120)}</div>
+                          <div className={styles.resultStats}>
+                            <span><i className="fa-regular fa-eye"></i> {post.viewCount || 0}</span>
+                            <span><i className="fa-regular fa-heart"></i> {post.likes || 0}</span>
+                            <span><i className="fa-regular fa-comment"></i> {post.commentCount || 0}</span>
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+          </>
+        )}
       </main>
-    </>
+    </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<div className={styles.loading}>로딩 중...</div>}>
+      <SearchContent />
+    </Suspense>
   );
 }

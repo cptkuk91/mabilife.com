@@ -52,7 +52,6 @@ export default function EventList() {
     <section className={styles.container}>
       <div className={styles.header}>
         <div>
-          <span className={styles.eyebrow}>이벤트</span>
           <h2 className={styles.title}>진행중인 이벤트</h2>
         </div>
         <a 
