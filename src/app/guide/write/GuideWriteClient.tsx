@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import RichTextEditorWrapper, { RichTextEditorHandle } from "@/components/Editor/RichTextEditorWrapper";
 import { createGuide, getGuideById, updateGuide } from "@/actions/guide";
 import { getPresignedUrlAction } from "@/actions/upload";
@@ -10,6 +11,7 @@ import styles from "./write.module.css";
 
 function GuideWriteContent() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const searchParams = useSearchParams();
   const editId = searchParams.get("edit");
   const isEditMode = !!editId;
@@ -25,6 +27,12 @@ function GuideWriteContent() {
   const [isLoading, setIsLoading] = useState(false);
 
   const categories = ["초보 가이드", "전투/던전", "메인스트림", "생활/알바", "패션/뷰티", "돈벌기"];
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login");
+    }
+  }, [status, router]);
 
   // 수정 모드일 때 기존 데이터 불러오기
   useEffect(() => {

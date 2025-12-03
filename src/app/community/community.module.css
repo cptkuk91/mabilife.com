@@ -566,6 +566,20 @@
 }
 
 /* Trending List */
+.trendingList {
+  display: flex;
+  flex-direction: column;
+}
+
+.rankList {
+  display: flex;
+  flex-direction: column;
+}
+
+.topRank {
+  color: #FF3B30 !important;
+}
+
 .trendRow {
   display: flex;
   align-items: center;

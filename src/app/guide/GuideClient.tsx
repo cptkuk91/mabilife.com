@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { getGuides } from "@/actions/guide";
 import styles from "./guide.module.css";
+import { useSession } from "next-auth/react";
 
 // 카테고리별 아이콘 및 색상 매핑
 const categoryStyles: Record<string, { icon: string; bg: string; color: string }> = {
@@ -55,6 +56,7 @@ type ViewMode = 'grid' | 'list';
 
 export default function GuideClient() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [guides, setGuides] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("전체");
@@ -93,6 +95,15 @@ export default function GuideClient() {
     setSearchQuery("");
   };
 
+  const handleWriteClick = () => {
+    if (status === "loading") return;
+    if (status === "unauthenticated") {
+      router.push("/login");
+      return;
+    }
+    router.push("/guide/write");
+  };
+
   return (
     <div className={styles.pageContainer}>
 
@@ -102,7 +113,7 @@ export default function GuideClient() {
           <div className={styles.hubTitle}>공략</div>
           <div className={styles.hubSubtitle}>에린 생활에 필요한 모든 지식</div>
         </div>
-        <button className={styles.writeBtn} onClick={() => router.push('/guide/write')}>
+        <button className={styles.writeBtn} onClick={handleWriteClick}>
           <i className="fa-solid fa-pen-to-square"></i>
           공략 작성
         </button>
@@ -175,7 +186,7 @@ export default function GuideClient() {
           <div className={styles.empty}>
             <i className="fa-solid fa-file-circle-question"></i>
             <p>아직 등록된 공략이 없습니다.</p>
-            <button onClick={() => router.push('/guide/write')} className={styles.writeBtn}>
+            <button onClick={handleWriteClick} className={styles.writeBtn}>
               첫 공략 작성하기
             </button>
           </div>

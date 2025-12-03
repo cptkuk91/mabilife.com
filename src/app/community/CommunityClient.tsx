@@ -843,16 +843,12 @@ export default function CommunityClient() {
               {trendingPosts.map((post, index) => (
                 <div 
                   key={post._id} 
-                  className={styles.trendingItem}
+                  className={styles.trendRow}
                   onClick={() => router.push(`/community/${post._id}`)}
                 >
-                  <span className={`${styles.rank} ${index < 3 ? styles.topRank : ''}`}>{index + 1}</span>
-                  <div className={styles.trendingContent}>
-                    <div className={styles.trendingTitle}>{post.content}</div>
-                    <div className={styles.trendingMeta}>
-                      <span><i className="fa-solid fa-heart"></i> {post.likes}</span>
-                      <span><i className="fa-regular fa-comment"></i> {post.commentCount}</span>
-                    </div>
+                  <span className={`${styles.trendRank} ${index < 3 ? styles.topRank : ''}`}>{index + 1}</span>
+                  <div className={styles.trendContent}>
+                    <div className={styles.tTitle}>{post.content}</div>
                   </div>
                 </div>
               ))}
@@ -866,17 +862,15 @@ export default function CommunityClient() {
             </div>
             <div className={styles.rankList}>
               {topAnswerers.map((user, index) => (
-                <div key={user._id} className={styles.rankItem}>
-                  <div className={styles.rankNum}>{index + 1}</div>
-                  <img src={user.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user._id}`} className={styles.rankAvatar} alt="User" />
-                  <div className={styles.rankInfo}>
-                    <div className={styles.rankName}>{user.name}</div>
-                    <div className={styles.rankScore}>채택 답변 {user.acceptedCount}개</div>
-                  </div>
+                <div key={user._id} className={styles.answererRow}>
+                  <div className={styles.answererRank}>{index + 1}</div>
+                  <img src={user.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user._id}`} className={styles.answererAvatar} alt="User" />
+                  <div className={styles.answererName}>{user.name}</div>
+                  <div className={styles.answererCount}>채택 답변 {user.acceptedCount}개</div>
                 </div>
               ))}
               {topAnswerers.length === 0 && (
-                <div className={styles.emptyRank}>아직 이번 주 답변왕이 없습니다.</div>
+                <div className={styles.emptyAnswerers}>아직 이번 주 답변왕이 없습니다.</div>
               )}
             </div>
           </div>
