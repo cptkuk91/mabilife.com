@@ -2,29 +2,89 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { getGuides } from "@/actions/guide";
 import styles from "./guide.module.css";
+
+// 카테고리별 아이콘 및 색상 매핑
+const categoryStyles: Record<string, { icon: string; bg: string; color: string }> = {
+  "초보 가이드": { icon: "fa-graduation-cap", bg: "#EAF4FF", color: "#0071E3" },
+  "전투/던전": { icon: "fa-dungeon", bg: "#FFEBEE", color: "#F44336" },
+  "메인스트림": { icon: "fa-book-open", bg: "#FFF3E0", color: "#FF9800" },
+  "생활/알바": { icon: "fa-hammer", bg: "#E8FAEB", color: "#00BA7C" },
+  "패션/뷰티": { icon: "fa-shirt", bg: "#F3E5F5", color: "#9C27B0" },
+  "돈벌기": { icon: "fa-sack-dollar", bg: "#FFF8E1", color: "#FF9500" },
+};
+
+// 상대적 시간 포맷
+const formatRelativeTime = (dateString: string) => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+
+  if (minutes < 1) return "방금 전";
+  if (minutes < 60) return `${minutes}분 전`;
+  if (hours < 24) return `${hours}시간 전`;
+  if (days < 7) return `${days}일 전`;
+  return date.toLocaleDateString();
+};
+
+// HTML 태그 제거하여 설명 추출
+const extractDescription = (html: string, maxLength: number = 60) => {
+  const text = html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ');
+  return text.length > maxLength ? text.slice(0, maxLength) + '...' : text;
+};
+
+// Placeholder 이미지 배열
+const placeholderImages = [
+  '/assets/placeholder/mm1.webp',
+  '/assets/placeholder/mm2.jpg',
+  '/assets/placeholder/mm3.jpg',
+];
+
+// 인덱스에 따른 placeholder 이미지 반환
+const getPlaceholderImage = (index: number) => {
+  return placeholderImages[index % placeholderImages.length];
+};
 
 export default function GuidePage() {
   const router = useRouter();
+  const [latestTips, setLatestTips] = useState<any[]>([]);
+  const [dungeonGuides, setDungeonGuides] = useState<any[]>([]);
+  const [lifeGuides, setLifeGuides] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Dummy Data for Guide Cards
-  const dungeonGuides = [
-    { id: 1, title: "알비 던전 상급 하드모드 공략", cat: "Dungeon", author: "Gamer1", thumb: "https://picsum.photos/id/10/400/300" },
-    { id: 2, title: "몽환의 라비 던전 솔플 가이드", cat: "Dungeon", author: "MabiGod", thumb: "https://picsum.photos/id/11/400/300" },
-    { id: 3, title: "베테랑 던전 효율적인 클리어 루트", cat: "Dungeon", author: "SpeedRun", thumb: "https://picsum.photos/id/12/400/300" },
-  ];
+  useEffect(() => {
+    loadGuides();
+  }, []);
 
-  const lifeGuides = [
-    { id: 4, title: "블랙스미스 1랭크 찍는 최단 루트", cat: "Life", author: "Smithy", thumb: "https://picsum.photos/id/13/400/300" },
-    { id: 5, title: "교역으로 두카트 부자 되는 법", cat: "Commerce", author: "Merchant", thumb: "https://picsum.photos/id/14/400/300" },
-    { id: 6, title: "낭만농장 꾸미기 팁 모음", cat: "Farm", author: "DecoMaster", thumb: "https://picsum.photos/id/15/400/300" },
-  ];
+  const loadGuides = async () => {
+    setLoading(true);
 
-  const tips = [
-    { id: 1, title: "오늘의 요일 효과 확인하세요 (화요일)", desc: "던전 아이템 드랍률 증가 효과가 있으니 오늘은 룬상하 달리세요.", time: "5분 전", icon: "fa-lightbulb", bg: "#EAF4FF", color: "#0071E3" },
-    { id: 2, title: "지향색 코드 공유합니다 (리블/리화)", desc: "RGB 값 정확하게 찍어왔습니다. 염색 앰플 참고하세요.", time: "20분 전", icon: "fa-palette", bg: "#FFF0F5", color: "#FF2D55" },
-    { id: 3, title: "간헐적으로 펫 소환 안되는 버그 해결법", desc: "채널 이동하면 풀리긴 하는데, 임시 방편으로 재접속 추천합니다.", time: "1시간 전", icon: "fa-bug", bg: "#F0F8FF", color: "#4682B4" },
-  ];
+    // 최신 팁 3개
+    const latestResult = await getGuides({ limit: 3, sort: 'latest' });
+    if (latestResult.success && latestResult.data) {
+      setLatestTips(latestResult.data as any[]);
+    }
+
+    // 전투/던전 카테고리 3개
+    const dungeonResult = await getGuides({ category: '전투/던전', limit: 3, sort: 'latest' });
+    if (dungeonResult.success && dungeonResult.data) {
+      setDungeonGuides(dungeonResult.data as any[]);
+    }
+
+    // 생활/알바 카테고리 3개
+    const lifeResult = await getGuides({ category: '생활/알바', limit: 3, sort: 'latest' });
+    if (lifeResult.success && lifeResult.data) {
+      setLifeGuides(lifeResult.data as any[]);
+    }
+
+    setLoading(false);
+  };
 
   return (
     <div className={styles.pageContainer}>
@@ -86,18 +146,31 @@ export default function GuidePage() {
           <Link href="/guide/tips" className={styles.viewAll}>모두 보기</Link>
         </div>
         <div className={styles.listGroup}>
-          {tips.map((tip) => (
-            <div key={tip.id} className={styles.listItem}>
-              <div className={styles.listIcon} style={{background: tip.bg, color: tip.color}}>
-                <i className={`fa-solid ${tip.icon}`}></i>
-              </div>
-              <div className={styles.listContent}>
-                <div className={styles.listTitle}>{tip.title}</div>
-                <div className={styles.listDesc}>{tip.desc}</div>
-              </div>
-              <div className={styles.listMeta}>{tip.time}</div>
-            </div>
-          ))}
+          {loading ? (
+            <div className={styles.loading}>로딩 중...</div>
+          ) : latestTips.length === 0 ? (
+            <div className={styles.emptyList}>아직 등록된 팁이 없습니다.</div>
+          ) : (
+            latestTips.map((tip) => {
+              const style = categoryStyles[tip.category] || { icon: "fa-lightbulb", bg: "#EAF4FF", color: "#0071E3" };
+              return (
+                <Link href={`/guide/tips/${tip._id}`} key={tip._id} className={styles.listItem}>
+                  {tip.thumbnail ? (
+                    <img src={tip.thumbnail} alt="" className={styles.listThumb} />
+                  ) : (
+                    <div className={styles.listIcon} style={{ background: style.bg, color: style.color }}>
+                      <i className={`fa-solid ${style.icon}`}></i>
+                    </div>
+                  )}
+                  <div className={styles.listContent}>
+                    <div className={styles.listTitle}>{tip.title}</div>
+                    <div className={styles.listDesc}>{extractDescription(tip.content)}</div>
+                  </div>
+                  <div className={styles.listMeta}>{formatRelativeTime(tip.createdAt)}</div>
+                </Link>
+              );
+            })
+          )}
         </div>
       </section>
 
@@ -108,19 +181,26 @@ export default function GuidePage() {
           <Link href="/guide/tips?category=전투/던전" className={styles.viewAll}>모두 보기</Link>
         </div>
         <div className={styles.scrollContainer}>
-          {dungeonGuides.map((card) => (
-            <div key={card.id} className={styles.guideCard}>
-              <div className={styles.cardThumb} style={{backgroundImage: `url(${card.thumb})`}}></div>
-              <div className={styles.cardBody}>
-                <div className={styles.cardCat}>{card.cat}</div>
-                <div className={styles.cardT}>{card.title}</div>
-                <div className={styles.cardAuth}>
-                  <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${card.author}`} alt="Author" />
-                  <span>{card.author}</span>
+          {dungeonGuides.length === 0 ? (
+            <div className={styles.emptyScroll}>아직 등록된 공략이 없습니다.</div>
+          ) : (
+            dungeonGuides.map((card, index) => (
+              <Link href={`/guide/tips/${card._id}`} key={card._id} className={styles.guideCard}>
+                <div
+                  className={styles.cardThumb}
+                  style={{ backgroundImage: `url(${card.thumbnail || getPlaceholderImage(index)})` }}
+                />
+                <div className={styles.cardBody}>
+                  <div className={styles.cardCat}>{card.category}</div>
+                  <div className={styles.cardT}>{card.title}</div>
+                  <div className={styles.cardAuth}>
+                    <img src={card.author?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${card.author?.id}`} alt="Author" />
+                    <span>{card.author?.name || '익명'}</span>
+                  </div>
                 </div>
-              </div>
-            </div>
-          ))}
+              </Link>
+            ))
+          )}
         </div>
       </section>
 
@@ -131,19 +211,26 @@ export default function GuidePage() {
           <Link href="/guide/tips?category=생활/알바" className={styles.viewAll}>전체보기</Link>
         </div>
         <div className={styles.scrollContainer}>
-          {lifeGuides.map((card) => (
-            <div key={card.id} className={styles.guideCard}>
-              <div className={styles.cardThumb} style={{backgroundImage: `url(${card.thumb})`}}></div>
-              <div className={styles.cardBody}>
-                <div className={styles.cardCat}>{card.cat}</div>
-                <div className={styles.cardT}>{card.title}</div>
-                <div className={styles.cardAuth}>
-                  <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${card.author}`} alt="Author" />
-                  <span>{card.author}</span>
+          {lifeGuides.length === 0 ? (
+            <div className={styles.emptyScroll}>아직 등록된 공략이 없습니다.</div>
+          ) : (
+            lifeGuides.map((card, index) => (
+              <Link href={`/guide/tips/${card._id}`} key={card._id} className={styles.guideCard}>
+                <div
+                  className={styles.cardThumb}
+                  style={{ backgroundImage: `url(${card.thumbnail || getPlaceholderImage(index)})` }}
+                />
+                <div className={styles.cardBody}>
+                  <div className={styles.cardCat}>{card.category}</div>
+                  <div className={styles.cardT}>{card.title}</div>
+                  <div className={styles.cardAuth}>
+                    <img src={card.author?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${card.author?.id}`} alt="Author" />
+                    <span>{card.author?.name || '익명'}</span>
+                  </div>
                 </div>
-              </div>
-            </div>
-          ))}
+              </Link>
+            ))
+          )}
         </div>
       </section>
 

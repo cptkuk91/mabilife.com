@@ -1,8 +1,12 @@
 'use client';
 
-import { useRef, useEffect, useState, memo, useId } from 'react';
+import { useRef, useEffect, useState, memo, useId, useImperativeHandle, forwardRef } from 'react';
 import { loadTinyMCE } from '@/lib/tinymce-loader'
 import { getPresignedUrlAction } from '@/actions/upload';
+
+export interface RichTextEditorHandle {
+  getContent: () => string;
+}
 
 interface RichTextEditorSimpleProps {
   value: string;
@@ -12,13 +16,13 @@ interface RichTextEditorSimpleProps {
   disabled?: boolean;
 }
 
-function RichTextEditorSimple({
+const RichTextEditorSimple = forwardRef<RichTextEditorHandle, RichTextEditorSimpleProps>(function RichTextEditorSimple({
   value,
   onChange,
   placeholder = '내용을 입력해주세요...',
   height = 400,
   disabled = false,
-}: RichTextEditorSimpleProps) {
+}, ref) {
   const editorRef = useRef<HTMLTextAreaElement>(null);
   const uniqueId = useId();
   const editorId = `tinymce-${uniqueId.replace(/:/g, '-')}`;
@@ -27,6 +31,16 @@ function RichTextEditorSimple({
   const tinymceRef = useRef<any>(null);
   const mountedRef = useRef(true);
   const onChangeRef = useRef(onChange);
+
+  // Expose getContent method via ref
+  useImperativeHandle(ref, () => ({
+    getContent: () => {
+      if (tinymceRef.current) {
+        return tinymceRef.current.getContent();
+      }
+      return value;
+    }
+  }), [value]);
 
   // Keep onChange ref updated
   useEffect(() => {
@@ -246,6 +260,6 @@ function RichTextEditorSimple({
       />
     </div>
   );
-}
+});
 
 export default memo(RichTextEditorSimple);

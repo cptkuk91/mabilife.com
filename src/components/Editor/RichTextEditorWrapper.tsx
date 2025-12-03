@@ -1,13 +1,15 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { forwardRef } from 'react';
+import type { RichTextEditorHandle } from './RichTextEditorSimple';
 
 // TinyMCE 컴포넌트를 동적으로 로드 (SSR 비활성화)
 const RichTextEditorSimple = dynamic(() => import('./RichTextEditorSimple'), {
   ssr: false,
   loading: () => (
     <div className="w-full">
-      <div 
+      <div
         className="border border-gray-300 rounded-lg flex items-center justify-center bg-gray-50"
         style={{ height: '400px' }}
       >
@@ -28,6 +30,12 @@ interface RichTextEditorWrapperProps {
   disabled?: boolean;
 }
 
-export default function RichTextEditorWrapper(props: RichTextEditorWrapperProps) {
-  return <RichTextEditorSimple {...props} />;
-}
+export type { RichTextEditorHandle };
+
+const RichTextEditorWrapper = forwardRef<RichTextEditorHandle, RichTextEditorWrapperProps>(
+  function RichTextEditorWrapper(props, ref) {
+    return <RichTextEditorSimple ref={ref} {...props} />;
+  }
+);
+
+export default RichTextEditorWrapper;

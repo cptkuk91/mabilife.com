@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import RichTextEditorWrapper from "@/components/Editor/RichTextEditorWrapper";
+import RichTextEditorWrapper, { RichTextEditorHandle } from "@/components/Editor/RichTextEditorWrapper";
 import { createGuide, getGuideById, updateGuide } from "@/actions/guide";
 import { getPresignedUrlAction } from "@/actions/upload";
 
@@ -13,6 +13,7 @@ function GuideWriteContent() {
   const searchParams = useSearchParams();
   const editId = searchParams.get("edit");
   const isEditMode = !!editId;
+  const editorRef = useRef<RichTextEditorHandle>(null);
 
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("초보 가이드");
@@ -122,7 +123,10 @@ function GuideWriteContent() {
   };
 
   const handleSubmit = async () => {
-    if (!title.trim() || !content.trim()) {
+    // 에디터에서 직접 콘텐츠 가져오기 (디바운스 문제 해결)
+    const editorContent = editorRef.current?.getContent() || content;
+
+    if (!title.trim() || !editorContent.trim()) {
       alert("제목과 내용을 모두 입력해주세요.");
       return;
     }
@@ -133,14 +137,14 @@ function GuideWriteContent() {
     if (isEditMode && editId) {
       result = await updateGuide(editId, {
         title: title.trim(),
-        content,
+        content: editorContent,
         category,
         thumbnail: thumbnail || undefined,
       });
     } else {
       result = await createGuide({
         title: title.trim(),
-        content,
+        content: editorContent,
         category,
         thumbnail: thumbnail || undefined,
       });
@@ -256,6 +260,7 @@ function GuideWriteContent() {
         {/* Editor */}
         <div className={styles.formGroup}>
           <RichTextEditorWrapper
+            ref={editorRef}
             value={content}
             onChange={setContent}
             placeholder="공략 내용을 자세히 적어주세요. 이미지도 첨부할 수 있습니다."
