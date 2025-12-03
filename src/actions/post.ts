@@ -74,7 +74,7 @@ export async function getPosts(page = 1, limit = 20, type?: string, search?: str
     // 채택된 댓글 ID들 수집
     const acceptedCommentIds = posts
       .filter(post => post.acceptedCommentId)
-      .map(post => post.acceptedCommentId);
+      .map(post => post.acceptedCommentId as string);
 
     // 채택된 댓글들 한번에 조회
     const acceptedComments = acceptedCommentIds.length > 0

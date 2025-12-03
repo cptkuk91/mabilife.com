@@ -24,7 +24,7 @@ export async function createComment(postId: string, content: string, parentId?: 
         name: session.user.name || "익명",
         image: session.user.image || undefined,
       },
-    });
+    } as any) as any;
 
     // Increment comment count on post
     await Post.findByIdAndUpdate(postId, {

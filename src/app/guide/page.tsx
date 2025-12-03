@@ -34,7 +34,7 @@ const formatRelativeTime = (dateString: string) => {
 };
 
 // HTML 태그 제거하여 설명 추출
-const extractDescription = (html: string, maxLength: number = 60) => {
+const extractDescription = (html: string, maxLength: number = 80) => {
   const text = html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ');
   return text.length > maxLength ? text.slice(0, maxLength) + '...' : text;
 };
@@ -51,45 +51,52 @@ const getPlaceholderImage = (index: number) => {
   return placeholderImages[index % placeholderImages.length];
 };
 
+type ViewMode = 'grid' | 'list';
+
 export default function GuidePage() {
   const router = useRouter();
-  const [latestTips, setLatestTips] = useState<any[]>([]);
-  const [dungeonGuides, setDungeonGuides] = useState<any[]>([]);
-  const [lifeGuides, setLifeGuides] = useState<any[]>([]);
+  const [guides, setGuides] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("전체");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+
+  const categories = ["전체", "초보 가이드", "전투/던전", "메인스트림", "생활/알바", "패션/뷰티", "돈벌기"];
 
   useEffect(() => {
     loadGuides();
-  }, []);
+  }, [activeTab, searchQuery]);
 
   const loadGuides = async () => {
     setLoading(true);
+    const result = await getGuides({
+      category: activeTab === "전체" ? undefined : activeTab,
+      search: searchQuery || undefined,
+      limit: 20,
+      sort: 'latest'
+    });
 
-    // 최신 팁 3개
-    const latestResult = await getGuides({ limit: 3, sort: 'latest' });
-    if (latestResult.success && latestResult.data) {
-      setLatestTips(latestResult.data as any[]);
+    if (result.success && result.data) {
+      setGuides(result.data as any[]);
     }
-
-    // 전투/던전 카테고리 3개
-    const dungeonResult = await getGuides({ category: '전투/던전', limit: 3, sort: 'latest' });
-    if (dungeonResult.success && dungeonResult.data) {
-      setDungeonGuides(dungeonResult.data as any[]);
-    }
-
-    // 생활/알바 카테고리 3개
-    const lifeResult = await getGuides({ category: '생활/알바', limit: 3, sort: 'latest' });
-    if (lifeResult.success && lifeResult.data) {
-      setLifeGuides(lifeResult.data as any[]);
-    }
-
     setLoading(false);
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSearchQuery(searchInput.trim());
+  };
+
+  const handleClearSearch = () => {
+    setSearchInput("");
+    setSearchQuery("");
   };
 
   return (
     <div className={styles.pageContainer}>
-      
-      {/* 1. Header Area */}
+
+      {/* Header */}
       <header className={styles.hubHeader}>
         <div>
           <div className={styles.hubTitle}>공략</div>
@@ -101,139 +108,135 @@ export default function GuidePage() {
         </button>
       </header>
 
-      {/* 2. Quick Categories */}
-      <div className={styles.categoryGrid}>
-        <div className={styles.catItem}>
-          <div className={styles.catIcon}><i className="fa-solid fa-dungeon"></i></div>
-          <div className={styles.catName}>던전</div>
-        </div>
-        <div className={styles.catItem}>
-          <div className={styles.catIcon}><i className="fa-solid fa-scroll"></i></div>
-          <div className={styles.catName}>메인스트림</div>
-        </div>
-        <div className={styles.catItem}>
-          <div className={styles.catIcon}><i className="fa-solid fa-hammer"></i></div>
-          <div className={styles.catName}>생활</div>
-        </div>
-        <div className={styles.catItem}>
-          <div className={styles.catIcon}><i className="fa-solid fa-shirt"></i></div>
-          <div className={styles.catName}>의장</div>
-        </div>
-        <div className={styles.catItem}>
-          <div className={styles.catIcon}><i className="fa-solid fa-coins"></i></div>
-          <div className={styles.catName}>돈벌기</div>
-        </div>
-        <div className={styles.catItem}>
-          <div className={styles.catIcon}><i className="fa-solid fa-paw"></i></div>
-          <div className={styles.catName}>펫/파트너</div>
-        </div>
+      {/* Filter Tabs */}
+      <div className={styles.filterBar}>
+        {categories.map((cat) => (
+          <div
+            key={cat}
+            className={`${styles.filterItem} ${activeTab === cat ? styles.active : ''}`}
+            onClick={() => setActiveTab(cat)}
+          >
+            {cat}
+          </div>
+        ))}
       </div>
 
-      {/* 3. Featured Guide (Hero) */}
-      <div className={styles.featuredHero}>
-        <div className={styles.heroBg}></div>
-        <div className={styles.heroInfo}>
-          <div className={styles.heroBadge}>Editor's Choice</div>
-          <div className={styles.heroText}>이번 주말, 룬다 상급 던전을<br />돌아야 하는 이유</div>
-          <div className={styles.heroSub}>붕괴된 마력의 정수 드랍률 2배 이벤트 진행 중!</div>
+      {/* Search Bar */}
+      <form className={styles.searchBar} onSubmit={handleSearch}>
+        <i className="fa-solid fa-magnifying-glass"></i>
+        <input
+          type="text"
+          placeholder="공략 검색..."
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          className={styles.searchInput}
+        />
+        {searchInput && (
+          <button type="button" className={styles.clearBtn} onClick={handleClearSearch}>
+            <i className="fa-solid fa-xmark"></i>
+          </button>
+        )}
+        <button type="submit" className={styles.searchBtn}>검색</button>
+      </form>
+
+      {/* Search Result Info */}
+      {searchQuery && (
+        <div className={styles.searchInfo}>
+          <span>&quot;{searchQuery}&quot; 검색 결과 {guides.length}건</span>
+          <button onClick={handleClearSearch} className={styles.clearSearchBtn}>
+            검색 초기화
+          </button>
         </div>
+      )}
+
+      {/* View Mode Toggle */}
+      <div className={styles.viewToggle}>
+        <button
+          className={`${styles.viewBtn} ${viewMode === 'grid' ? styles.active : ''}`}
+          onClick={() => setViewMode('grid')}
+          title="그리드 보기"
+        >
+          <i className="fa-solid fa-table-cells"></i>
+        </button>
+        <button
+          className={`${styles.viewBtn} ${viewMode === 'list' ? styles.active : ''}`}
+          onClick={() => setViewMode('list')}
+          title="리스트 보기"
+        >
+          <i className="fa-solid fa-list"></i>
+        </button>
       </div>
 
-      {/* 6. Real-time User Tips (List View) */}
-      <section className={styles.scrollSection}>
-        <div className={styles.sectionTitle}>
-          <span>실시간 유저 팁 💡</span>
-          <Link href="/guide/tips" className={styles.viewAll}>모두 보기</Link>
-        </div>
-        <div className={styles.listGroup}>
-          {loading ? (
-            <div className={styles.loading}>로딩 중...</div>
-          ) : latestTips.length === 0 ? (
-            <div className={styles.emptyList}>아직 등록된 팁이 없습니다.</div>
-          ) : (
-            latestTips.map((tip) => {
-              const style = categoryStyles[tip.category] || { icon: "fa-lightbulb", bg: "#EAF4FF", color: "#0071E3" };
-              return (
-                <Link href={`/guide/tips/${tip._id}`} key={tip._id} className={styles.listItem}>
-                  {tip.thumbnail ? (
-                    <img src={tip.thumbnail} alt="" className={styles.listThumb} />
-                  ) : (
-                    <div className={styles.listIcon} style={{ background: style.bg, color: style.color }}>
-                      <i className={`fa-solid ${style.icon}`}></i>
+      {/* Guide Grid/List */}
+      <div className={viewMode === 'grid' ? styles.guideGrid : styles.guideList}>
+        {loading ? (
+          <div className={styles.loading}>로딩 중...</div>
+        ) : guides.length === 0 ? (
+          <div className={styles.empty}>
+            <i className="fa-solid fa-file-circle-question"></i>
+            <p>아직 등록된 공략이 없습니다.</p>
+            <button onClick={() => router.push('/guide/write')} className={styles.writeBtn}>
+              첫 공략 작성하기
+            </button>
+          </div>
+        ) : viewMode === 'grid' ? (
+          // Grid View
+          guides.map((guide, index) => (
+            <Link href={`/guide/tips/${guide._id}`} key={guide._id} className={styles.guideCard}>
+              <div
+                className={styles.cardThumb}
+                style={{ backgroundImage: `url(${guide.thumbnail || getPlaceholderImage(index)})` }}
+              />
+              <div className={styles.cardBody}>
+                <div className={styles.cardCat}>{guide.category}</div>
+                <div className={styles.cardT}>{guide.title}</div>
+                <div className={styles.cardDesc}>{extractDescription(guide.content)}</div>
+                <div className={styles.cardFooter}>
+                  <div className={styles.cardAuth}>
+                    <img src={guide.author?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${guide.author?.id}`} alt="Author" />
+                    <span>{guide.author?.name || '익명'}</span>
+                  </div>
+                  <div className={styles.cardStats}>
+                    <span><i className="fa-regular fa-eye"></i> {guide.views || 0}</span>
+                    <span><i className="fa-regular fa-heart"></i> {guide.likes || 0}</span>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          ))
+        ) : (
+          // List View
+          guides.map((guide) => {
+            const style = categoryStyles[guide.category] || { icon: "fa-lightbulb", bg: "#EAF4FF", color: "#0071E3" };
+            return (
+              <Link href={`/guide/tips/${guide._id}`} key={guide._id} className={styles.listItem}>
+                <div className={styles.listIcon} style={{ background: style.bg, color: style.color }}>
+                  <i className={`fa-solid ${style.icon}`}></i>
+                </div>
+                <div className={styles.listContent}>
+                  <div className={styles.listHeader}>
+                    <span className={styles.listCat}>{guide.category}</span>
+                    <span className={styles.listTime}>{formatRelativeTime(guide.createdAt)}</span>
+                  </div>
+                  <div className={styles.listTitle}>{guide.title}</div>
+                  <div className={styles.listDesc}>{extractDescription(guide.content, 100)}</div>
+                  <div className={styles.listFooter}>
+                    <div className={styles.listAuthor}>
+                      <img src={guide.author?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${guide.author?.id}`} alt="Author" />
+                      <span>{guide.author?.name || '익명'}</span>
                     </div>
-                  )}
-                  <div className={styles.listContent}>
-                    <div className={styles.listTitle}>{tip.title}</div>
-                    <div className={styles.listDesc}>{extractDescription(tip.content)}</div>
-                  </div>
-                  <div className={styles.listMeta}>{formatRelativeTime(tip.createdAt)}</div>
-                </Link>
-              );
-            })
-          )}
-        </div>
-      </section>
-
-      {/* 4. Horizontal Scroll (Topic 1: Dungeon) */}
-      <section className={styles.scrollSection}>
-        <div className={styles.sectionTitle}>
-          <span>던전 완전 정복 ⚔️</span>
-          <Link href="/guide/tips?category=전투/던전" className={styles.viewAll}>모두 보기</Link>
-        </div>
-        <div className={styles.scrollContainer}>
-          {dungeonGuides.length === 0 ? (
-            <div className={styles.emptyScroll}>아직 등록된 공략이 없습니다.</div>
-          ) : (
-            dungeonGuides.map((card, index) => (
-              <Link href={`/guide/tips/${card._id}`} key={card._id} className={styles.guideCard}>
-                <div
-                  className={styles.cardThumb}
-                  style={{ backgroundImage: `url(${card.thumbnail || getPlaceholderImage(index)})` }}
-                />
-                <div className={styles.cardBody}>
-                  <div className={styles.cardCat}>{card.category}</div>
-                  <div className={styles.cardT}>{card.title}</div>
-                  <div className={styles.cardAuth}>
-                    <img src={card.author?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${card.author?.id}`} alt="Author" />
-                    <span>{card.author?.name || '익명'}</span>
+                    <div className={styles.listStats}>
+                      <span><i className="fa-regular fa-eye"></i> {guide.views || 0}</span>
+                      <span><i className="fa-regular fa-heart"></i> {guide.likes || 0}</span>
+                      <span><i className="fa-regular fa-comment"></i> {guide.commentCount || 0}</span>
+                    </div>
                   </div>
                 </div>
               </Link>
-            ))
-          )}
-        </div>
-      </section>
-
-      {/* 5. Horizontal Scroll (Topic 2: Life) */}
-      <section className={styles.scrollSection}>
-        <div className={styles.sectionTitle}>
-          <span>생활 / 알바 🌿</span>
-          <Link href="/guide/tips?category=생활/알바" className={styles.viewAll}>전체보기</Link>
-        </div>
-        <div className={styles.scrollContainer}>
-          {lifeGuides.length === 0 ? (
-            <div className={styles.emptyScroll}>아직 등록된 공략이 없습니다.</div>
-          ) : (
-            lifeGuides.map((card, index) => (
-              <Link href={`/guide/tips/${card._id}`} key={card._id} className={styles.guideCard}>
-                <div
-                  className={styles.cardThumb}
-                  style={{ backgroundImage: `url(${card.thumbnail || getPlaceholderImage(index)})` }}
-                />
-                <div className={styles.cardBody}>
-                  <div className={styles.cardCat}>{card.category}</div>
-                  <div className={styles.cardT}>{card.title}</div>
-                  <div className={styles.cardAuth}>
-                    <img src={card.author?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${card.author?.id}`} alt="Author" />
-                    <span>{card.author?.name || '익명'}</span>
-                  </div>
-                </div>
-              </Link>
-            ))
-          )}
-        </div>
-      </section>
-
+            );
+          })
+        )}
+      </div>
     </div>
   );
 }

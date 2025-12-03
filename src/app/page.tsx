@@ -3,6 +3,7 @@
 
 
 import styles from "./home.module.css";
+import EventList from "@/components/EventList";
 
 export default function Home() {
   return (
@@ -101,6 +102,9 @@ export default function Home() {
         </article>
 
       </section>
+
+      {/* 5. Event List */}
+      <EventList />
     </>
   );
 }

@@ -38,7 +38,7 @@ export async function createGuide(input: CreateGuideInput): Promise<GuideRespons
       tags: input.tags || [],
       thumbnail: input.thumbnail,
       author: {
-        id: session.user.id,
+        id: (session.user as any).id,
         name: session.user.name || "익명",
         image: session.user.image || undefined,
       },
@@ -159,7 +159,7 @@ export async function updateGuide(
       return { success: false, error: "가이드를 찾을 수 없습니다." };
     }
 
-    if (guide.author.id !== session.user.id) {
+    if (guide.author.id !== (session.user as any).id) {
       return { success: false, error: "수정 권한이 없습니다." };
     }
 
@@ -195,7 +195,7 @@ export async function deleteGuide(id: string): Promise<GuideResponse> {
       return { success: false, error: "가이드를 찾을 수 없습니다." };
     }
 
-    if (guide.author.id !== session.user.id) {
+    if (guide.author.id !== (session.user as any).id) {
       return { success: false, error: "삭제 권한이 없습니다." };
     }
 
@@ -232,7 +232,7 @@ export async function toggleGuideLike(id: string): Promise<GuideResponse> {
       return { success: false, error: "가이드를 찾을 수 없습니다." };
     }
 
-    const userId = session.user.id;
+    const userId = (session.user as any).id;
     const hasLiked = guide.likedBy.includes(userId);
 
     if (hasLiked) {
@@ -274,7 +274,7 @@ export async function toggleGuideBookmark(id: string): Promise<GuideResponse> {
       return { success: false, error: "가이드를 찾을 수 없습니다." };
     }
 
-    const userId = session.user.id;
+    const userId = (session.user as any).id;
     const hasBookmarked = guide.bookmarkedBy.includes(userId);
 
     if (hasBookmarked) {

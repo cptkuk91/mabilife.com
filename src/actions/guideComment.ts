@@ -30,11 +30,11 @@ export async function createGuideComment(
       content,
       parentId: parentId || null,
       author: {
-        id: session.user.id,
+        id: (session.user as any).id,
         name: session.user.name || "익명",
         image: session.user.image || undefined,
       },
-    });
+    } as any) as any;
 
     revalidatePath(`/guide/tips/${guideId}`);
 
@@ -96,7 +96,7 @@ export async function updateGuideComment(
       return { success: false, error: "댓글을 찾을 수 없습니다." };
     }
 
-    if (comment.author.id !== session.user.id) {
+    if (comment.author.id !== (session.user as any).id) {
       return { success: false, error: "수정 권한이 없습니다." };
     }
 
@@ -130,7 +130,7 @@ export async function deleteGuideComment(
       return { success: false, error: "댓글을 찾을 수 없습니다." };
     }
 
-    if (comment.author.id !== session.user.id) {
+    if (comment.author.id !== (session.user as any).id) {
       return { success: false, error: "삭제 권한이 없습니다." };
     }
 
@@ -167,7 +167,7 @@ export async function toggleGuideCommentLike(
       return { success: false, error: "댓글을 찾을 수 없습니다." };
     }
 
-    const userId = session.user.id;
+    const userId = (session.user as any).id;
     const hasLiked = comment.likedBy.includes(userId);
 
     if (hasLiked) {

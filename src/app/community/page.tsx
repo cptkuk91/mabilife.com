@@ -455,7 +455,7 @@ export default function CommunityPage() {
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
             >
-              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Me" className={styles.myAvatar} alt="My Avatar" />
+              <img src={session?.user?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${(session?.user as any)?.id || 'Me'}`} className={styles.myAvatar} alt="My Avatar" />
               
               <div className={styles.inputContainer}>
                 {/* Highlights Overlay */}
