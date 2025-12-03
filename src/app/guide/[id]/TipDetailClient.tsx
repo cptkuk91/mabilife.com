@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useEffect, use } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { getGuideById, toggleGuideLike, toggleGuideBookmark, deleteGuide } from "@/actions/guide";
 import {
@@ -13,10 +13,9 @@ import {
 } from "@/actions/guideComment";
 import styles from "./tipDetail.module.css";
 
-export default function TipDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default function TipDetailClient({ id }: { id: string }) {
   const router = useRouter();
   const { data: session } = useSession();
-  const { id } = use(params);
 
   const [guide, setGuide] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -579,7 +578,7 @@ export default function TipDetailPage({ params }: { params: Promise<{ id: string
 
       {/* Back Button */}
       <div className={styles.backBtnWrapper}>
-        <button className={styles.backBtn} onClick={() => router.push("/guide/tips")}>
+        <button className={styles.backBtn} onClick={() => router.push("/guide")}>
           <i className="fa-solid fa-arrow-left"></i>
           목록으로
         </button>

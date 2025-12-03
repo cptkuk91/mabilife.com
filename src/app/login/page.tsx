@@ -1,36 +1,11 @@
-"use client";
+import LoginClient from "./LoginClient";
+import type { Metadata } from "next";
 
-import { signIn } from "next-auth/react";
-import Link from "next/link";
-import styles from "./login.module.css";
+export const metadata: Metadata = {
+  title: "로그인 - Mabi Life",
+  description: "Mabi Life에 로그인하고 더 많은 기능을 이용해보세요.",
+};
 
 export default function LoginPage() {
-  return (
-    <div className={styles.container}>
-      <div className={styles.card}>
-        <div>
-          <div className={styles.logo} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-            <i className="fa-solid fa-leaf"></i> MabiLife 
-            <span style={{ fontSize: '0.8em', opacity: 0.5, margin: '0 4px' }}>X</span>
-            <img src="/assets/logo/kakao-logo.webp" alt="GG FACTORY" style={{ height: '24px' }} />
-            <span style={{ color: '#F7A51A' }}>GG FACTORY</span>
-          </div>
-          <p className={styles.desc}>에린의 모험가들과 함께하세요.</p>
-        </div>
-
-        <button className={styles.googleBtn} onClick={() => signIn("google", { callbackUrl: "/" })}>
-          <img 
-            src="https://www.svgrepo.com/show/475656/google-color.svg" 
-            alt="Google Logo" 
-            className={styles.googleIcon} 
-          />
-          Google 계정으로 계속하기
-        </button>
-
-        <div style={{fontSize: '13px', color: '#888', marginTop: '10px'}}>
-          계속 진행하면 <Link href="https://talk.kakao.gg/terms" style={{textDecoration: 'underline'}}>이용약관</Link> 및 <Link href="https://talk.kakao.gg/privacy" style={{textDecoration: 'underline'}}>개인정보처리방침</Link>에 동의하게 됩니다.
-        </div>
-      </div>
-    </div>
-  );
+  return <LoginClient />;
 }

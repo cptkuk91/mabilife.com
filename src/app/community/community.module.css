@@ -1482,3 +1482,16 @@
   color: var(--text-sub);
   font-size: 13px;
 }
+
+/* Community Rules Widget */
+.rulesList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ruleItem {
+  font-size: 14px;
+  color: var(--text-sub);
+  line-height: 1.5;
+}
