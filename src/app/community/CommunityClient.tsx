@@ -448,7 +448,15 @@ export default function CommunityClient() {
         <main className={styles.feedSection}>
           
           {/* 1. Universal Write Box */}
-          <div className={styles.writeCard}>
+          <div className={`${styles.writeCard} ${!session ? styles.writeCardBlur : ''}`}>
+            {!session && (
+              <div className={styles.loginOverlay}>
+                <p>로그인하고 글을 작성해보세요!</p>
+                <button onClick={() => router.push('/login')} className={styles.loginBtn}>
+                  로그인하기
+                </button>
+              </div>
+            )}
             <div 
               className={`${styles.writeTop} ${isDragging ? styles.dragging : ''}`}
               onDragOver={handleDragOver}
@@ -471,6 +479,7 @@ export default function CommunityClient() {
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                   spellCheck={false}
+                  disabled={!session}
                 ></textarea>
               </div>
 
@@ -503,18 +512,21 @@ export default function CommunityClient() {
                 <button 
                   className={`${styles.typeBtn} ${postType === '잡담' ? styles.active : ''}`}
                   onClick={() => setPostType('잡담')}
+                  disabled={!session}
                 >
                   잡담
                 </button>
                 <button 
                   className={`${styles.typeBtn} ${styles.qMode} ${postType === '질문' ? styles.active : ''}`}
                   onClick={() => setPostType('질문')}
+                  disabled={!session}
                 >
                   질문
                 </button>
                 <button 
                   className={`${styles.typeBtn} ${postType === '정보' ? styles.active : ''}`}
                   onClick={() => setPostType('정보')}
+                  disabled={!session}
                 >
                   정보
                 </button>
@@ -528,9 +540,9 @@ export default function CommunityClient() {
                     accept="image/*" 
                     className={styles.hiddenInput}
                     onChange={handleFileSelect}
-                    disabled={uploadedImages.length >= MAX_IMAGES}
+                    disabled={uploadedImages.length >= MAX_IMAGES || !session}
                   />
-                  <label htmlFor="image-upload" className={`${styles.imageUploadBtn} ${uploadedImages.length >= MAX_IMAGES ? styles.disabled : ''}`}>
+                  <label htmlFor="image-upload" className={`${styles.imageUploadBtn} ${(uploadedImages.length >= MAX_IMAGES || !session) ? styles.disabled : ''}`}>
                     <i className="fa-regular fa-image"></i>
                     <span className={styles.imageCount}>{uploadedImages.length}/{MAX_IMAGES}</span>
                   </label>
@@ -538,8 +550,8 @@ export default function CommunityClient() {
                 <button 
                   className={styles.postBtn}
                   onClick={handlePostSubmit}
-                  disabled={isSubmitting}
-                  style={{ opacity: isSubmitting ? 0.7 : 1, cursor: isSubmitting ? 'not-allowed' : 'pointer' }}
+                  disabled={isSubmitting || !session}
+                  style={{ opacity: (isSubmitting || !session) ? 0.7 : 1, cursor: (isSubmitting || !session) ? 'not-allowed' : 'pointer' }}
                 >
                   {isSubmitting ? '등록 중...' : '게시'}
                 </button>
