@@ -156,7 +156,7 @@ function GuideWriteContent() {
       if (isEditMode && editId) {
         router.push(`/guide/tips/${editId}`);
       } else {
-        router.push("/guide/tips");
+        router.push("/guide");
       }
     } else {
       alert(result.error || "가이드 저장에 실패했습니다.");

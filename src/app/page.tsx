@@ -120,6 +120,13 @@ export default function Home() {
             </button>
           )}
         </div>
+
+        {/* Quick Tags */}
+        <div className={styles.quickTags}>
+          <Link href="/search?q=초보가이드" className={styles.tagPill}>#초보가이드</Link>
+          <Link href="/search?q=던전공략" className={styles.tagPill}>#던전공략</Link>
+          <Link href="/search?q=생활스킬" className={styles.tagPill}>#생활스킬</Link>
+        </div>
       </header>
 
       {/* Search Results */}
@@ -214,16 +221,6 @@ export default function Home() {
         </section>
       ) : (
         <>
-          {/* Tags Filter */}
-          <div className={styles.tagsBar}>
-            <div className={`${styles.tagPill} ${styles.active}`}>전체</div>
-            <div className={styles.tagPill}>#초보자가이드</div>
-            <div className={styles.tagPill}>#전투공략</div>
-            <div className={styles.tagPill}>#생활스킬</div>
-            <div className={styles.tagPill}>#득템인증</div>
-            <div className={styles.tagPill}>#코디자랑</div>
-          </div>
-
           {/* Main Feed (Bento Grid Layout) */}
           <section className={styles.dashboardGrid}>
 

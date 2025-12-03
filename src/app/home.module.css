@@ -61,6 +61,14 @@
   cursor: pointer;
 }
 
+/* Quick Tags under Search */
+.quickTags {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+
 /* --- Dashboard Grid (Bento Grid) --- */
 .dashboardGrid {
   max-width: var(--max-width);
@@ -194,23 +202,7 @@
   color: #FF2D55;
 }
 
-/* --- Tags / Quick Menu --- */
-.tagsBar {
-  max-width: var(--max-width);
-  margin: 0 auto 30px;
-  padding: 0 20px;
-  display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  padding-bottom: 10px;
-  /* Hide scrollbar */
-  scrollbar-width: none;
-}
-
-.tagsBar::-webkit-scrollbar {
-  display: none;
-}
-
+/* --- Tag Pills --- */
 .tagPill {
   background: rgba(0, 0, 0, 0.04);
   padding: 8px 18px;
@@ -220,10 +212,10 @@
   color: var(--text-title);
   white-space: nowrap;
   transition: 0.2s;
+  text-decoration: none;
 }
 
-.tagPill:hover,
-.tagPill.active {
+.tagPill:hover {
   background: var(--text-title);
   color: white;
 }
