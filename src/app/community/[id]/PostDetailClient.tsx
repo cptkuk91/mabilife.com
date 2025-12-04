@@ -803,16 +803,12 @@ export default function PostDetailClient({ id }: { id: string }) {
             {trendingPosts.map((post, index) => (
               <div
                 key={post._id}
-                className={styles.trendingItem}
+                className={styles.trendRow}
                 onClick={() => router.push(`/community/${post._id}`)}
               >
-                <span className={`${styles.rank} ${index < 3 ? styles.topRank : ''}`}>{index + 1}</span>
-                <div className={styles.trendingContent}>
-                  <div className={styles.trendingTitle}>{post.content}</div>
-                  <div className={styles.trendingMeta}>
-                    <span><i className="fa-solid fa-heart"></i> {post.likes}</span>
-                    <span><i className="fa-regular fa-comment"></i> {post.commentCount}</span>
-                  </div>
+                <span className={`${styles.trendRank} ${index < 3 ? styles.topRank : ''}`}>{index + 1}</span>
+                <div className={styles.trendContent}>
+                  <div className={styles.tTitle}>{post.content}</div>
                 </div>
               </div>
             ))}
