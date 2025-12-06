@@ -649,3 +649,70 @@
   color: var(--text-sub);
   font-size: 14px;
 }
+
+/* Mobile Responsive Styles */
+@media (max-width: 640px) {
+  .tipDetailContainer {
+    margin-top: 60px;
+    padding: 0 16px;
+  }
+
+  .tipTitle {
+    font-size: 24px;
+  }
+
+  .tipMeta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .tipActions {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .actionBtn {
+    padding: 6px 12px;
+    font-size: 13px;
+    gap: 4px;
+  }
+
+  .viewCount {
+    font-size: 13px;
+  }
+
+  .commentsSection {
+    padding: 20px 16px;
+    margin-top: 40px;
+  }
+
+  .commentInputArea {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .commentSubmit {
+    width: 100%;
+  }
+
+  .repliesWrapper,
+  .replyInputArea {
+    margin-left: 24px;
+  }
+
+  .replyInputArea {
+    flex-wrap: wrap;
+  }
+
+  .replyInput {
+    width: 100%;
+  }
+
+  .replySubmit,
+  .replyCancel {
+    flex: 1;
+  }
+}

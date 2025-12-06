@@ -4,8 +4,10 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import styles from "./home.module.css";
 import EventList from "@/components/EventList";
+import YouTuberSection from "@/components/YouTuberSection";
 import { getGuides, getGuideById } from "@/actions/guide";
 import { getPosts } from "@/actions/post";
+import { fetchMabinogiMobileYouTubers, YouTubeChannel } from "@/actions/youtube";
 
 // Editor's Choice 고정 ID
 const EDITORS_CHOICE_ID = "692fbf2c9e1c94a15a09f963";
@@ -85,6 +87,7 @@ export default function HomeClient() {
   const [feedGuides, setFeedGuides] = useState<any[]>([]);
   const [feedPosts, setFeedPosts] = useState<any[]>([]);
   const [editorsChoice, setEditorsChoice] = useState<any>(null);
+  const [youtubers, setYoutubers] = useState<YouTubeChannel[] | null>(null);
   const [feedLoading, setFeedLoading] = useState(true);
 
   // 피드 데이터 로드
@@ -94,10 +97,11 @@ export default function HomeClient() {
 
   const loadFeedData = async () => {
     setFeedLoading(true);
-    const [guideResult, postResult, editorsChoiceResult] = await Promise.all([
+    const [guideResult, postResult, editorsChoiceResult, youtubersResult] = await Promise.all([
       getGuides({ limit: 4, sort: 'latest' }),
       getPosts(1, 4),
-      getGuideById(EDITORS_CHOICE_ID)
+      getGuideById(EDITORS_CHOICE_ID),
+      fetchMabinogiMobileYouTubers()
     ]);
 
     if (guideResult.success && guideResult.data) {
@@ -109,6 +113,7 @@ export default function HomeClient() {
     if (editorsChoiceResult.success && editorsChoiceResult.data) {
       setEditorsChoice(editorsChoiceResult.data);
     }
+    setYoutubers(youtubersResult);
     setFeedLoading(false);
   };
 
@@ -348,6 +353,9 @@ export default function HomeClient() {
             )}
 
           </section>
+
+          {/* YouTuber Section */}
+          <YouTuberSection channels={youtubers} />
 
           {/* Event List */}
           <EventList />

@@ -1,0 +1,271 @@
+/* YouTuber Section */
+.section {
+  max-width: var(--max-width);
+  margin: 0 auto 40px;
+  padding: 0 20px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.iconWrapper {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(255, 45, 85, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.iconWrapper svg {
+  width: 20px;
+  height: 20px;
+  color: #FF2D55;
+}
+
+.headerTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-title);
+  margin: 0;
+}
+
+.headerSubtitle {
+  font-size: 13px;
+  color: var(--text-body);
+  margin: 0;
+}
+
+.moreLink {
+  font-size: 14px;
+  color: var(--text-body);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: 0.2s;
+}
+
+.moreLink:hover {
+  color: var(--accent);
+}
+
+.moreLink svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Channel Grid */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+/* Channel Card */
+.card {
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  padding: 24px 20px;
+  box-shadow: var(--shadow-card);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  text-decoration: none;
+  display: block;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hover);
+}
+
+/* Rank Badge */
+.rankBadge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.rank1 {
+  background: rgba(255, 204, 0, 0.15);
+  color: #FFCC00;
+}
+
+.rank2 {
+  background: rgba(142, 142, 147, 0.15);
+  color: #8E8E93;
+}
+
+.rank3 {
+  background: rgba(205, 127, 50, 0.15);
+  color: #CD7F32;
+}
+
+.rankDefault {
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--text-body);
+}
+
+/* Channel Info */
+.channelInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.thumbnail {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-bottom: 14px;
+  border: 3px solid rgba(0, 0, 0, 0.05);
+  transition: 0.3s;
+}
+
+.card:hover .thumbnail {
+  border-color: rgba(255, 45, 85, 0.2);
+}
+
+.thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.channelName {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-title);
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  transition: 0.2s;
+}
+
+.card:hover .channelName {
+  color: #FF2D55;
+}
+
+/* Stats */
+.stats {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+
+.subscribers {
+  color: #FF2D55;
+  font-weight: 600;
+}
+
+.videoCount {
+  color: var(--text-body);
+}
+
+/* Responsive - Tablet */
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Responsive - Mobile */
+@media (max-width: 640px) {
+  .section {
+    margin-bottom: 32px;
+    padding: 0 16px;
+  }
+
+  .header {
+    margin-bottom: 16px;
+  }
+
+  .iconWrapper {
+    width: 36px;
+    height: 36px;
+  }
+
+  .iconWrapper svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .headerTitle {
+    font-size: 17px;
+  }
+
+  .headerSubtitle {
+    font-size: 12px;
+  }
+
+  .moreLink {
+    font-size: 13px;
+  }
+
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .card {
+    padding: 16px 14px;
+    border-radius: 16px;
+  }
+
+  .card:hover {
+    transform: none;
+  }
+
+  .thumbnail {
+    width: 56px;
+    height: 56px;
+    margin-bottom: 10px;
+  }
+
+  .channelName {
+    font-size: 13px;
+  }
+
+  .stats {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .subscribers,
+  .videoCount {
+    font-size: 11px;
+  }
+
+  .rankBadge {
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
+    top: 8px;
+    right: 8px;
+  }
+}
