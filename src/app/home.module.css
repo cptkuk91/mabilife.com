@@ -422,10 +422,6 @@
     line-height: 1.5;
   }
 
-  .hero p br {
-    display: none;
-  }
-
   .writeWrapper {
     padding: 6px 12px;
     border-radius: 14px;

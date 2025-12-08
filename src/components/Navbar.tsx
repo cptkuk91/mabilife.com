@@ -10,8 +10,10 @@ export default function Navbar() {
   const { data: session } = useSession();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileDropdownOpen, setIsMobileDropdownOpen] = useState(false);
+  const [isLinkDropdownOpen, setIsLinkDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const mobileDropdownRef = useRef<HTMLDivElement>(null);
+  const linkDropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -21,6 +23,9 @@ export default function Navbar() {
       }
       if (mobileDropdownRef.current && !mobileDropdownRef.current.contains(event.target as Node)) {
         setIsMobileDropdownOpen(false);
+      }
+      if (linkDropdownRef.current && !linkDropdownRef.current.contains(event.target as Node)) {
+        setIsLinkDropdownOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -48,7 +53,7 @@ export default function Navbar() {
 
           <div className="nav-actions">
             <a
-              href="https://discord.gg/VRqwWzfq"
+              href="https://discord.gg/yYrxEhUw"
               target="_blank"
               rel="noopener noreferrer"
               className="nav-icon-btn"
@@ -114,15 +119,40 @@ export default function Navbar() {
           <i className="fa-solid fa-comments"></i>
           <span>커뮤니티</span>
         </Link>
-        <a
-          href="https://discord.gg/VRqwWzfq"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="dock-item"
-        >
-          <i className="fa-brands fa-discord"></i>
-          <span>디스코드</span>
-        </a>
+        <div className="dock-item-wrapper" ref={linkDropdownRef}>
+          <div
+            className="dock-item"
+            onClick={() => setIsLinkDropdownOpen(!isLinkDropdownOpen)}
+          >
+            <i className="fa-solid fa-link"></i>
+            <span>링크</span>
+          </div>
+
+          {isLinkDropdownOpen && (
+            <div className="mobile-dropdown mobile-dropdown-up">
+              <a
+                href="https://discord.gg/yYrxEhUw"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mobile-dropdown-item"
+                onClick={() => setIsLinkDropdownOpen(false)}
+              >
+                <i className="fa-brands fa-discord"></i>
+                <span>디스코드</span>
+              </a>
+              <a
+                href="https://link.kakao.gg"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mobile-dropdown-item"
+                onClick={() => setIsLinkDropdownOpen(false)}
+              >
+                <i className="fa-solid fa-arrow-up-right-from-square"></i>
+                <span>퀵링크</span>
+              </a>
+            </div>
+          )}
+        </div>
         {session ? (
           <div className="dock-item-wrapper" ref={mobileDropdownRef}>
             <div
