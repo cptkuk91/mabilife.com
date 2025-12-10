@@ -76,7 +76,7 @@ const extractText = (html: string, maxLength: number = 100) => {
   return text.length > maxLength ? text.slice(0, maxLength) + '...' : text;
 };
 
-export default function HomeClient() {
+export default function HomeClient({ initialStats }: { initialStats?: any }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [searchGuides, setSearchGuides] = useState<any[]>([]);
@@ -353,6 +353,31 @@ export default function HomeClient() {
             )}
 
           </section>
+
+          {/* Ranking / Job Recommendation Section */}
+          {initialStats && initialStats.jobStats && (
+            <section className={styles.sectionContainer}>
+                <div className={styles.sectionHeader}>
+                    <h2>🏆 지금 가장 핫한 직업은?</h2>
+                    <Link href="/statistics" className={styles.seeAll}>
+                        통계 더보기 <i className="fa-solid fa-chevron-right"></i>
+                    </Link>
+                </div>
+                
+                <div className={styles.rankingGrid}>
+                     {initialStats.jobStats.slice(0, 3).map((stat: any, index: number) => (
+                        <div key={index} className={`${styles.rankingCard} ${index === 0 ? styles.rankingFirst : ''}`}>
+                            <div className={styles.rankingBadge}>{index + 1}위</div>
+                            <div className={styles.rankingContent}>
+                                <div className={styles.rankingName}>{stat.name}</div>
+                                <div className={styles.rankingCount}>{stat.count}명 선택</div>
+                            </div>
+                            {index === 0 && <i className="fa-solid fa-crown" style={{ color: '#FFD700', fontSize: '24px', position: 'absolute', top: '16px', right: '16px' }}></i>}
+                        </div>
+                     ))}
+                </div>
+            </section>
+          )}
 
           {/* YouTuber Section */}
           <YouTuberSection channels={youtubers} />

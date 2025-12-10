@@ -51,7 +51,6 @@ export default function Navbar() {
             <Link href="/runes" className={pathname === "/runes" || pathname?.startsWith("/runes/") ? "active" : ""}>추천 룬</Link>
             <Link href="/ranking" className={pathname === "/ranking" || pathname?.startsWith("/ranking/") ? "active" : ""}>랭킹</Link>
             <Link href="/homework" className={pathname === "/homework" || pathname?.startsWith("/homework/") ? "active" : ""}>숙제</Link>
-            <Link href="/statistics" className={pathname === "/statistics" || pathname?.startsWith("/statistics/") ? "active" : ""}>통계</Link>
             <Link href="/community" className={pathname === "/community" || pathname?.startsWith("/community/") ? "active" : ""}>커뮤니티</Link>
           </div>
 
@@ -131,10 +130,7 @@ export default function Navbar() {
           <i className="fa-solid fa-list-check"></i>
           <span>숙제</span>
         </Link>
-        <Link href="/statistics" className={`dock-item ${pathname === "/statistics" || pathname?.startsWith("/statistics/") ? "active" : ""}`}>
-          <i className="fa-solid fa-chart-pie"></i>
-          <span>통계</span>
-        </Link>
+
         <Link href="/community" className={`dock-item ${pathname === "/community" || pathname?.startsWith("/community/") ? "active" : ""}`}>
           <i className="fa-solid fa-comments"></i>
           <span>커뮤니티</span>

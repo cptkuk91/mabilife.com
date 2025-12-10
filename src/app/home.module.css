@@ -579,3 +579,146 @@
     font-size: 13px;
   }
 }
+
+/* Ranking Section */
+.sectionContainer {
+  margin-top: 60px;
+  margin-bottom: 20px;
+  max-width: var(--max-width);
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0 20px;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.sectionHeader h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-title);
+  margin: 0;
+}
+
+.seeAll {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+.seeAll:hover {
+  opacity: 0.7;
+}
+
+.rankingGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.rankingCard {
+  background: var(--card-bg);
+  border-radius: 20px; /* Slightly more rounded */
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  border: 1px solid rgba(0,0,0,0.04);
+}
+
+.rankingCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+}
+
+.rankingFirst {
+  background: linear-gradient(135deg, #FFF9E6 0%, #FFFdf5 100%);
+  border: 1px solid #FFEBA6;
+}
+
+.rankingBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: #E8E8ED;
+  border-radius: 8px;
+  font-weight: 700;
+  color: var(--text-body);
+  font-size: 14px;
+}
+
+.rankingFirst .rankingBadge {
+  background: #FFD700;
+  color: white;
+}
+
+.rankingCard:nth-child(2) .rankingBadge { background: #C0C0C0; color: white; }
+.rankingCard:nth-child(3) .rankingBadge { background: #CD7F32; color: white; }
+
+.rankingContent {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rankingName {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-title);
+}
+
+.rankingCount {
+  font-size: 14px;
+  color: var(--text-body);
+}
+
+@media (max-width: 768px) {
+  .rankingGrid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .rankingCard {
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+  }
+  
+  .rankingContent {
+    flex: 1;
+  }
+  
+  /* Reset badge size for mobile horizontal layout */
+  .rankingBadge {
+    width: 28px;
+    height: 28px;
+    font-size: 13px;
+    margin-bottom: 0;
+  }
+  
+  .rankingFirst i {
+    top: 50% !important;
+    transform: translateY(-50%);
+    right: 20px !important;
+    font-size: 20px !important;
+  }
+  
+  .sectionHeader h2 {
+    font-size: 18px;
+  }
+}
