@@ -48,6 +48,8 @@ export default function Navbar() {
 
           <div className="nav-menu">
             <Link href="/guide" className={pathname === "/guide" || pathname?.startsWith("/guide/") ? "active" : ""}>공략</Link>
+            <Link href="/runes" className={pathname === "/runes" || pathname?.startsWith("/runes/") ? "active" : ""}>추천 룬</Link>
+            <Link href="/ranking" className={pathname === "/ranking" || pathname?.startsWith("/ranking/") ? "active" : ""}>랭킹</Link>
             <Link href="/community" className={pathname === "/community" || pathname?.startsWith("/community/") ? "active" : ""}>커뮤니티</Link>
           </div>
 
@@ -114,6 +116,14 @@ export default function Navbar() {
         <Link href="/guide" className={`dock-item ${pathname === "/guide" || pathname?.startsWith("/guide/") ? "active" : ""}`}>
           <i className="fa-solid fa-book"></i>
           <span>공략</span>
+        </Link>
+        <Link href="/runes" className={`dock-item ${pathname === "/runes" || pathname?.startsWith("/runes/") ? "active" : ""}`}>
+          <i className="fa-solid fa-gem"></i>
+          <span>추천 룬</span>
+        </Link>
+        <Link href="/ranking" className={`dock-item ${pathname === "/ranking" || pathname?.startsWith("/ranking/") ? "active" : ""}`}>
+          <i className="fa-solid fa-trophy"></i>
+          <span>랭킹</span>
         </Link>
         <Link href="/community" className={`dock-item ${pathname === "/community" || pathname?.startsWith("/community/") ? "active" : ""}`}>
           <i className="fa-solid fa-comments"></i>
