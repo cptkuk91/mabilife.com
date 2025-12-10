@@ -256,7 +256,7 @@ a { text-decoration: none; color: inherit; }
 }
 
 .dock-item.active {
-  color: var(--accent);
+  color: var(--text-title);
 }
 
 .dock-item.active i {
@@ -278,7 +278,7 @@ a { text-decoration: none; color: inherit; }
 }
 
 .dock-item.active .dock-profile-img {
-  border-color: var(--accent);
+  border-color: var(--text-title);
 }
 
 /* Mobile Dock Dropdown */
@@ -381,6 +381,90 @@ a { text-decoration: none; color: inherit; }
   body {
     padding-bottom: 80px;
   }
+}
+
+/* Mobile Menu Grid Panel */
+.mobile-menu-panel {
+  position: fixed;
+  bottom: 80px; /* Above dock */
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 24px 24px 0 0;
+  padding: 24px 20px 30px;
+  box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.15);
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  z-index: 999;
+  animation: slideUpPanel 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  max-width: 600px;
+  margin: 0 auto; /* Center on larger mobile screens if any */
+}
+
+/* On very wide screens, keep it centered and not full width if wanted, or let it stick to bottom */
+@media (min-width: 601px) {
+    .mobile-menu-panel {
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100%;
+        max-width: 500px;
+        bottom: 90px;
+        border-radius: 24px;
+    }
+}
+
+@keyframes slideUpPanel {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px 12px;
+}
+
+.menu-grid-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--text-title);
+  width: 100%;
+}
+
+.menu-icon {
+  width: 50px;
+  height: 50px;
+  background: #F5F5F7;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  color: var(--text-title);
+  transition: all 0.2s ease;
+}
+
+.menu-grid-item:active .menu-icon {
+  background: #E8E8ED;
+  transform: scale(0.95);
+}
+
+.menu-grid-item span {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-body);
+  white-space: nowrap;
+}
+
+.mobile-dropdown-right {
+  right: 10px;
+  left: auto;
+  transform: none;
+  animation: slideUp 0.2s ease-out;
 }
 
 

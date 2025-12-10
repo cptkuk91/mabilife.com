@@ -11,9 +11,11 @@ export default function Navbar() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileDropdownOpen, setIsMobileDropdownOpen] = useState(false);
   const [isLinkDropdownOpen, setIsLinkDropdownOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const mobileDropdownRef = useRef<HTMLDivElement>(null);
   const linkDropdownRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -26,6 +28,9 @@ export default function Navbar() {
       }
       if (linkDropdownRef.current && !linkDropdownRef.current.contains(event.target as Node)) {
         setIsLinkDropdownOpen(false);
+      }
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -110,65 +115,64 @@ export default function Navbar() {
 
       {/* Mobile Dock Navigation */}
       <nav className="mobile-dock">
-        <Link href="/" className={`dock-item ${pathname === "/" ? "active" : ""}`}>
+        {/* 1. 홈 */}
+        <Link href="/" className={`dock-item ${pathname === "/" && !isMenuOpen ? "active" : ""}`}>
           <i className="fa-solid fa-house"></i>
           <span>홈</span>
         </Link>
-        <Link href="/guide" className={`dock-item ${pathname === "/guide" || pathname?.startsWith("/guide/") ? "active" : ""}`}>
-          <i className="fa-solid fa-book"></i>
-          <span>공략</span>
-        </Link>
-        <Link href="/runes" className={`dock-item ${pathname === "/runes" || pathname?.startsWith("/runes/") ? "active" : ""}`}>
-          <i className="fa-solid fa-gem"></i>
-          <span>추천 룬</span>
-        </Link>
-        <Link href="/ranking" className={`dock-item ${pathname === "/ranking" || pathname?.startsWith("/ranking/") ? "active" : ""}`}>
-          <i className="fa-solid fa-trophy"></i>
-          <span>랭킹</span>
-        </Link>
-        <Link href="/homework" className={`dock-item ${pathname === "/homework" || pathname?.startsWith("/homework/") ? "active" : ""}`}>
-          <i className="fa-solid fa-list-check"></i>
-          <span>숙제</span>
-        </Link>
-
-        <Link href="/community" className={`dock-item ${pathname === "/community" || pathname?.startsWith("/community/") ? "active" : ""}`}>
-          <i className="fa-solid fa-comments"></i>
-          <span>커뮤니티</span>
-        </Link>
-        <div className="dock-item-wrapper" ref={linkDropdownRef}>
-          <div
-            className="dock-item"
-            onClick={() => setIsLinkDropdownOpen(!isLinkDropdownOpen)}
-          >
-            <i className="fa-solid fa-link"></i>
-            <span>링크</span>
-          </div>
-
-          {isLinkDropdownOpen && (
-            <div className="mobile-dropdown mobile-dropdown-up">
-              <a
-                href="https://discord.gg/yYrxEhUw"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mobile-dropdown-item"
-                onClick={() => setIsLinkDropdownOpen(false)}
-              >
-                <i className="fa-brands fa-discord"></i>
-                <span>디스코드</span>
-              </a>
-              <a
-                href="https://link.kakao.gg"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mobile-dropdown-item"
-                onClick={() => setIsLinkDropdownOpen(false)}
-              >
-                <i className="fa-solid fa-arrow-up-right-from-square"></i>
-                <span>퀵링크</span>
-              </a>
+        
+        {/* 2. 메뉴 (Toggle) */}
+        <div className="dock-item-wrapper" ref={menuRef}>
+            <div 
+                className={`dock-item ${isMenuOpen ? "active" : ""}`}
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+                <i className="fa-solid fa-bars"></i>
+                <span>메뉴</span>
             </div>
-          )}
+
+            {/* 그리드 메뉴 패널 */}
+            {isMenuOpen && (
+                <div className="mobile-menu-panel">
+                    <div className="menu-grid">
+                        <Link href="/guide" className="menu-grid-item" onClick={() => setIsMenuOpen(false)}>
+                            <div className="menu-icon"><i className="fa-solid fa-book"></i></div>
+                            <span>공략</span>
+                        </Link>
+                        <Link href="/runes" className="menu-grid-item" onClick={() => setIsMenuOpen(false)}>
+                            <div className="menu-icon"><i className="fa-solid fa-gem"></i></div>
+                            <span>추천 룬</span>
+                        </Link>
+                        <Link href="/ranking" className="menu-grid-item" onClick={() => setIsMenuOpen(false)}>
+                            <div className="menu-icon"><i className="fa-solid fa-trophy"></i></div>
+                            <span>랭킹</span>
+                        </Link>
+                        <Link href="/homework" className="menu-grid-item" onClick={() => setIsMenuOpen(false)}>
+                            <div className="menu-icon"><i className="fa-solid fa-list-check"></i></div>
+                            <span>숙제</span>
+                        </Link>
+                        <Link href="/community" className="menu-grid-item" onClick={() => setIsMenuOpen(false)}>
+                            <div className="menu-icon"><i className="fa-solid fa-comments"></i></div>
+                            <span>커뮤니티</span>
+                        </Link>
+                        <Link href="/statistics" className="menu-grid-item" onClick={() => setIsMenuOpen(false)}>
+                            <div className="menu-icon"><i className="fa-solid fa-chart-pie"></i></div>
+                            <span>통계</span>
+                        </Link>
+                        <a href="https://discord.gg/yYrxEhUw" target="_blank" rel="noopener noreferrer" className="menu-grid-item" onClick={() => setIsMenuOpen(false)}>
+                            <div className="menu-icon"><i className="fa-brands fa-discord"></i></div>
+                            <span>디스코드</span>
+                        </a>
+                         <a href="https://link.kakao.gg" target="_blank" rel="noopener noreferrer" className="menu-grid-item" onClick={() => setIsMenuOpen(false)}>
+                            <div className="menu-icon"><i className="fa-solid fa-link"></i></div>
+                            <span>퀵링크</span>
+                        </a>
+                    </div>
+                </div>
+            )}
         </div>
+
+        {/* 3. MY / 로그인 */}
         {session ? (
           <div className="dock-item-wrapper" ref={mobileDropdownRef}>
             <div
@@ -184,7 +188,7 @@ export default function Navbar() {
             </div>
 
             {isMobileDropdownOpen && (
-              <div className="mobile-dropdown">
+              <div className="mobile-dropdown mobile-dropdown-right">
                 <Link
                   href="/profile"
                   className="mobile-dropdown-item"

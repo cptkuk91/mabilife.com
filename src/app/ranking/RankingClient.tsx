@@ -77,7 +77,7 @@ export default function RankingClient() {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h1 className={styles.title}>아르카나 랭킹</h1>
+        <h1 className={styles.title}>랭킹</h1>
         <p className={styles.lastUpdated}>
             마지막 업데이트: {formatDate(lastUpdated)}
         </p>
