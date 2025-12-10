@@ -51,9 +51,7 @@ export default function EventList() {
   return (
     <section className={styles.container}>
       <div className={styles.header}>
-        <div>
-          <h2 className={styles.title}>진행중인 이벤트</h2>
-        </div>
+        <h2 className={styles.title}>진행 중인 이벤트</h2>
         <a 
           href="https://mabinogimobile.nexon.com/News/Events?headlineId=2501" 
           target="_blank" 

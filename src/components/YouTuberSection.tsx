@@ -37,12 +37,7 @@ export default function YouTuberSection({ channels }: Props) {
     <section className={styles.section}>
       {/* Section Header */}
       <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <div>
-            <h2 className={styles.headerTitle}>인기 크리에이터</h2>
-            <p className={styles.headerSubtitle}>마비노기 모바일 유튜버</p>
-          </div>
-        </div>
+        <h2 className={styles.headerTitle}>인기 크리에이터</h2>
         <a
           href="https://www.youtube.com/results?search_query=%EB%A7%88%EB%B9%84%EB%85%B8%EA%B8%B0+%EB%AA%A8%EB%B0%94%EC%9D%BC"
           target="_blank"
@@ -50,9 +45,7 @@ export default function YouTuberSection({ channels }: Props) {
           className={styles.moreLink}
         >
           더보기
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
-          </svg>
+          <i className="fa-solid fa-chevron-right" style={{ fontSize: '12px' }}></i>
         </a>
       </div>
 

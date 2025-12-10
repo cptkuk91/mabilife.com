@@ -360,7 +360,7 @@ export default function HomeClient({ initialStats }: { initialStats?: any }) {
                 <div className={styles.sectionHeader}>
                     <h2>🏆 지금 가장 핫한 직업은?</h2>
                     <Link href="/statistics" className={styles.seeAll}>
-                        통계 더보기 <i className="fa-solid fa-chevron-right"></i>
+                        더보기 <i className="fa-solid fa-chevron-right"></i>
                     </Link>
                 </div>
                 
