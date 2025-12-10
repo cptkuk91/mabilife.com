@@ -358,7 +358,7 @@ export default function HomeClient({ initialStats }: { initialStats?: any }) {
           {initialStats && initialStats.jobStats && (
             <section className={styles.sectionContainer}>
                 <div className={styles.sectionHeader}>
-                    <h2>🏆 지금 가장 핫한 직업은?</h2>
+                    <h2>🏆 랭커가 선택한 직업은?</h2>
                     <Link href="/statistics" className={styles.seeAll}>
                         더보기 <i className="fa-solid fa-chevron-right"></i>
                     </Link>
