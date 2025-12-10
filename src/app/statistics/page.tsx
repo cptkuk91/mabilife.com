@@ -8,6 +8,9 @@ export const metadata: Metadata = {
 };
 
 export default async function StatisticsPage() {
-  const initialData = await getRankingStatistics();
+  const rawData = await getRankingStatistics('total');
+  // Serialize Date objects to strings to match Client Component props
+  const initialData = rawData ? JSON.parse(JSON.stringify(rawData)) : null;
+  
   return <StatisticsClient initialData={initialData} />;
 }
