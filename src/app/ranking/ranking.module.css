@@ -103,6 +103,30 @@
   box-shadow: 0 0 0 2px rgba(0, 113, 227, 0.2);
 }
 
+.resetBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 99px;
+  background: #F5F5F7;
+  color: var(--text-body);
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.resetBtn:hover {
+  background: #E8E8ED;
+  color: var(--text-title);
+}
+
+.resetBtn i {
+  font-size: 12px;
+}
+
 /* Ranking Table */
 .tableContainer {
   background: var(--card-bg);

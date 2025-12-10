@@ -120,6 +120,20 @@ export default function RankingClient() {
                     {JOBS.map(j => <option key={j} value={j}>{j === 'All' ? '전체 직업' : j}</option>)}
                 </select>
             </div>
+            
+            {(selectedServer !== 'All' || selectedJob !== 'All') && (
+                <button 
+                    className={styles.resetBtn} 
+                    onClick={() => {
+                        setSelectedServer('All');
+                        setSelectedJob('All');
+                    }}
+                    title="필터 초기화"
+                >
+                    <i className="fa-solid fa-rotate-left"></i>
+                    초기화
+                </button>
+            )}
         </div>
       </div>
 

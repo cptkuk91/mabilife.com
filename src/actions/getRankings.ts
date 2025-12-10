@@ -24,7 +24,13 @@ export async function getRankings({
     // We assume the latest batch contains data for ALL types since our crawler runs them sequentially.
     // Ideally, find latest date for the SPECIFIC type effectively.
     
-    const latestEntry = await Ranking.findOne({ rankingType: type })
+    // Construct type query to handle legacy data
+    const typeQuery = type === 'total' 
+        ? { $or: [{ rankingType: 'total' }, { rankingType: { $exists: false } }] }
+        : { rankingType: type };
+
+    // Find the latest batch date to filter by
+    const latestEntry = await Ranking.findOne(typeQuery)
         .sort({ crawledAt: -1 })
         .select('crawledAt');
         
@@ -35,7 +41,7 @@ export async function getRankings({
     // Build Query
     const query: any = { 
         crawledAt: latestDate,
-        rankingType: type
+        ...typeQuery 
     };
 
     if (server && server !== 'All') {

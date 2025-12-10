@@ -29,6 +29,9 @@ const RankingSchema: Schema = new Schema(
 RankingSchema.index({ rankingType: 1, server: 1, crawledAt: -1 });
 RankingSchema.index({ rankingType: 1, job: 1, crawledAt: -1 });
 
+// TTL Index: Automatically delete documents created more than 30 days ago
+RankingSchema.index({ crawledAt: 1 }, { expireAfterSeconds: 60 * 60 * 24 * 30 });
+
 const Ranking: Model<IRanking> =
   mongoose.models.Ranking || mongoose.model<IRanking>("Ranking", RankingSchema);
 
