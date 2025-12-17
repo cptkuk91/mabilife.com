@@ -21,7 +21,7 @@ type JobCategory = {
 const JOB_DATA: JobCategory[] = [
   {
     id: "warrior",
-    name: "전사",
+    name: "전사 계열",
     icon: "fa-solid fa-shield-halved",
     description: "근접 전투의 전문가, 강력한 체력과 공격력을 자랑합니다.",
     subJobs: [
@@ -32,7 +32,7 @@ const JOB_DATA: JobCategory[] = [
       },
       {
         id: "greatsword",
-        name: "대검 전사",
+        name: "대검전사",
         runeIds: []
       },
       {
@@ -44,7 +44,7 @@ const JOB_DATA: JobCategory[] = [
   },
   {
     id: "archer",
-    name: "궁수",
+    name: "궁수 계열",
     icon: "fa-solid fa-bullseye",
     description: "원거리에서 적을 제압하며, 높은 명중률과 치명타를 가집니다.",
     subJobs: [
@@ -55,14 +55,19 @@ const JOB_DATA: JobCategory[] = [
       },
       {
         id: "crossbow",
-        name: "석궁수",
+        name: "석궁사수",
+        runeIds: []
+      },
+      {
+        id: "longbow",
+        name: "장궁병",
         runeIds: []
       }
     ]
   },
   {
     id: "mage",
-    name: "마법사",
+    name: "마법사 계열",
     icon: "fa-solid fa-wand-magic-sparkles",
     description: "원소의 힘을 다루어 강력한 마법 공격을 펼칩니다.",
     subJobs: [
@@ -72,28 +77,53 @@ const JOB_DATA: JobCategory[] = [
         runeIds: []
       },
       {
-        id: "battle-mage",
-        name: "배틀메이지",
+        id: "pyromancer",
+        name: "화염술사",
+        runeIds: []
+      },
+      {
+        id: "cryomancer",
+        name: "빙결술사",
+        runeIds: []
+      },
+      {
+        id: "electromancer",
+        name: "전격술사",
         runeIds: []
       }
     ]
   },
   {
     id: "healer",
-    name: "힐러",
+    name: "힐러 계열",
     icon: "fa-solid fa-heart-pulse",
     description: "아군을 치유하고 보호하며, 전투의 지속력을 높입니다.",
     subJobs: [
       {
+        id: "healer-basic",
+        name: "힐러",
+        runeIds: []
+      },
+      {
         id: "priest",
-        name: "성직자",
+        name: "사제",
+        runeIds: []
+      },
+      {
+        id: "monk",
+        name: "수도사",
+        runeIds: []
+      },
+      {
+        id: "dark-mage",
+        name: "암흑술사",
         runeIds: []
       }
     ]
   },
   {
     id: "bard",
-    name: "음유시인",
+    name: "음유시인 계열",
     icon: "fa-solid fa-music",
     description: "음악으로 아군을 강화하고 적을 약화시킵니다.",
     subJobs: [
@@ -101,23 +131,38 @@ const JOB_DATA: JobCategory[] = [
         id: "bard-basic",
         name: "음유시인",
         runeIds: []
+      },
+      {
+        id: "dancer",
+        name: "댄서",
+        runeIds: []
+      },
+      {
+        id: "musician",
+        name: "악사",
+        runeIds: []
       }
     ]
   },
   {
-    id: "thief",
-    name: "도적",
+    id: "rogue",
+    name: "도적 계열",
     icon: "fa-solid fa-user-secret",
     description: "빠른 몸놀림과 은신으로 적을 기습합니다.",
     subJobs: [
       {
-        id: "thief-basic",
+        id: "rogue-basic",
         name: "도적",
         runeIds: []
       },
       {
-        id: "assassin",
-        name: "암살자",
+        id: "fighter",
+        name: "격투가",
+        runeIds: []
+      },
+      {
+        id: "dual-blade",
+        name: "듀얼블레이드",
         runeIds: []
       }
     ]
