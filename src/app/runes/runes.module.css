@@ -39,13 +39,11 @@
 .categoryItem:hover {
   background: rgba(0, 0, 0, 0.04);
   color: var(--text-title);
-  transform: translateX(4px);
 }
 
 .categoryItem.active {
   background: var(--card-bg);
   color: var(--accent);
-  box-shadow: var(--shadow-card);
   font-weight: 600;
 }
 
@@ -108,7 +106,6 @@
 .subTab.active {
   background: var(--accent);
   color: #fff;
-  box-shadow: 0 4px 12px rgba(0, 113, 227, 0.25);
 }
 
 /* Content Body */
@@ -132,9 +129,62 @@
 
 /* Rune Content Wrapper */
 .runeContentWrapper {
+  display: list-item; /* Or block, but let's stick to flex/grid usually. Wait, user wants "one line". Block is best for stacking vertically. */
   display: flex;
   flex-direction: column;
-  gap: 32px; /* Space between sections */
+  gap: 32px;
+}
+
+/* Ranking Styles */
+.rankCell {
+  width: 60px;
+  text-align: center;
+  color: var(--text-body);
+  font-weight: 600;
+  padding: 12px 8px !important;
+}
+
+.rankHeader {
+  width: 60px;
+  text-align: center;
+  padding: 12px 8px !important;
+}
+
+.rankBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 13px;
+  color: #fff;
+  font-weight: 700;
+}
+
+.rank1 {
+  background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%);
+  box-shadow: 0 2px 6px rgba(253, 185, 49, 0.4);
+  text-shadow: 0 1px 1px rgba(0,0,0,0.1);
+}
+
+.rank2 {
+  background: linear-gradient(135deg, #E0E0E0 0%, #BDBDBD 100%);
+  box-shadow: 0 2px 6px rgba(189, 189, 189, 0.4);
+  text-shadow: 0 1px 1px rgba(0,0,0,0.1);
+}
+
+.rank3 {
+  background: linear-gradient(135deg, #E6A570 0%, #CD7F32 100%);
+  box-shadow: 0 2px 6px rgba(205, 127, 50, 0.4);
+  text-shadow: 0 1px 1px rgba(0,0,0,0.1);
+}
+
+.rankNormal {
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 15px;
+  font-weight: 500;
 }
 
 .slotSection {
@@ -210,6 +260,44 @@
 
 .epic {
   color: #A335EE; /* Epic Purple */
+}
+
+/* Search Bar */
+.searchWrapper {
+  display: flex;
+  align-items: center;
+  background: var(--card-bg);
+  border-radius: var(--radius-md);
+  padding: 0 16px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(0,0,0,0.06);
+  transition: all 0.2s ease;
+}
+
+.searchWrapper:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1); 
+}
+
+.searchWrapper i {
+  color: var(--text-dim);
+  font-size: 16px;
+  margin-right: 12px;
+}
+
+.searchInput {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 14px 0;
+  font-size: 15px;
+  color: var(--text-title);
+  outline: none;
+}
+
+.searchInput::placeholder {
+  color: var(--text-dim);
 }
 
 /* Mobile Responsive */
