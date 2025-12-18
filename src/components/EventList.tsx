@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getMabinogiEvents, MabinogiEvent } from "@/actions/nexon";
+import Image from "next/image";
 import styles from "./event-list.module.css";
 
 export default function EventList() {
@@ -57,6 +58,7 @@ export default function EventList() {
           target="_blank" 
           rel="noopener noreferrer"
           className={styles.moreLink}
+          aria-label="마비노기 모바일 공식 홈페이지에서 진행 중인 이벤트 전체 보기"
         >
           더보기 <i className="fa-solid fa-chevron-right"></i>
         </a>
@@ -72,7 +74,13 @@ export default function EventList() {
           >
             <div className={styles.thumbnailWrapper}>
               {event.thumbnail ? (
-                <img src={event.thumbnail} alt={event.title} className={styles.thumbnail} loading="lazy" />
+                <Image 
+                  src={event.thumbnail} 
+                  alt={event.title} 
+                  className={styles.thumbnail}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 300px"
+                />
               ) : (
                 <div className={styles.thumbnail} style={{ background: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <i className="fa-solid fa-image" style={{ color: '#ccc', fontSize: '2rem' }}></i>
@@ -93,6 +101,7 @@ export default function EventList() {
           target="_blank" 
           rel="noopener noreferrer" 
           className={styles.viewAllCard}
+          aria-label="마비노기 모바일 공식 홈페이지에서 진행 중인 이벤트 전체 보기"
         >
           <div className={styles.viewAllIconCircle}>
             <i className="fa-solid fa-arrow-right"></i>

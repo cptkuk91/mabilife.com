@@ -1,9 +1,19 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import GoogleAnalytics from "@/components/GoogleAnalytics";
+// import "./fontawesome.css"; // Removed local CSS
+// import GoogleAnalytics from "@/components/GoogleAnalytics"; // Removed custom component
+import { GoogleAnalytics } from '@next/third-parties/google'; // Added optimized library
 import Navbar from "@/components/Navbar";
 import AuthProvider from "@/components/AuthProvider";
 import Footer from "@/components/Footer";
+import { Noto_Sans_KR } from 'next/font/google';
+
+const notoSansKr = Noto_Sans_KR({
+  subsets: ['latin'],
+  weight: ['400', '500', '700'],
+  display: 'swap',
+  variable: '--font-noto',
+});
 
 const SITE_URL = "https://www.mabilife.com";
 const SITE_NAME = "Mabi Life";
@@ -123,9 +133,12 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body>
+      <body className={`${notoSansKr.variable}`}>
+        {process.env.NEXT_PUBLIC_GA_ID ? (
+          <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
+        ) : null}
         <AuthProvider>
-          <GoogleAnalytics />
+          {/* <GoogleAnalytics /> Removed old usage */}
           <Navbar />
           {children}
           <Footer />

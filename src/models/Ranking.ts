@@ -18,7 +18,7 @@ const RankingSchema: Schema = new Schema(
     job: { type: String, required: true },
     score: { type: Number, required: true },
     rankingType: { type: String, required: true, default: 'total', index: true },
-    crawledAt: { type: Date, default: Date.now, index: true }, // To easily find the latest batch
+    crawledAt: { type: Date, default: Date.now }, // To easily find the latest batch
   },
   {
     timestamps: true,

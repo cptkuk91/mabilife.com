@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import styles from "./home.module.css";
 import EventList from "@/components/EventList";
 import YouTuberSection from "@/components/YouTuberSection";
@@ -298,12 +299,33 @@ export default function HomeClient({ initialStats }: { initialStats?: any }) {
 
             {/* Card 1: Editor's Choice (Large) */}
             {editorsChoice && (
-              <Link href={`/guide/${editorsChoice._id}`} className={`${styles.card} ${styles.colSpan8} ${styles.rowSpan2} ${styles.imgCard}`} style={{backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.35), rgba(0,0,0,0.85)), url('${editorsChoice.thumbnail || getPlaceholderImage(0)}')`}}>
-                <div className={styles.cardCategory}>Editor's Choice</div>
-                <div className={styles.cardTitle}>{editorsChoice.title}</div>
-                <div className={styles.cardDesc}>{extractText(editorsChoice.content, 80)}</div>
-                <div className={styles.cardFooter} style={{borderTopColor: 'rgba(255,255,255,0.2)'}}>
-                  <img src={editorsChoice.author?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${editorsChoice.author?.id}`} className={styles.avatar} alt="User Avatar" />
+              <Link href={`/guide/${editorsChoice._id}`} className={`${styles.card} ${styles.colSpan8} ${styles.rowSpan2} ${styles.imgCard}`}>
+                <Image 
+                  src={editorsChoice.thumbnail || getPlaceholderImage(0)} 
+                  alt={editorsChoice.title}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 800px"
+                  style={{ objectFit: 'cover', zIndex: 0 }}
+                  priority
+                />
+                <div style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background: 'linear-gradient(to bottom, rgba(0,0,0,0.35), rgba(0,0,0,0.85))',
+                  zIndex: 1
+                }} />
+                
+                <div className={styles.cardCategory} style={{position: 'relative', zIndex: 2}}>Editor's Choice</div>
+                <div className={styles.cardTitle} style={{position: 'relative', zIndex: 2}}>{editorsChoice.title}</div>
+                <div className={styles.cardDesc} style={{position: 'relative', zIndex: 2}}>{extractText(editorsChoice.content, 80)}</div>
+                <div className={styles.cardFooter} style={{borderTopColor: 'rgba(255,255,255,0.2)', position: 'relative', zIndex: 2}}>
+                  <Image 
+                    src={editorsChoice.author?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${editorsChoice.author?.id}`} 
+                    className={styles.avatar} 
+                    alt="User Avatar"
+                    width={32}
+                    height={32}
+                  />
                   <span className={styles.userInfo} style={{color:'white'}}>{editorsChoice.author?.name || '익명'}</span>
                   <span className={styles.likes} style={{color:'white'}}><i className="fa-solid fa-heart"></i> {editorsChoice.likes || 0}</span>
                 </div>
@@ -338,7 +360,13 @@ export default function HomeClient({ initialStats }: { initialStats?: any }) {
                       <div className={styles.cardTitle} style={{fontSize: index < 2 ? '18px' : '20px'}}>{title}</div>
                       <div className={styles.cardDesc}>{desc}</div>
                       <div className={styles.cardFooter}>
-                        <img src={authorImage} className={styles.avatar} alt="User Avatar" />
+                        <Image 
+                          src={authorImage} 
+                          className={styles.avatar} 
+                          alt="User Avatar"
+                          width={32}
+                          height={32}
+                        />
                         <span className={styles.userInfo}>{authorName}</span>
                         {comments !== null ? (
                           <span className={styles.likes}><i className="fa-regular fa-comment"></i> {comments}</span>

@@ -26,7 +26,7 @@ const CommentSchema: Schema = new Schema({
     name: { type: String, required: true },
     image: { type: String },
   },
-  parentId: { type: String, default: null, index: true },
+  parentId: { type: String, default: null },
   likes: { type: Number, default: 0 },
   likedBy: [{ type: String }],
   isAccepted: { type: Boolean, default: false },
