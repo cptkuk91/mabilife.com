@@ -533,7 +533,7 @@ const JOB_DATA: JobCategory[] = [
 ];
 
 interface RunesClientProps {
-  initialRunes?: any[];
+  initialRunes?: Rune[];
 }
 
 export default function RunesClient({ initialRunes = [] }: RunesClientProps) {
@@ -639,7 +639,7 @@ export default function RunesClient({ initialRunes = [] }: RunesClientProps) {
               {["무기", "방어구", "장신구", "엠블럼", "보석"]
                 .filter(slot => dictionaryTab === "전체" || dictionaryTab === slot)
                 .map((slot) => {
-                const runesInSlot = Object.values(runesMap).filter(rune => 
+                const runesInSlot = Object.values(runesMap).filter((rune: Rune) => 
                   rune.slot === slot &&
                   (searchTerm === "" || 
                    rune.name.includes(searchTerm) || 
