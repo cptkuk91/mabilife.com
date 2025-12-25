@@ -435,6 +435,15 @@
   background: #FF2D55;
 }
 
+.btnPrimary {
+  background: var(--accent);
+  color: white;
+}
+
+.btnPrimary:hover {
+  background: #005BBB;
+}
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }

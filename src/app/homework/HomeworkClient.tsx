@@ -26,9 +26,40 @@ export default function HomeworkClient() {
 
   const activeHomework = characters[activeCharIndex];
 
+  // Login Alert Modal
+  const [showLoginAlert, setShowLoginAlert] = useState(false);
+
+  // Demo data for unauthenticated users
+  const demoData: IHomeworkData = {
+    _id: 'demo',
+    userId: 'demo',
+    characterName: '체험용 캐릭터',
+    weekStartDate: new Date(),
+    lastDailyReset: new Date(),
+    daily: {
+      dailyMission: false,
+      dailyDungeon: false,
+      silverCoin: false,
+      deepDungeon: false,
+      partTimeJob: false,
+      dailyGift: false,
+      gemBox: false,
+    },
+    weekly: {
+      barrier: 0,
+      blackHole: 0,
+      fieldBoss: 0,
+      abyss: 0,
+      raid: 0,
+    },
+    memo: '',
+  };
+
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.push("/login");
+      // Show demo data instead of redirecting
+      setCharacters([demoData]);
+      setLoading(false);
     } else if (status === "authenticated") {
       fetchData();
     }
@@ -83,7 +114,17 @@ export default function HomeworkClient() {
     }
   };
 
+  // Check if user is authenticated before any action
+  const requireAuth = () => {
+    if (status !== "authenticated") {
+      setShowLoginAlert(true);
+      return false;
+    }
+    return true;
+  };
+
   const handleAddCharacter = async () => {
+      if (!requireAuth()) return;
       if (!newCharName.trim()) return;
       
       const result = await createCharacter(newCharName);
@@ -129,34 +170,46 @@ export default function HomeworkClient() {
   const calculateProgress = (type: 'daily' | 'weekly') => {
     if (!activeHomework) return 0;
     
-    let total = 0;
-    let completed = 0;
-
-    const countBool = (val: boolean) => {
-        total++;
-        if (val) completed++;
-    };
-    
-    const processObj = (obj: any) => {
-        for (const key in obj) {
-            if (typeof obj[key] === 'boolean') {
-                countBool(obj[key]);
-            } else if (Array.isArray(obj[key])) {
-                obj[key].forEach((v: any) => {
-                   if (typeof v === 'boolean') countBool(v); 
-                });
-            } else if (typeof obj[key] === 'object' && obj[key] !== null) {
-                processObj(obj[key]);
-            }
+    if (type === 'daily') {
+      // Daily tasks are booleans
+      let total = 0;
+      let completed = 0;
+      
+      const daily = activeHomework.daily;
+      for (const key in daily) {
+        if (typeof (daily as any)[key] === 'boolean') {
+          total++;
+          if ((daily as any)[key]) completed++;
         }
-    };
-    
-    processObj(activeHomework[type]);
-    
-    return total === 0 ? 0 : Math.round((completed / total) * 100);
+      }
+      
+      return total === 0 ? 0 : Math.round((completed / total) * 100);
+    } else {
+      // Weekly tasks are counters with max values
+      const maxValues: Record<string, number> = {
+        barrier: 7,
+        blackHole: 7,
+        fieldBoss: 3,
+        abyss: 4,
+        raid: 3,
+      };
+      
+      let total = 0;
+      let completed = 0;
+      
+      const weekly = activeHomework.weekly;
+      for (const key in maxValues) {
+        total += maxValues[key];
+        const val = (weekly as any)[key];
+        completed += typeof val === 'number' ? Math.min(val, maxValues[key]) : 0;
+      }
+      
+      return total === 0 ? 0 : Math.round((completed / total) * 100);
+    }
   };
 
   const handleToggle = async (path: string, currentVal: any) => {
+    if (!requireAuth()) return;
     if (!activeHomework) return;
 
     // Optimistic Update
@@ -235,6 +288,7 @@ export default function HomeworkClient() {
   );
 
   const handleUpdateValue = async (path: string, newVal: any) => {
+    if (!requireAuth()) return;
     if (!activeHomework) return;
     
     const keys = path.split('.');
@@ -316,6 +370,32 @@ export default function HomeworkClient() {
                         onClick={handleDeleteCharacter}
                       >
                           삭제하기
+                      </button>
+                  </div>
+              </div>
+          </div>
+      )}
+
+      {showLoginAlert && (
+          <div className={styles.modalOverlay} onClick={() => setShowLoginAlert(false)}>
+              <div className={styles.modal} onClick={e => e.stopPropagation()}>
+                  <h3 className={styles.modalTitle}>로그인 필요</h3>
+                  <p className={styles.modalDesc}>
+                      숙제 트래커 기능을 이용하려면 로그인이 필요합니다.<br/>
+                      로그인 페이지로 이동하시겠습니까?
+                  </p>
+                  <div className={styles.modalActions}>
+                      <button 
+                        className={`${styles.modalBtn} ${styles.btnCancel}`}
+                        onClick={() => setShowLoginAlert(false)}
+                      >
+                          취소
+                      </button>
+                      <button 
+                        className={`${styles.modalBtn} ${styles.btnPrimary}`}
+                        onClick={() => router.push('/login')}
+                      >
+                          로그인하기
                       </button>
                   </div>
               </div>

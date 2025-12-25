@@ -55,8 +55,14 @@ async function checkAndReset(homework: any) {
     const currentDailyReset = getDailyResetTime();
     let needsSave = false;
     
+    console.log('[checkAndReset] Current Weekly Reset:', currentWeeklyReset);
+    console.log('[checkAndReset] Current Daily Reset:', currentDailyReset);
+    console.log('[checkAndReset] Homework weekStartDate:', homework.weekStartDate);
+    console.log('[checkAndReset] Homework lastDailyReset:', homework.lastDailyReset);
+    
     // Check Weekly Reset
     if (new Date(homework.weekStartDate).getTime() < currentWeeklyReset.getTime()) {
+      console.log('[checkAndReset] WEEKLY RESET TRIGGERED!');
       homework.weekly = {
           barrier: 0,
           blackHole: 0,
@@ -64,7 +70,6 @@ async function checkAndReset(homework: any) {
           abyss: 0,
           raid: 0,
       };
-      // Reset daily too
       // Reset daily too
       homework.daily = {
           dailyMission: false,
@@ -82,6 +87,7 @@ async function checkAndReset(homework: any) {
     } 
     // Check Daily Reset
     else if (new Date(homework.lastDailyReset).getTime() < currentDailyReset.getTime()) {
+      console.log('[checkAndReset] DAILY RESET TRIGGERED!');
       homework.daily = {
           dailyMission: false,
           dailyDungeon: false,
@@ -93,6 +99,8 @@ async function checkAndReset(homework: any) {
       };
       homework.lastDailyReset = currentDailyReset;
       needsSave = true;
+    } else {
+      console.log('[checkAndReset] No reset needed');
     }
 
     if (needsSave) {
@@ -205,16 +213,25 @@ export async function updateHomework(homeworkId: string, updates: Partial<IHomew
 }
 
 export async function toggleTask(homeworkId: string, path: string, value: any) {
+    console.log('[toggleTask] Called with:', { homeworkId, path, value });
+    
     const session = await getServerSession(authOptions);
-    if (!session || !session.user) return { success: false, error: 'Unauthorized' };
+    if (!session || !session.user) {
+        console.log('[toggleTask] Unauthorized');
+        return { success: false, error: 'Unauthorized' };
+    }
 
     await connectToDatabase();
 
+    console.log('[toggleTask] Updating...', { _id: homeworkId, userId: (session.user as any).id });
+    
     const result = await Homework.findOneAndUpdate(
         { _id: homeworkId, userId: (session.user as any).id },
         { $set: { [path]: value } },
         { new: true }
     );
+
+    console.log('[toggleTask] Result:', result ? 'Updated' : 'Not found');
 
     if (!result) return { success: false, error: 'Failed to update' };
 
