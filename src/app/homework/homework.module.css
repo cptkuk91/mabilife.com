@@ -1,57 +1,452 @@
-/* Homework Page (Todo List Style) */
+
 .container {
   max-width: var(--max-width);
   margin: 0 auto;
-  padding: 80px 20px 40px;
-  min-height: 100vh;
+  padding: 80px 20px 80px;
 }
 
 .header {
-  margin-bottom: 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
 }
 
-.title {
+.header h1 {
   font-size: 28px;
   font-weight: 700;
-  color: var(--text-title);
-  margin-bottom: 8px;
-}
-
-.description {
-  color: var(--text-body);
-  font-size: 15px;
-}
-
-.homeworkList {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 12px;
 }
 
-.emptyState {
+.header h1 i {
+  display: none;
+}
+
+.timer {
+  background: var(--card-bg);
+  padding: 10px 20px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  text-align: right;
+  border: 1px solid var(--border);
+}
+
+.timerLabel {
+  font-size: 12px;
+  color: var(--text-sub);
+  margin-bottom: 2px;
+}
+
+.timerTime {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Character Selector */
+.charSelector {
   display: flex;
   flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+  background: var(--card-bg);
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.charList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.charChip {
+  padding: 8px 16px;
+  border-radius: 99px;
+  background: var(--bg-sub);
+  color: var(--text-sub);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.charChip:hover {
+  background: #E5E5EA;
+}
+
+.charChip.active {
+  background: var(--accent);
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 113, 227, 0.3);
+}
+
+.addCharBtn {
+  background: transparent;
+  border: 1px dashed var(--text-sub);
+  color: var(--text-sub);
+}
+
+.addCharBtn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: transparent;
+}
+
+.addCharForm {
+  display: flex;
+  gap: 8px;
+}
+
+.charInput {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 14px;
+  outline: none;
+}
+
+.charInput:focus {
+  border-color: var(--accent);
+}
+
+.confirmBtn {
+  padding: 8px 16px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.deleteBtn {
+  margin-left: 4px;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.deleteBtn:hover {
+  opacity: 1;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 24px;
+}
+
+.sideCol {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.mainCol {
+  display: flex;
+  flex-direction: column;
+}
+
+.card {
+  background: var(--card-bg);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+
+.card h2 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+.progressItem {
+  margin-bottom: 16px;
+}
+
+.progressLabel {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.progressBar {
+  height: 10px;
+  background: var(--bg-sub);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 24px;
+  background: var(--card-bg);
+  padding: 6px;
+  border-radius: 16px;
+  width: fit-content;
+  box-shadow: var(--shadow);
+}
+
+.tab {
+  padding: 10px 24px;
+  border-radius: 12px;
+  border: none;
+  background: transparent;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-sub);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab.active {
+  background: var(--accent);
+  color: white;
+  box-shadow: 0 2px 10px rgba(0, 113, 227, 0.3);
+}
+
+.taskList {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.sectionTitle {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.taskGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.taskCard {
+  background: var(--card-bg);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.taskCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border-color: var(--accent);
+}
+
+.taskCard.completed {
+  background: rgba(0, 186, 124, 0.08);
+  border-color: var(--success);
+}
+
+.taskCard.completed .taskTitle {
+  color: var(--text-sub);
+  text-decoration: line-through;
+}
+
+.taskIcon {
+  display: none;
+}
+
+.taskInfo {
+  flex: 1;
+}
+
+.taskTitle {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  transition: color 0.2s;
+}
+
+.taskStatus {
+  font-size: 12px;
+  color: var(--text-sub);
+}
+
+.check {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--success);
+  color: white;
+  display: flex;
   align-items: center;
   justify-content: center;
-  padding: 80px 0;
-  color: var(--text-body);
-  gap: 16px;
+  font-size: 12px;
+  opacity: 0;
+  transform: scale(0.5);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.taskCard.completed .check {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Steps for array tasks */
+.steps {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.step {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: var(--bg-sub);
+  color: var(--text-sub);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  transition: all 0.2s;
+}
+
+.step:hover {
+  border-color: var(--accent);
+}
+
+.stepDone {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 50vh;
+  font-size: 16px;
+  color: var(--text-sub);
+}
+
+/* Modal */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal {
   background: var(--card-bg);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
-  text-align: center;
+  border-radius: 20px;
+  padding: 30px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: var(--shadow-hover);
+  animation: scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.icon {
-  font-size: 48px;
-  color: var(--accent);
-  opacity: 0.8;
-  margin-bottom: 8px;
+.modalTitle {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: var(--text-title);
 }
 
-/* Mobile Responsive */
-@media (max-width: 768px) {
-  .container {
-    padding: 68px 20px 100px;
+.modalDesc {
+  font-size: 15px;
+  color: var(--text-body);
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+.modalActions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.modalBtn {
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: 0.2s;
+}
+
+.btnCancel {
+  background: var(--bg-sub);
+  color: var(--text-title);
+}
+
+.btnCancel:hover {
+  background: #E5E5EA;
+}
+
+.btnDanger {
+  background: #FF3B30;
+  color: white;
+}
+
+.btnDanger:hover {
+  background: #FF2D55;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: 1fr;
   }
 }

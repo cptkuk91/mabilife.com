@@ -1,8 +1,9 @@
+
 import { Metadata } from 'next';
 import HomeworkClient from './HomeworkClient';
 
 export const metadata: Metadata = {
-  title: '숙제 | Mabi Life',
+  title: '숙제 트래커 | Mabi Life',
   description: '마비노기 모바일 일일/주간 숙제를 관리하세요.',
 };
 
