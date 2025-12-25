@@ -58,36 +58,22 @@ async function checkAndReset(homework: any) {
     // Check Weekly Reset
     if (new Date(homework.weekStartDate).getTime() < currentWeeklyReset.getTime()) {
       homework.weekly = {
-          weeklyMission: false,
-          guildMission: [false, false, false, false, false, false],
-          fieldBosses: {
-            peri: false,
-            crabvach: false,
-            krama: false,
-            drohnenem: false,
-          },
-          sunkenRuins: false,
-          collapsedAltar: false,
-          hallOfDestruction: false,
-          glasGhaibhleann: false,
-          guardian: false,
-          bellast: false,
-          weeklyShop: false,
-          advancedSeal: false,
+          barrier: 0,
+          blackHole: 0,
+          fieldBoss: 0,
+          abyss: 0,
+          raid: 0,
       };
+      // Reset daily too
       // Reset daily too
       homework.daily = {
           dailyMission: false,
-          blackHole: [false, false, false],
-          summoningBadge: [false, false],
-          deepDungeon: false,
-          tower: false,
           dailyDungeon: false,
+          silverCoin: false,
+          deepDungeon: false,
           partTimeJob: false,
           dailyGift: false,
-          crystalBox: 0,
-          fergusOre: false,
-          endelyonHolyWater: false,
+          gemBox: false,
       };
       
       homework.weekStartDate = currentWeeklyReset;
@@ -98,16 +84,12 @@ async function checkAndReset(homework: any) {
     else if (new Date(homework.lastDailyReset).getTime() < currentDailyReset.getTime()) {
       homework.daily = {
           dailyMission: false,
-          blackHole: [false, false, false],
-          summoningBadge: [false, false],
-          deepDungeon: false,
-          tower: false,
           dailyDungeon: false,
+          silverCoin: false,
+          deepDungeon: false,
           partTimeJob: false,
           dailyGift: false,
-          crystalBox: 0,
-          fergusOre: false,
-          endelyonHolyWater: false,
+          gemBox: false,
       };
       homework.lastDailyReset = currentDailyReset;
       needsSave = true;

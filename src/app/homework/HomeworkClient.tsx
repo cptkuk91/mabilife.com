@@ -234,6 +234,63 @@ export default function HomeworkClient() {
       </div>
   );
 
+  const handleUpdateValue = async (path: string, newVal: any) => {
+    if (!activeHomework) return;
+    
+    const keys = path.split('.');
+    const newChars = JSON.parse(JSON.stringify(characters));
+    const targetChar = newChars[activeCharIndex];
+    let ref = targetChar;
+    for (let i = 0; i < keys.length - 1; i++) {
+        ref = ref[keys[i]];
+    }
+    const lastKey = keys[keys.length - 1];
+    ref[lastKey] = newVal;
+    
+    setCharacters(newChars);
+    await toggleTask(activeHomework._id, path, newVal);
+  };
+
+  const WeeklyCounter = ({ title, path, value, max }: any) => {
+      const safeValue = typeof value === 'number' ? value : 0;
+      const isCompleted = safeValue >= max;
+      return (
+          <div className={`${styles.weeklyCard} ${isCompleted ? styles.completed : ''}`}>
+              <div className={styles.weeklyCardHeader}>
+                  <div className={styles.weeklyTitle}>{title}</div>
+                  <div className={styles.weeklyCount}>{safeValue}/{max}</div>
+              </div>
+              <div className={styles.weeklyProgress}>
+                  <div className={styles.weeklyFill} style={{ width: `${(safeValue / max) * 100}%` }}></div>
+              </div>
+              <div className={styles.weeklyControls}>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                      <button 
+                        className={styles.weeklyBtn} 
+                        onClick={() => handleUpdateValue(path, Math.max(0, safeValue - 1))}
+                        disabled={safeValue <= 0}
+                      >
+                          <i className="fa-solid fa-minus"></i>
+                      </button>
+                      <button 
+                        className={styles.weeklyBtn} 
+                        onClick={() => handleUpdateValue(path, Math.min(max, safeValue + 1))}
+                        disabled={safeValue >= max}
+                      >
+                          <i className="fa-solid fa-plus"></i>
+                      </button>
+                  </div>
+                  <button 
+                    className={styles.weeklyMaxBtn}
+                    onClick={() => handleUpdateValue(path, max)}
+                  >
+                      MAX
+                  </button>
+              </div>
+          </div>
+      );
+  };
+
   if (loading) return <div className={styles.loading}>로딩중...</div>;
   if (!activeHomework) return null; // Should have at least one character
 
@@ -368,71 +425,27 @@ export default function HomeworkClient() {
 
                         <h3 className={styles.sectionTitle}>던전</h3>
                         <div className={styles.taskGrid}>
-                            <ArrayTaskCard title="검은 달의 교단 (3회)" path="daily.blackHole" values={activeHomework.daily.blackHole} />
-                            <ArrayTaskCard title="소환의 징표 (2회)" path="daily.summoningBadge" values={activeHomework.daily.summoningBadge} />
-                            <TaskCard title="심연의 코일" path="daily.deepDungeon" value={activeHomework.daily.deepDungeon} icon="fa-solid fa-dungeon" color="#5856D6" />
-                            <TaskCard title="망령의 탑" path="daily.tower" value={activeHomework.daily.tower} icon="fa-solid fa-chess-rook" color="#AF52DE" />
                             <TaskCard title="요일 던전" path="daily.dailyDungeon" value={activeHomework.daily.dailyDungeon} icon="fa-regular fa-calendar" />
+                            <TaskCard title="은동전" path="daily.silverCoin" value={activeHomework.daily.silverCoin} icon="fa-solid fa-coins" color="#A9A9A9" />
+                            <TaskCard title="심층 던전" path="daily.deepDungeon" value={activeHomework.daily.deepDungeon} icon="fa-solid fa-dungeon" color="#5856D6" />
                         </div>
 
                         <h3 className={styles.sectionTitle}>상점 & 교환</h3>
                         <div className={styles.taskGrid}>
-                            <TaskCard title="일일 의상 (무료)" path="daily.dailyGift" value={activeHomework.daily.dailyGift} icon="fa-solid fa-shirt" color="#FF2D55" />
-                            <TaskCard title="퍼거스 광석 교환" path="daily.fergusOre" value={activeHomework.daily.fergusOre} icon="fa-solid fa-gem" color="#5AC8FA" />
-                            <TaskCard title="엔델리온 축복의 포션" path="daily.endelyonHolyWater" value={activeHomework.daily.endelyonHolyWater} icon="fa-solid fa-flask" color="#34C759" />
-                            {/* Crystal Box Counter */}
-                            <div 
-                                className={`${styles.taskCard}`}
-                                onClick={() => handleToggle('daily.crystalBox', activeHomework.daily.crystalBox)}
-                            >
-                                <div className={styles.taskIcon} style={{ background: activeHomework.daily.crystalBox >= 10 ? '#34C759' : '#eee', color: activeHomework.daily.crystalBox >= 10 ? 'white' : '#999' }}>
-                                    <i className="fa-solid fa-cube"></i>
-                                </div>
-                                <div className={styles.taskInfo}>
-                                    <div className={styles.taskTitle}>수정 상자 (10회)</div>
-                                    <div className={styles.taskStatus}>{activeHomework.daily.crystalBox}/10 완료</div>
-                                </div>
-                            </div>
+                            <TaskCard title="보석 상자" path="daily.gemBox" value={activeHomework.daily.gemBox} icon="fa-solid fa-gem" color="#5AC8FA" />
+                            <TaskCard title="무료 상품" path="daily.dailyGift" value={activeHomework.daily.dailyGift} icon="fa-solid fa-gift" color="#FF2D55" />
                         </div>
                       </>
                   )}
 
                   {activeTab === 'weekly' && (
-                      <>
-                        <h3 className={styles.sectionTitle}>주간 미션</h3>
-                        <div className={styles.taskGrid}>
-                            <TaskCard title="주간 미션" path="weekly.weeklyMission" value={activeHomework.weekly.weeklyMission} icon="fa-regular fa-flag" color="#FF3B30" />
-                        </div>
-
-                        <h3 className={styles.sectionTitle}>길드 협동</h3>
-                        <div className={styles.taskGrid}>
-                             <ArrayTaskCard title="길드 미션 (6단계)" path="weekly.guildMission" values={activeHomework.weekly.guildMission} />
-                        </div>
-
-                        <h3 className={styles.sectionTitle}>필드 보스</h3>
-                        <div className={styles.taskGrid}>
-                            <TaskCard title="페리" path="weekly.fieldBosses.peri" value={activeHomework.weekly.fieldBosses.peri} icon="fa-solid fa-dragon" color="#FF3B30" />
-                            <TaskCard title="크라브" path="weekly.fieldBosses.crabvach" value={activeHomework.weekly.fieldBosses.crabvach} icon="fa-solid fa-spider" color="#AF52DE" />
-                            <TaskCard title="크라마" path="weekly.fieldBosses.krama" value={activeHomework.weekly.fieldBosses.krama} icon="fa-solid fa-skull" color="#5856D6" />
-                            <TaskCard title="드로네" path="weekly.fieldBosses.drohnenem" value={activeHomework.weekly.fieldBosses.drohnenem} icon="fa-solid fa-bug" color="#FF9500" />
-                        </div>
-
-                        <h3 className={styles.sectionTitle}>심연 & 레이드</h3>
-                        <div className={styles.taskGrid}>
-                            <TaskCard title="복원된 유적 (심연)" path="weekly.sunkenRuins" value={activeHomework.weekly.sunkenRuins} icon="fa-solid fa-landmark" color="#0071E3" />
-                            <TaskCard title="붕괴된 제단 (심연)" path="weekly.collapsedAltar" value={activeHomework.weekly.collapsedAltar} icon="fa-solid fa-cube" color="#0071E3" />
-                            <TaskCard title="파괴의 장소 (심연)" path="weekly.hallOfDestruction" value={activeHomework.weekly.hallOfDestruction} icon="fa-solid fa-fire" color="#FF3B30" />
-                            <TaskCard title="글라스 기브넨 (레이드)" path="weekly.glasGhaibhleann" value={activeHomework.weekly.glasGhaibhleann} icon="fa-solid fa-ghost" color="#AF52DE" />
-                            <TaskCard title="가디언 (레이드)" path="weekly.guardian" value={activeHomework.weekly.guardian} icon="fa-solid fa-shield-halved" color="#FF9500" />
-                            <TaskCard title="벨라스트 (레이드)" path="weekly.bellast" value={activeHomework.weekly.bellast} icon="fa-solid fa-person-military-rifle" color="#34C759" />
-                        </div>
-                        
-                        <h3 className={styles.sectionTitle}>주간 상점</h3>
-                        <div className={styles.taskGrid}>
-                            <TaskCard title="주간 상점 구매" path="weekly.weeklyShop" value={activeHomework.weekly.weeklyShop} icon="fa-solid fa-cart-shopping" color="#0071E3" />
-                            <TaskCard title="고급 인장 교환" path="weekly.advancedSeal" value={activeHomework.weekly.advancedSeal} icon="fa-solid fa-certificate" color="#FFCC00" />
-                        </div>
-                      </>
+                      <div className={styles.taskGrid} style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
+                        <WeeklyCounter title="결계" path="weekly.barrier" value={activeHomework.weekly.barrier} max={7} />
+                        <WeeklyCounter title="검은 구멍" path="weekly.blackHole" value={activeHomework.weekly.blackHole} max={7} />
+                        <WeeklyCounter title="필드 보스" path="weekly.fieldBoss" value={activeHomework.weekly.fieldBoss} max={4} />
+                        <WeeklyCounter title="어비스" path="weekly.abyss" value={activeHomework.weekly.abyss} max={3} />
+                        <WeeklyCounter title="레이드" path="weekly.raid" value={activeHomework.weekly.raid} max={3} />
+                      </div>
                   )}
               </div>
           </div>

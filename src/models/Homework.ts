@@ -11,37 +11,20 @@ export interface IHomeworkDocument extends Document, Omit<IHomeworkData, '_id' |
 
 const DailyTasksSchema = new Schema({
   dailyMission: { type: Boolean, default: false },
-  blackHole: { type: [Boolean], default: [false, false, false] },
-  summoningBadge: { type: [Boolean], default: [false, false] },
-  deepDungeon: { type: Boolean, default: false },
-  tower: { type: Boolean, default: false },
   dailyDungeon: { type: Boolean, default: false },
+  silverCoin: { type: Boolean, default: false },
+  deepDungeon: { type: Boolean, default: false },
   partTimeJob: { type: Boolean, default: false },
   dailyGift: { type: Boolean, default: false },
-  crystalBox: { type: Number, default: 0 },
-  fergusOre: { type: Boolean, default: false },
-  endelyonHolyWater: { type: Boolean, default: false },
-}, { _id: false });
-
-const WeeklyBossesSchema = new Schema({
-    peri: { type: Boolean, default: false },
-    crabvach: { type: Boolean, default: false },
-    krama: { type: Boolean, default: false },
-    drohnenem: { type: Boolean, default: false },
+  gemBox: { type: Boolean, default: false },
 }, { _id: false });
 
 const WeeklyTasksSchema = new Schema({
-  weeklyMission: { type: Boolean, default: false },
-  guildMission: { type: [Boolean], default: [false, false, false, false, false, false] },
-  fieldBosses: { type: WeeklyBossesSchema, default: () => ({}) },
-  sunkenRuins: { type: Boolean, default: false },
-  collapsedAltar: { type: Boolean, default: false },
-  hallOfDestruction: { type: Boolean, default: false },
-  glasGhaibhleann: { type: Boolean, default: false },
-  guardian: { type: Boolean, default: false },
-  bellast: { type: Boolean, default: false },
-  weeklyShop: { type: Boolean, default: false },
-  advancedSeal: { type: Boolean, default: false },
+  barrier: { type: Number, default: 0 },
+  blackHole: { type: Number, default: 0 },
+  fieldBoss: { type: Number, default: 0 },
+  abyss: { type: Number, default: 0 },
+  raid: { type: Number, default: 0 },
 }, { _id: false });
 
 const HomeworkSchema = new Schema<IHomeworkDocument>(

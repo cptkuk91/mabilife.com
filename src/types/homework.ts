@@ -3,44 +3,23 @@ export interface IDailyTasks {
   // Missions
   dailyMission: boolean;
   // Dungeons
-  blackHole: boolean[]; // 3 steps
-  summoningBadge: boolean[]; // 2 steps
-  deepDungeon: boolean;
-  tower: boolean;
-  dailyDungeon: boolean;
+  // Dungeons
+  dailyDungeon: boolean;    // 요일 던전
+  silverCoin: boolean;      // 은동전
+  deepDungeon: boolean;     // 심층 던전
   // Activities
   partTimeJob: boolean;
   // Shop/Exchange
-  dailyGift: boolean; // Free fashion
-  crystalBox: number; // 0-10
-  fergusOre: boolean;
-  endelyonHolyWater: boolean;
-}
-
-export interface IWeeklyBosses {
-    peri: boolean;
-    crabvach: boolean;
-    krama: boolean;
-    drohnenem: boolean;
+  dailyGift: boolean; // 무료 상품
+  gemBox: boolean;    // 보석 상자
 }
 
 export interface IWeeklyTasks {
-  // Missions
-  weeklyMission: boolean;
-  guildMission: boolean[]; // 6 stages
-  // Bosses
-  fieldBosses: IWeeklyBosses;
-  // Abyss
-  sunkenRuins: boolean;
-  collapsedAltar: boolean;
-  hallOfDestruction: boolean;
-  // Raids
-  glasGhaibhleann: boolean;
-  guardian: boolean;
-  bellast: boolean;
-  // Shop/Exchange
-  weeklyShop: boolean;
-  advancedSeal: boolean; // Example exchange
+  barrier: number;   // 결계 (0-7)
+  blackHole: number; // 검은 구멍 (0-7)
+  fieldBoss: number; // 필드보스 (0-4)
+  abyss: number;     // 어비스 (0-3)
+  raid: number;      // 레이드 (0-3)
 }
 
 // Pure data interface without Mongoose dependencies
