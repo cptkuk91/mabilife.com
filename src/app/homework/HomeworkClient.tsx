@@ -442,8 +442,8 @@ export default function HomeworkClient() {
                       <div className={styles.taskGrid} style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
                         <WeeklyCounter title="결계" path="weekly.barrier" value={activeHomework.weekly.barrier} max={7} />
                         <WeeklyCounter title="검은 구멍" path="weekly.blackHole" value={activeHomework.weekly.blackHole} max={7} />
-                        <WeeklyCounter title="필드 보스" path="weekly.fieldBoss" value={activeHomework.weekly.fieldBoss} max={4} />
-                        <WeeklyCounter title="어비스" path="weekly.abyss" value={activeHomework.weekly.abyss} max={3} />
+                        <WeeklyCounter title="필드 보스" path="weekly.fieldBoss" value={activeHomework.weekly.fieldBoss} max={3} />
+                        <WeeklyCounter title="어비스" path="weekly.abyss" value={activeHomework.weekly.abyss} max={4} />
                         <WeeklyCounter title="레이드" path="weekly.raid" value={activeHomework.weekly.raid} max={3} />
                       </div>
                   )}
