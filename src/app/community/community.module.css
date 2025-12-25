@@ -1023,8 +1023,13 @@
 .tTitle {
   font-weight: 600;
   font-size: 14px;
-  display: block;
   margin-bottom: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  -webkit-box-orient: vertical;
 }
 
 .tMeta {
