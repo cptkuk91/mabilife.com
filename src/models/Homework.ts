@@ -20,11 +20,11 @@ const DailyTasksSchema = new Schema({
 }, { _id: false });
 
 const WeeklyTasksSchema = new Schema({
-  barrier: { type: Number, default: 0 },
-  blackHole: { type: Number, default: 0 },
-  fieldBoss: { type: Number, default: 0 },
-  abyss: { type: Number, default: 0 },
-  raid: { type: Number, default: 0 },
+  barrier: { type: Boolean, default: false },
+  blackHole: { type: Boolean, default: false },
+  fieldBoss: { type: Boolean, default: false },
+  abyss: { type: Boolean, default: false },
+  raid: { type: Boolean, default: false },
 }, { _id: false });
 
 const HomeworkSchema = new Schema<IHomeworkDocument>(

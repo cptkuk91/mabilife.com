@@ -64,11 +64,11 @@ async function checkAndReset(homework: any) {
     if (new Date(homework.weekStartDate).getTime() < currentWeeklyReset.getTime()) {
       console.log('[checkAndReset] WEEKLY RESET TRIGGERED!');
       homework.weekly = {
-          barrier: 0,
-          blackHole: 0,
-          fieldBoss: 0,
-          abyss: 0,
-          raid: 0,
+          barrier: false,
+          blackHole: false,
+          fieldBoss: false,
+          abyss: false,
+          raid: false,
       };
       // Reset daily too
       homework.daily = {
@@ -223,15 +223,34 @@ export async function toggleTask(homeworkId: string, path: string, value: any) {
 
     await connectToDatabase();
 
-    console.log('[toggleTask] Updating...', { _id: homeworkId, userId: (session.user as any).id });
+    const userId = (session.user as any).id;
     
-    const result = await Homework.findOneAndUpdate(
-        { _id: homeworkId, userId: (session.user as any).id },
+    console.log('[toggleTask] Updating...', { _id: homeworkId, userId });
+    
+    // Try with string ID first (for backwards compatibility)
+    let result = await Homework.findOneAndUpdate(
+        { _id: homeworkId, userId: userId },
         { $set: { [path]: value } },
         { new: true }
     );
+    
+    // If not found, try with ObjectId
+    if (!result) {
+        const mongoose = await import('mongoose');
+        try {
+            const objectId = new mongoose.Types.ObjectId(homeworkId);
+            const userObjectId = new mongoose.Types.ObjectId(userId);
+            result = await Homework.findOneAndUpdate(
+                { _id: objectId, userId: userObjectId },
+                { $set: { [path]: value } },
+                { new: true }
+            );
+        } catch (e) {
+            console.log('[toggleTask] ObjectId conversion failed');
+        }
+    }
 
-    console.log('[toggleTask] Result:', result ? 'Updated' : 'Not found');
+    console.log('[toggleTask] Result:', result ? JSON.stringify(result.weekly) : 'Not found');
 
     if (!result) return { success: false, error: 'Failed to update' };
 

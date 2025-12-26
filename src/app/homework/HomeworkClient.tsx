@@ -46,11 +46,11 @@ export default function HomeworkClient() {
       gemBox: false,
     },
     weekly: {
-      barrier: 0,
-      blackHole: 0,
-      fieldBoss: 0,
-      abyss: 0,
-      raid: 0,
+      barrier: false,
+      blackHole: false,
+      fieldBoss: false,
+      abyss: false,
+      raid: false,
     },
     memo: '',
   };
@@ -170,42 +170,18 @@ export default function HomeworkClient() {
   const calculateProgress = (type: 'daily' | 'weekly') => {
     if (!activeHomework) return 0;
     
-    if (type === 'daily') {
-      // Daily tasks are booleans
-      let total = 0;
-      let completed = 0;
-      
-      const daily = activeHomework.daily;
-      for (const key in daily) {
-        if (typeof (daily as any)[key] === 'boolean') {
-          total++;
-          if ((daily as any)[key]) completed++;
-        }
+    let total = 0;
+    let completed = 0;
+    
+    const tasks = activeHomework[type];
+    for (const key in tasks) {
+      if (typeof (tasks as any)[key] === 'boolean') {
+        total++;
+        if ((tasks as any)[key]) completed++;
       }
-      
-      return total === 0 ? 0 : Math.round((completed / total) * 100);
-    } else {
-      // Weekly tasks are counters with max values
-      const maxValues: Record<string, number> = {
-        barrier: 7,
-        blackHole: 7,
-        fieldBoss: 3,
-        abyss: 4,
-        raid: 3,
-      };
-      
-      let total = 0;
-      let completed = 0;
-      
-      const weekly = activeHomework.weekly;
-      for (const key in maxValues) {
-        total += maxValues[key];
-        const val = (weekly as any)[key];
-        completed += typeof val === 'number' ? Math.min(val, maxValues[key]) : 0;
-      }
-      
-      return total === 0 ? 0 : Math.round((completed / total) * 100);
     }
+    
+    return total === 0 ? 0 : Math.round((completed / total) * 100);
   };
 
   const handleToggle = async (path: string, currentVal: any) => {
@@ -519,13 +495,16 @@ export default function HomeworkClient() {
                   )}
 
                   {activeTab === 'weekly' && (
-                      <div className={styles.taskGrid} style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
-                        <WeeklyCounter title="결계" path="weekly.barrier" value={activeHomework.weekly.barrier} max={7} />
-                        <WeeklyCounter title="검은 구멍" path="weekly.blackHole" value={activeHomework.weekly.blackHole} max={7} />
-                        <WeeklyCounter title="필드 보스" path="weekly.fieldBoss" value={activeHomework.weekly.fieldBoss} max={3} />
-                        <WeeklyCounter title="어비스" path="weekly.abyss" value={activeHomework.weekly.abyss} max={4} />
-                        <WeeklyCounter title="레이드" path="weekly.raid" value={activeHomework.weekly.raid} max={3} />
-                      </div>
+                      <>
+                        <h3 className={styles.sectionTitle}>주간 숙제</h3>
+                        <div className={styles.taskGrid}>
+                            <TaskCard title="결계" path="weekly.barrier" value={activeHomework.weekly.barrier} icon="fa-solid fa-shield" color="#0071E3" />
+                            <TaskCard title="검은 구멍" path="weekly.blackHole" value={activeHomework.weekly.blackHole} icon="fa-solid fa-circle" color="#1C1C1E" />
+                            <TaskCard title="필드 보스" path="weekly.fieldBoss" value={activeHomework.weekly.fieldBoss} icon="fa-solid fa-dragon" color="#FF3B30" />
+                            <TaskCard title="어비스" path="weekly.abyss" value={activeHomework.weekly.abyss} icon="fa-solid fa-dungeon" color="#5856D6" />
+                            <TaskCard title="레이드" path="weekly.raid" value={activeHomework.weekly.raid} icon="fa-solid fa-users" color="#FF9500" />
+                        </div>
+                      </>
                   )}
               </div>
           </div>

@@ -15,11 +15,11 @@ export interface IDailyTasks {
 }
 
 export interface IWeeklyTasks {
-  barrier: number;   // 결계 (0-7)
-  blackHole: number; // 검은 구멍 (0-7)
-  fieldBoss: number; // 필드보스 (0-4)
-  abyss: number;     // 어비스 (0-3)
-  raid: number;      // 레이드 (0-3)
+  barrier: boolean;    // 결계
+  blackHole: boolean;  // 검은 구멍
+  fieldBoss: boolean;  // 필드 보스
+  abyss: boolean;      // 어비스
+  raid: boolean;       // 레이드
 }
 
 // Pure data interface without Mongoose dependencies
