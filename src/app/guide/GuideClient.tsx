@@ -114,10 +114,6 @@ export default function GuideClient() {
           <div className={styles.hubTitle}>공략</div>
           <div className={styles.hubSubtitle}>에린 생활에 필요한 모든 지식</div>
         </div>
-        <button className={styles.writeBtn} onClick={handleWriteClick}>
-          <i className="fa-solid fa-pen-to-square"></i>
-          공략 작성
-        </button>
       </header>
 
       {/* Filter Tabs */}
@@ -255,6 +251,11 @@ export default function GuideClient() {
           })
         )}
       </div>
+      
+      {/* Floating Write Button */}
+      <button className={styles.writeBtn} onClick={handleWriteClick} title="공략 작성">
+        <i className="fa-solid fa-pen-to-square"></i>
+      </button>
     </div>
   );
 }
