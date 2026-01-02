@@ -2,6 +2,7 @@
 
 import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useSession } from "next-auth/react";
 import { getPost, incrementViewCount, deletePost, updatePost, toggleLike, getTrendingPosts, TrendingPeriod } from "@/actions/post";
 import { getComments, createComment, deleteComment, updateComment, toggleCommentLike, acceptComment } from "@/actions/comment";
@@ -362,7 +363,7 @@ export default function PostDetailClient({ id }: { id: string }) {
           <div className={styles.postDetailHeader}>
             <div className={styles.cardHeader} style={{ marginBottom: 0, flex: 1 }}>
               <div className={styles.userMeta}>
-                <img src={post.author.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.author.id}`} className={styles.uAvatar} alt="User Avatar" />
+                <Image src={post.author.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.author.id}`} className={styles.uAvatar} alt="User Avatar" width={40} height={40} />
                 <div className={styles.uInfo}>
                   <span className={styles.uName}>{post.author.name}</span>
                   <span className={styles.uTime}>{new Date(post.createdAt).toLocaleString()}</span>
@@ -460,7 +461,16 @@ export default function PostDetailClient({ id }: { id: string }) {
           </div>
           
           {post.images && post.images.map((url: string, index: number) => (
-            <img key={index} src={url} alt={`Post Image ${index + 1}`} className={styles.postImg} />
+            <Image 
+              key={index} 
+              src={url} 
+              alt={`Post Image ${index + 1}`} 
+              className={styles.postImg} 
+              width={0} 
+              height={0} 
+              sizes="100vw" 
+              style={{ width: '100%', height: 'auto' }} 
+            />
           ))}
 
           <div className={styles.cardFooter}>
@@ -488,10 +498,12 @@ export default function PostDetailClient({ id }: { id: string }) {
 
           {/* Comment Input */}
           <div className={styles.commentInputWrapper}>
-            <img
+            <Image
               src={session?.user?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=anonymous`}
               className={styles.commentAvatar}
               alt="Your Avatar"
+              width={32}
+              height={32}
             />
             <div className={styles.commentInputBox}>
               <textarea
@@ -524,10 +536,12 @@ export default function PostDetailClient({ id }: { id: string }) {
                   )}
                   {/* Main Comment */}
                   <div className={styles.commentContent}>
-                    <img
+                    <Image
                       src={comment.author.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.author.id}`}
                       className={styles.commentAvatar}
                       alt="Commenter"
+                      width={32}
+                      height={32}
                     />
                     <div className={styles.commentBody}>
                       <div className={styles.commentHeader}>
@@ -674,10 +688,12 @@ export default function PostDetailClient({ id }: { id: string }) {
                     <div className={styles.repliesList}>
                       {comment.replies.map((reply: any) => (
                         <div key={reply._id} className={styles.replyItem}>
-                          <img
+                          <Image
                             src={reply.author.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${reply.author.id}`}
                             className={styles.replyAvatar}
                             alt="Replier"
+                            width={24}
+                            height={24}
                           />
                           <div className={styles.commentBody}>
                             <div className={styles.commentHeader}>

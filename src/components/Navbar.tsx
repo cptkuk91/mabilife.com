@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { useState, useRef, useEffect } from "react";
@@ -81,10 +82,12 @@ export default function Navbar() {
 
             {session ? (
               <div className="nav-profile-container" ref={dropdownRef}>
-                <img
+                <Image
                   src={session.user?.image || "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"}
                   alt="Profile"
                   className="nav-profile-img"
+                  width={34}
+                  height={34}
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 />
 
@@ -179,10 +182,12 @@ export default function Navbar() {
               className={`dock-item dock-profile ${pathname === "/profile" ? "active" : ""}`}
               onClick={() => setIsMobileDropdownOpen(!isMobileDropdownOpen)}
             >
-              <img
+              <Image
                 src={session.user?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${(session.user as any)?.id || 'user'}`}
                 alt="Profile"
                 className="dock-profile-img"
+                width={28}
+                height={28}
               />
               <span>MY</span>
             </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { getGuides } from "@/actions/guide";
@@ -194,10 +195,16 @@ export default function GuideClient() {
           // Grid View
           guides.map((guide, index) => (
             <Link href={`/guide/${guide._id}`} key={guide._id} className={styles.guideCard}>
-              <div
-                className={styles.cardThumb}
-                style={{ backgroundImage: `url(${guide.thumbnail || getPlaceholderImage(index)})` }}
-              />
+              <div className={styles.cardThumb}>
+                <Image
+                  src={guide.thumbnail || getPlaceholderImage(index)}
+                  alt={guide.title}
+                  fill
+                  className={styles.thumbImage}
+                  sizes="(max-width: 600px) 100vw, (max-width: 900px) 50vw, 33vw"
+                  priority={index < 3}
+                />
+              </div>
               <div className={styles.cardBody}>
                 <div className={styles.cardCat}>{guide.category}</div>
                 <div className={styles.cardT}>{guide.title}</div>

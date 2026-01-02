@@ -105,14 +105,24 @@
 .addCharForm {
   display: flex;
   gap: 8px;
+  align-items: center;
+  width: 100%;
+  max-width: 300px; /* Limit width on larger screens to keep it compact */
+}
+
+@media (max-width: 480px) {
+  .addCharForm {
+    max-width: 100%; /* Allow full width on mobile */
+  }
 }
 
 .charInput {
   flex: 1;
+  min-width: 0; /* Allow shrinking */
   padding: 8px 12px;
   border-radius: 8px;
   border: 1px solid var(--border);
-  font-size: 14px;
+  font-size: 16px; /* Prevent iOS zoom */
   outline: none;
 }
 
@@ -129,6 +139,8 @@
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  flex-shrink: 0; /* Prevent button from shrinking */
+  white-space: nowrap;
 }
 
 .deleteBtn {
@@ -139,6 +151,12 @@
 
 .deleteBtn:hover {
   opacity: 1;
+}
+
+/* Ensure cancel button (using charChip class) also doesn't shrink in this context */
+.addCharForm .charChip {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .grid {

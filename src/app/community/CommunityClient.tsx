@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { getPresignedUrlAction } from "@/actions/upload";
@@ -463,7 +464,7 @@ export default function CommunityClient() {
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
             >
-              <img src={session?.user?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${(session?.user as any)?.id || 'Me'}`} className={styles.myAvatar} alt="My Avatar" />
+              <Image src={session?.user?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${(session?.user as any)?.id || 'Me'}`} className={styles.myAvatar} alt="My Avatar" width={40} height={40} />
               
               <div className={styles.inputContainer}>
                 {/* Highlights Overlay */}
@@ -608,7 +609,7 @@ export default function CommunityClient() {
             >
               <div className={styles.cardHeader}>
                 <div className={styles.userMeta}>
-                  <img src={post.author.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.author.id}`} className={styles.uAvatar} alt="User Avatar" />
+                  <Image src={post.author.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.author.id}`} className={styles.uAvatar} alt="User Avatar" width={40} height={40} />
                   <div className={styles.uInfo}>
                     <span className={styles.uName}>{post.author.name}</span>
                     <span className={styles.uTime}>
@@ -760,7 +761,15 @@ export default function CommunityClient() {
               
               {post.images && post.images.length > 0 && (
                 <div className={styles.imagePlaceholder} style={{ background: 'none', height: 'auto', display: 'block' }}>
-                  <img src={post.images[0]} alt="Post Image" className={styles.postImg} />
+                  <Image 
+                    src={post.images[0]} 
+                    alt="Post Image" 
+                    className={styles.postImg} 
+                    width={0} 
+                    height={0} 
+                    sizes="100vw" 
+                    style={{ width: '100%', height: 'auto' }} 
+                  />
                   {post.images.length > 1 && (
                     <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
                       + {post.images.length - 1} more images
@@ -777,10 +786,12 @@ export default function CommunityClient() {
                     <span>채택된 답변</span>
                   </div>
                   <div className={styles.acceptedAnswerContent}>
-                    <img
+                    <Image
                       src={post.acceptedComment.author.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.acceptedComment.author.id}`}
                       className={styles.acceptedAnswerAvatar}
                       alt="Answerer"
+                      width={32}
+                      height={32}
                     />
                     <div className={styles.acceptedAnswerText}>
                       <span className={styles.acceptedAnswerAuthor}>{post.acceptedComment.author.name}</span>
