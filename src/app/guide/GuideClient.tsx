@@ -190,7 +190,7 @@ export default function GuideClient() {
         ) : viewMode === 'grid' ? (
           // Grid View
           guides.map((guide, index) => (
-            <Link href={`/guide/${guide._id}`} key={guide._id} className={styles.guideCard}>
+            <Link href={`/guide/${guide.slug || guide._id}`} key={guide._id} className={styles.guideCard}>
               <div className={styles.cardThumb}>
                 <Image
                   src={guide.thumbnail || getPlaceholderImage(index)}
@@ -223,7 +223,7 @@ export default function GuideClient() {
           guides.map((guide) => {
             const style = categoryStyles[guide.category] || { icon: "fa-lightbulb", bg: "#EAF4FF", color: "#0071E3" };
             return (
-              <Link href={`/guide/${guide._id}`} key={guide._id} className={styles.listItem}>
+              <Link href={`/guide/${guide.slug || guide._id}`} key={guide._id} className={styles.listItem}>
                 <div className={styles.listIcon} style={{ background: style.bg, color: style.color }}>
                   <i className={`fa-solid ${style.icon}`}></i>
                 </div>

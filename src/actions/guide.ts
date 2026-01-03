@@ -20,6 +20,18 @@ export interface GuideResponse {
   id?: string;
 }
 
+// Helper to generate slug
+function generateSlug(title: string): string {
+  return title
+    .trim()
+    .replace(/\s+/g, '-') // Replace spaces with hyphens
+    // Remove special characters but keep Korean, alphanumeric, and hyphens. 
+    // Usually we might want to keep more, but this is a safe start.
+    // If you want to keep everything and just replace spaces, that's also an option for modern browsers.
+    // However, clean URLs usually avoid punctuation.
+    .replace(/[^a-zA-Z0-9가-힣-]/g, '');
+}
+
 // Create a new guide
 export async function createGuide(input: CreateGuideInput): Promise<GuideResponse> {
   try {
@@ -30,6 +42,17 @@ export async function createGuide(input: CreateGuideInput): Promise<GuideRespons
     }
 
     const Guide = await getGuideModel();
+
+    // Generate unique slug
+    let slug = generateSlug(input.title);
+    let counter = 1;
+    let originalSlug = slug;
+    
+    // Check for duplicate slug
+    while (await Guide.findOne({ slug })) {
+      slug = `${originalSlug}-${counter}`;
+      counter++;
+    }
 
     const guide = await Guide.create({
       title: input.title,
@@ -42,6 +65,7 @@ export async function createGuide(input: CreateGuideInput): Promise<GuideRespons
         name: session.user.name || "익명",
         image: session.user.image || undefined,
       },
+      slug: slug,
     });
 
     revalidatePath("/guide");
@@ -49,7 +73,10 @@ export async function createGuide(input: CreateGuideInput): Promise<GuideRespons
 
     return {
       success: true,
-      id: guide._id.toString(),
+      id: guide.slug, // Return slug instead of ID if possible, or we return ID and let client handle redirect? 
+      // Existing code expects ID likely. But we want to navigate to slug. 
+      // Let's return the slug as `id` property or add a `slug` property to response. 
+      // The interface GuideResponse has `id?: string`. I will send slug in `id` if that's what's used for redirection.
     };
   } catch (error) {
     console.error("Create guide error:", error);
@@ -110,27 +137,63 @@ export async function getGuides(options?: {
   }
 }
 
-// Get a single guide by ID
-export async function getGuideById(id: string): Promise<GuideResponse> {
+// Get a single guide by ID or Slug
+export async function getGuideById(idOrSlug: string): Promise<GuideResponse> {
   try {
     const Guide = await getGuideModel();
+    let guide;
 
-    const guide = await Guide.findByIdAndUpdate(
-      id,
-      { $inc: { views: 1 } },
-      { new: true, timestamps: false }
-    ).lean();
+    // Check if it's a valid ObjectId
+    const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(idOrSlug);
+
+    if (isValidObjectId) {
+      guide = await Guide.findByIdAndUpdate(
+        idOrSlug,
+        { $inc: { views: 1 } },
+        { new: true, timestamps: false }
+      ); // Do not lean yet, we might need to save
+
+      // Lazy migration: if found by ID but no slug, generate one
+      if (guide && !guide.slug) {
+        let slug = generateSlug(guide.title);
+        let counter = 1;
+        let originalSlug = slug;
+        
+        while (await Guide.findOne({ slug, _id: { $ne: guide._id } })) {
+          slug = `${originalSlug}-${counter}`;
+          counter++;
+        }
+        
+        guide.slug = slug;
+        await guide.save();
+      }
+    } 
+
+    // If not found by ID or not a valid ID (or just trying to find by slug), try finding by slug
+    // Note: if we found it by ID above, we skip this
+    if (!guide) {
+      // Decode URI component just in case it was passed encoded
+      const decodedSlug = decodeURIComponent(idOrSlug);
+      guide = await Guide.findOneAndUpdate(
+        { slug: decodedSlug },
+        { $inc: { views: 1 } },
+        { new: true, timestamps: false }
+      );
+    }
 
     if (!guide) {
       return { success: false, error: "가이드를 찾을 수 없습니다." };
     }
 
+    // Convert to plain object if not already (from lean or save)
+    const guideObj = guide.toObject ? guide.toObject() : guide;
+
     // 직렬화하여 클라이언트로 전달
     const serializedGuide = {
-      ...guide,
-      _id: guide._id.toString(),
-      createdAt: guide.createdAt.toISOString(),
-      updatedAt: guide.updatedAt.toISOString(),
+      ...guideObj,
+      _id: guideObj._id.toString(),
+      createdAt: guideObj.createdAt.toISOString(),
+      updatedAt: guideObj.updatedAt.toISOString(),
     };
 
     return { success: true, data: serializedGuide as any };

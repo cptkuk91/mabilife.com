@@ -47,8 +47,13 @@ export default function TipDetailClient({ id }: { id: string }) {
 
   useEffect(() => {
     loadGuide();
-    loadComments();
   }, [id]);
+
+  useEffect(() => {
+    if (guide?._id) {
+      loadComments();
+    }
+  }, [guide]);
 
   // session이 로드된 후 좋아요/북마크 상태 업데이트
   useEffect(() => {
@@ -57,7 +62,12 @@ export default function TipDetailClient({ id }: { id: string }) {
       setIsLiked(guide.likedBy?.includes(userId) || false);
       setIsBookmarked(guide.bookmarkedBy?.includes(userId) || false);
     }
-  }, [session, guide]);
+
+    // URL update to slug if visited by ID
+    if (guide?.slug && id !== guide.slug) {
+       window.history.replaceState(null, "", `/guide/${guide.slug}`);
+    }
+  }, [session, guide, id]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -86,7 +96,8 @@ export default function TipDetailClient({ id }: { id: string }) {
   };
 
   const loadComments = async () => {
-    const result = await getGuideComments(id);
+    if (!guide?._id) return;
+    const result = await getGuideComments(guide._id);
     if (result.success && result.data) {
       setComments(result.data);
     }
@@ -98,7 +109,9 @@ export default function TipDetailClient({ id }: { id: string }) {
       return;
     }
 
-    const result = await toggleGuideLike(id);
+    if (!guide?._id) return;
+
+    const result = await toggleGuideLike(guide._id);
     if (result.success) {
       if (isLiked) {
         setLikeCount((prev) => prev - 1);
@@ -115,7 +128,9 @@ export default function TipDetailClient({ id }: { id: string }) {
       return;
     }
 
-    const result = await toggleGuideBookmark(id);
+    if (!guide?._id) return;
+
+    const result = await toggleGuideBookmark(guide._id);
     if (result.success) {
       setIsBookmarked(!isBookmarked);
     }
@@ -123,12 +138,14 @@ export default function TipDetailClient({ id }: { id: string }) {
 
   // Guide actions
   const handleEditGuide = () => {
-    router.push(`/guide/write?edit=${id}`);
+    if (!guide?._id) return;
+    router.push(`/guide/write?edit=${guide._id}`);
   };
 
   const handleDeleteGuide = async () => {
+    if (!guide?._id) return;
     setIsDeleting(true);
-    const result = await deleteGuide(id);
+    const result = await deleteGuide(guide._id);
     if (result.success) {
       router.push("/guide");
     } else {
@@ -146,9 +163,10 @@ export default function TipDetailClient({ id }: { id: string }) {
     }
 
     if (!newComment.trim()) return;
+    if (!guide?._id) return;
 
     setIsSubmitting(true);
-    const result = await createGuideComment(id, newComment.trim());
+    const result = await createGuideComment(guide._id, newComment.trim());
     if (result.success) {
       setNewComment("");
       loadComments();
@@ -163,9 +181,10 @@ export default function TipDetailClient({ id }: { id: string }) {
     }
 
     if (!replyContent.trim()) return;
+    if (!guide?._id) return;
 
     setIsSubmitting(true);
-    const result = await createGuideComment(id, replyContent.trim(), parentId);
+    const result = await createGuideComment(guide._id, replyContent.trim(), parentId);
     if (result.success) {
       setReplyContent("");
       setReplyingTo(null);
@@ -187,8 +206,9 @@ export default function TipDetailClient({ id }: { id: string }) {
 
   const handleSaveEditComment = async (commentId: string) => {
     if (!editCommentContent.trim()) return;
+    if (!guide?._id) return;
 
-    const result = await updateGuideComment(commentId, id, editCommentContent.trim());
+    const result = await updateGuideComment(commentId, guide._id, editCommentContent.trim());
     if (result.success) {
       setEditingCommentId(null);
       setEditCommentContent("");
@@ -206,9 +226,10 @@ export default function TipDetailClient({ id }: { id: string }) {
 
   const handleConfirmDeleteComment = async () => {
     if (!deletingCommentId) return;
+    if (!guide?._id) return;
 
     setIsDeletingComment(true);
-    const result = await deleteGuideComment(deletingCommentId, id);
+    const result = await deleteGuideComment(deletingCommentId, guide._id);
     if (result.success) {
       loadComments();
     } else {
@@ -225,7 +246,9 @@ export default function TipDetailClient({ id }: { id: string }) {
       return;
     }
 
-    const result = await toggleGuideCommentLike(commentId, id);
+    if (!guide?._id) return;
+
+    const result = await toggleGuideCommentLike(commentId, guide._id);
     if (result.success) {
       loadComments();
     }

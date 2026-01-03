@@ -86,7 +86,7 @@ export const metadata: Metadata = {
   },
   manifest: "/manifest.json",
   alternates: {
-    canonical: SITE_URL,
+    canonical: "./",
   },
   verification: {
     // google: "구글 서치 콘솔 인증 코드",

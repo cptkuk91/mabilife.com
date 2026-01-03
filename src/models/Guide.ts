@@ -20,6 +20,7 @@ export interface IGuide extends Document {
   isPublished: boolean;
   createdAt: Date;
   updatedAt: Date;
+  slug?: string;
 }
 
 const GuideSchema: Schema = new Schema({
@@ -39,6 +40,7 @@ const GuideSchema: Schema = new Schema({
   tags: [{ type: String }],
   thumbnail: { type: String },
   isPublished: { type: Boolean, default: true },
+  slug: { type: String, unique: true, sparse: true },
 }, {
   timestamps: true,
 });
