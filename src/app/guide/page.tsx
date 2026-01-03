@@ -10,6 +10,15 @@ export const metadata: Metadata = {
   openGraph: {
     title: "공략 | Mabi Life",
     description: "마비노기 모바일 초보 가이드, 전투/던전, 메인스트림, 생활 컨텐츠 공략을 확인하세요.",
+    url: `${SITE_URL}/guide`,
+    type: 'website',
+    images: [{ url: '/assets/og-image.png', width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: '공략 | Mabi Life',
+    description: '마비노기 모바일 초보 가이드, 전투/던전 공략을 확인하세요.',
+    images: ['/assets/og-image.png'],
   },
   alternates: {
     canonical: `${SITE_URL}/guide`,

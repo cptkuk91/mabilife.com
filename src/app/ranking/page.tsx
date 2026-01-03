@@ -5,7 +5,21 @@ const SITE_URL = "https://www.mabilife.com";
 
 export const metadata: Metadata = {
   title: '랭킹 | Mabi Life',
-  description: '마비노기 모바일 랭킹 정보를 확인하세요.',
+  description: '마비노기 모바일 서버별 전투력 랭킹을 확인하세요. 실시간 순위와 직업별 분포를 한눈에 볼 수 있습니다.',
+  keywords: ['마비노기 모바일 랭킹', '전투력 순위', '서버 랭킹', '직업별 랭킹'],
+  openGraph: {
+    title: '랭킹 | Mabi Life',
+    description: '마비노기 모바일 서버별 전투력 랭킹을 확인하세요. 실시간 순위와 직업별 분포를 한눈에 볼 수 있습니다.',
+    url: `${SITE_URL}/ranking`,
+    type: 'website',
+    images: [{ url: '/assets/og-image.png', width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: '랭킹 | Mabi Life',
+    description: '마비노기 모바일 서버별 전투력 랭킹을 확인하세요.',
+    images: ['/assets/og-image.png'],
+  },
   alternates: {
     canonical: `${SITE_URL}/ranking`,
   },
