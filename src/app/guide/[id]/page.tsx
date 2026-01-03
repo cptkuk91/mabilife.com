@@ -49,7 +49,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       images: thumbnail ? [thumbnail] : ["/assets/og-image.png"],
     },
     alternates: {
-      canonical: `${SITE_URL}/guide/${guide.slug || id}`,
+      canonical: `${SITE_URL}/guide/${encodeURIComponent(guide.slug || id)}`,
     },
   };
 }

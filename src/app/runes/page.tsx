@@ -3,9 +3,14 @@ import RunesClient from './RunesClient';
 import getRuneModel from '@/models/Rune';
 import { connectToDatabase } from '@/lib/mongodb';
 
+const SITE_URL = "https://www.mabilife.com";
+
 export const metadata: Metadata = {
   title: '직업별 추천 룬 | Mabi Life',
   description: '마비노기 모바일 직업별 추천 룬 정보를 확인하세요.',
+  alternates: {
+    canonical: `${SITE_URL}/runes`,
+  },
 };
 
 async function getRunes() {
