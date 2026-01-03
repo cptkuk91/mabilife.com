@@ -19,7 +19,7 @@ if (process.env.NODE_ENV !== 'production' && redis) {
 
 const getKey = (key: string) => {
   if (!REDIS_PREFIX) return key;
-  return REDIS_PREFIX.endsWith('/') ? REDIS_PREFIX + key : `${REDIS_PREFIX}/${key}`;
+  return REDIS_PREFIX.endsWith(':') ? REDIS_PREFIX + key : `${REDIS_PREFIX}:${key}`;
 };
 
 export async function getCache<T>(key: string): Promise<T | null> {
