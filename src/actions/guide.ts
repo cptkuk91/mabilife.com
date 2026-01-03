@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import getGuideModel, { IGuide } from "@/models/Guide";
 import getGuideCommentModel from "@/models/GuideComment";
 import { revalidatePath } from "next/cache";
+import { getCache, setCache, delCache, invalidateCachePattern } from "@/lib/redis";
 
 export interface CreateGuideInput {
   title: string;
@@ -26,9 +27,6 @@ function generateSlug(title: string): string {
     .trim()
     .replace(/\s+/g, '-') // Replace spaces with hyphens
     // Remove special characters but keep Korean, alphanumeric, and hyphens. 
-    // Usually we might want to keep more, but this is a safe start.
-    // If you want to keep everything and just replace spaces, that's also an option for modern browsers.
-    // However, clean URLs usually avoid punctuation.
     .replace(/[^a-zA-Z0-9가-힣-]/g, '');
 }
 
@@ -68,15 +66,15 @@ export async function createGuide(input: CreateGuideInput): Promise<GuideRespons
       slug: slug,
     });
 
+    // Invalidate list cache
+    await invalidateCachePattern('guides:list:*');
+
     revalidatePath("/guide");
     revalidatePath("/guide/tips");
 
     return {
       success: true,
-      id: guide.slug, // Return slug instead of ID if possible, or we return ID and let client handle redirect? 
-      // Existing code expects ID likely. But we want to navigate to slug. 
-      // Let's return the slug as `id` property or add a `slug` property to response. 
-      // The interface GuideResponse has `id?: string`. I will send slug in `id` if that's what's used for redirection.
+      id: guide.slug, 
     };
   } catch (error) {
     console.error("Create guide error:", error);
@@ -93,6 +91,15 @@ export async function getGuides(options?: {
   sort?: 'latest' | 'popular' | 'views';
 }): Promise<GuideResponse> {
   try {
+    // Generate cache key
+    const cacheKey = `guides:list:${JSON.stringify(options || {})}`;
+    
+    // Check cache
+    const cached = await getCache<any>(cacheKey);
+    if (cached) {
+      return { success: true, data: cached };
+    }
+
     const Guide = await getGuideModel();
 
     const query: Record<string, unknown> = { isPublished: true };
@@ -130,6 +137,9 @@ export async function getGuides(options?: {
       updatedAt: guide.updatedAt.toISOString(),
     }));
 
+    // Set cache (TTL 60 seconds)
+    await setCache(cacheKey, serializedGuides, 60);
+
     return { success: true, data: serializedGuides as any };
   } catch (error) {
     console.error("Get guides error:", error);
@@ -142,6 +152,30 @@ export async function getGuideById(idOrSlug: string): Promise<GuideResponse> {
   try {
     const Guide = await getGuideModel();
     let guide;
+
+    // Try cache first (Key: guide:detail:{idOrSlug})
+    // Note: If cached by ID, we might miss slug lookups if not careful, but usually we link by one consistent way.
+    // However, since we support both, we'll cache by the requested key.
+    // Issue: If accessed by ID, cached by ID. Accessed by Slug, cached by Slug.
+    // Invalidation needs to handle both.
+    const cacheKey = `guide:detail:${idOrSlug}`;
+    const cached = await getCache<any>(cacheKey);
+
+    if (cached) {
+      // Async view increment (Fire and forget)
+      try {
+        const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(idOrSlug);
+        if (isValidObjectId) {
+          Guide.findByIdAndUpdate(idOrSlug, { $inc: { views: 1 } }, { timestamps: false }).exec();
+        } else {
+          const decodedSlug = decodeURIComponent(idOrSlug);
+          Guide.findOneAndUpdate({ slug: decodedSlug }, { $inc: { views: 1 } }, { timestamps: false }).exec();
+        }
+      } catch (e) {
+        console.error("View increment error:", e);
+      }
+      return { success: true, data: cached };
+    }
 
     // Check if it's a valid ObjectId
     const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(idOrSlug);
@@ -196,6 +230,11 @@ export async function getGuideById(idOrSlug: string): Promise<GuideResponse> {
       updatedAt: guideObj.updatedAt.toISOString(),
     };
 
+    // Cache the result. TTL 5 mins.
+    // We should cache by the requested key.
+    // Also, if we found it by Slug, we might want to also cache by ID if we could, but let's stick to requested key for simplicity.
+    await setCache(cacheKey, serializedGuide, 300);
+
     return { success: true, data: serializedGuide as any };
   } catch (error) {
     console.error("Get guide error:", error);
@@ -232,6 +271,16 @@ export async function updateGuide(
       { new: true }
     ).lean();
 
+    // Invalidate caches
+    // 1. List cache
+    await invalidateCachePattern('guides:list:*');
+    // 2. Detail cache by ID
+    await delCache(`guide:detail:${id}`);
+    // 3. Detail cache by Slug (if exists)
+    if (guide.slug) {
+      await delCache(`guide:detail:${guide.slug}`);
+    }
+
     revalidatePath("/guide");
     revalidatePath(`/guide/tips/${id}`);
 
@@ -266,6 +315,18 @@ export async function deleteGuide(id: string): Promise<GuideResponse> {
     const GuideComment = await getGuideCommentModel();
     await GuideComment.deleteMany({ guideId: id });
 
+    // Invalidate caches BEFORE delete just in case, but usually irrelevant.
+    // 1. List cache
+    await invalidateCachePattern('guides:list:*');
+    // 2. Detail cache by ID
+    await delCache(`guide:detail:${id}`);
+    // 3. Detail cache by Slug
+    if (guide.slug) {
+      await delCache(`guide:detail:${guide.slug}`);
+    }
+    // 4. Comments cache
+    await delCache(`guide:comments:${id}`);
+
     // 가이드 삭제
     await Guide.findByIdAndDelete(id);
 
@@ -298,18 +359,29 @@ export async function toggleGuideLike(id: string): Promise<GuideResponse> {
     const userId = (session.user as any).id;
     const hasLiked = guide.likedBy.includes(userId);
 
+    let updatedGuide;
     if (hasLiked) {
-      await Guide.findByIdAndUpdate(
+      updatedGuide = await Guide.findByIdAndUpdate(
         id,
         { $pull: { likedBy: userId }, $inc: { likes: -1 } },
-        { timestamps: false }
+        { timestamps: false, new: true } // Return new to confirm
       );
     } else {
-      await Guide.findByIdAndUpdate(
+      updatedGuide = await Guide.findByIdAndUpdate(
         id,
         { $push: { likedBy: userId }, $inc: { likes: 1 } },
-        { timestamps: false }
+        { timestamps: false, new: true }
       );
+    }
+
+    // Invalidate caches
+    // 1. List cache (sort by popularity might change)
+    await invalidateCachePattern('guides:list:*');
+    // 2. Detail cache by ID
+    await delCache(`guide:detail:${id}`);
+    // 3. Detail cache by Slug
+    if (guide.slug) {
+      await delCache(`guide:detail:${guide.slug}`);
     }
 
     revalidatePath(`/guide/tips/${id}`);
@@ -352,6 +424,13 @@ export async function toggleGuideBookmark(id: string): Promise<GuideResponse> {
         { $push: { bookmarkedBy: userId }, $inc: { bookmarks: 1 } },
         { timestamps: false }
       );
+    }
+
+    // Invalidate caches
+    // Bookmark count usually doesn't affect list sort as mostly internal, but keeping safe.
+    await delCache(`guide:detail:${id}`);
+    if (guide.slug) {
+      await delCache(`guide:detail:${guide.slug}`);
     }
 
     revalidatePath(`/guide/tips/${id}`);
