@@ -3,7 +3,6 @@
 import { auth } from "@/lib/auth";
 import getGuideCommentModel, { IGuideComment } from "@/models/GuideComment";
 import { revalidatePath } from "next/cache";
-import { getCache, setCache, delCache } from "@/lib/redis";
 
 export interface GuideCommentResponse {
   success: boolean;
@@ -37,9 +36,6 @@ export async function createGuideComment(
       },
     } as any) as any;
 
-    // Invalidate comments cache
-    await delCache(`guide:comments:${guideId}`);
-
     revalidatePath(`/guide/tips/${guideId}`);
 
     return {
@@ -60,13 +56,6 @@ export async function createGuideComment(
 // Get comments for a guide
 export async function getGuideComments(guideId: string): Promise<GuideCommentResponse> {
   try {
-    const cacheKey = `guide:comments:${guideId}`;
-    const cached = await getCache<any>(cacheKey);
-
-    if (cached) {
-      return { success: true, data: cached };
-    }
-
     const GuideComment = await getGuideCommentModel();
 
     const comments = await GuideComment.find({ guideId })
@@ -79,9 +68,6 @@ export async function getGuideComments(guideId: string): Promise<GuideCommentRes
       createdAt: comment.createdAt.toISOString(),
       updatedAt: comment.updatedAt.toISOString(),
     }));
-
-    // Cache comments (TTL 5 mins)
-    await setCache(cacheKey, serializedComments, 300);
 
     return { success: true, data: serializedComments };
   } catch (error) {
@@ -115,9 +101,6 @@ export async function updateGuideComment(
     }
 
     await GuideComment.findByIdAndUpdate(commentId, { content });
-
-    // Invalidate caches
-    await delCache(`guide:comments:${guideId}`);
 
     revalidatePath(`/guide/tips/${guideId}`);
 
@@ -155,9 +138,6 @@ export async function deleteGuideComment(
     await GuideComment.deleteMany({
       $or: [{ _id: commentId }, { parentId: commentId }],
     });
-
-    // Invalidate caches
-    await delCache(`guide:comments:${guideId}`);
 
     revalidatePath(`/guide/tips/${guideId}`);
 
