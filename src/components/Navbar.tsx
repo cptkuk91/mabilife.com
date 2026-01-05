@@ -62,7 +62,7 @@ export default function Navbar() {
 
           <div className="nav-actions">
             <a
-              href="https://discord.gg/yYrxEhUw"
+              href="https://discord.gg/b9QfreeE"
               target="_blank"
               rel="noopener noreferrer"
               className="nav-icon-btn"
@@ -162,7 +162,7 @@ export default function Navbar() {
                             <div className="menu-icon"><i className="fa-solid fa-chart-pie"></i></div>
                             <span>통계</span>
                         </Link>
-                        <a href="https://discord.gg/yYrxEhUw" target="_blank" rel="noopener noreferrer" className="menu-grid-item" onClick={() => setIsMenuOpen(false)}>
+                        <a href="https://discord.gg/b9QfreeE" target="_blank" rel="noopener noreferrer" className="menu-grid-item" onClick={() => setIsMenuOpen(false)}>
                             <div className="menu-icon"><i className="fa-brands fa-discord"></i></div>
                             <span>디스코드</span>
                         </a>

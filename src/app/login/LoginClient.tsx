@@ -29,7 +29,7 @@ export default function LoginClient() {
         </button>
 
         <div style={{fontSize: '13px', color: '#888', marginTop: '10px'}}>
-          계속 진행하면 <Link href="https://talk.kakao.gg/terms" style={{textDecoration: 'underline'}}>이용약관</Link> 및 <Link href="https://talk.kakao.gg/privacy" style={{textDecoration: 'underline'}}>개인정보처리방침</Link>에 동의하게 됩니다.
+          계속 진행하면 <Link href="https://www.kakao.gg/terms" style={{textDecoration: 'underline'}}>이용약관</Link> 및 <Link href="https://www.kakao.gg/privacy" style={{textDecoration: 'underline'}}>개인정보처리방침</Link>에 동의하게 됩니다.
         </div>
       </div>
     </div>

@@ -15,9 +15,9 @@ export default function Footer() {
             This site is not associated with Nexon & Mabinogi Mobile.
           </p>
           <div className={styles.links}>
-            <a href="https://talk.kakao.gg/terms" target="_blank" rel="noopener noreferrer" className={styles.link}>Terms of Service</a>
-            <a href="https://talk.kakao.gg/privacy" target="_blank" rel="noopener noreferrer" className={styles.link}>Privacy Policy</a>
-            <a href="mailto:cptkuk91@gmail.com" className={styles.link}>Contact Us</a>
+            <a href="https://www.kakao.gg/terms" target="_blank" rel="noopener noreferrer" className={styles.link}>Terms of Service</a>
+            <a href="https://www.kakao.gg/privacy" target="_blank" rel="noopener noreferrer" className={styles.link}>Privacy Policy</a>
+            <a href="https://www.instagram.com/next.uri/" target="_blank" rel="noopener noreferrer" className={styles.link}>Instagram</a>
           </div>
 
         </div>
