@@ -151,10 +151,12 @@ function SearchContent() {
       </div>
 
       {/* Search Info */}
+      {(!hasSearched || !query) && <h1 className="sr-only">통합 검색</h1>}
+      
       {hasSearched && query && (
-        <div className={styles.searchInfo}>
+        <h1 className={styles.searchInfo}>
           &quot;{query}&quot; 검색 결과 {totalResults}건
-        </div>
+        </h1>
       )}
 
       {/* Results */}

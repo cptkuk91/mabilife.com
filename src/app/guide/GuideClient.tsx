@@ -111,7 +111,7 @@ export default function GuideClient() {
       {/* Header */}
       <header className={styles.hubHeader}>
         <div>
-          <div className={styles.hubTitle}>공략</div>
+          <h1 className={styles.hubTitle}>공략</h1>
           <div className={styles.hubSubtitle}>에린 생활에 필요한 모든 지식</div>
         </div>
       </header>

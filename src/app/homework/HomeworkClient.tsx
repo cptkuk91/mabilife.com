@@ -321,8 +321,8 @@ export default function HomeworkClient() {
       );
   };
 
-  if (loading) return <div className={styles.loading}>로딩중...</div>;
-  if (!activeHomework) return null; // Should have at least one character
+  // if (loading) return <div className={styles.loading}>로딩중...</div>;
+  // if (!activeHomework) return null; // Should have at least one character
 
   return (
     <div className={styles.container}>
@@ -386,129 +386,137 @@ export default function HomeworkClient() {
         </div>
       </div>
 
-      {/* Character Selector */}
-      <div className={styles.charSelector}>
-          <div className={styles.charList}>
-              {characters.map((char, idx) => (
-                  <div 
-                    key={char._id} 
-                    className={`${styles.charChip} ${idx === activeCharIndex ? styles.active : ''}`}
-                    onClick={() => setActiveCharIndex(idx)}
-                  >
-                      {char.characterName}
-                      {characters.length > 1 && (
-                          <span 
-                            className={styles.deleteBtn}
-                            onClick={(e) => confirmDeleteCharacter(e, idx, char._id, char.characterName)}
-                          >
-                              <i className="fa-solid fa-xmark"></i>
-                          </span>
+      {loading ? (
+        <div className={styles.loading}>로딩중...</div>
+      ) : !activeHomework ? (
+        null
+      ) : (
+        <>
+          {/* Character Selector */}
+          <div className={styles.charSelector}>
+              <div className={styles.charList}>
+                  {characters.map((char, idx) => (
+                      <div 
+                        key={char._id} 
+                        className={`${styles.charChip} ${idx === activeCharIndex ? styles.active : ''}`}
+                        onClick={() => setActiveCharIndex(idx)}
+                      >
+                          {char.characterName}
+                          {characters.length > 1 && (
+                              <span 
+                                className={styles.deleteBtn}
+                                onClick={(e) => confirmDeleteCharacter(e, idx, char._id, char.characterName)}
+                              >
+                                  <i className="fa-solid fa-xmark"></i>
+                              </span>
+                          )}
+                      </div>
+                  ))}
+
+                  {isAdding ? (
+                      <div className={styles.addCharForm}>
+                          <input 
+                            className={styles.charInput} 
+                            value={newCharName} 
+                            onChange={(e) => setNewCharName(e.target.value)}
+                            placeholder="캐릭터명"
+                            autoFocus
+                          />
+                          <button className={styles.confirmBtn} onClick={handleAddCharacter}>추가</button>
+                          <button className={styles.charChip} onClick={() => setIsAdding(false)}>취소</button>
+                      </div>
+                  ) : (
+                      <button className={`${styles.charChip} ${styles.addCharBtn}`} onClick={() => setIsAdding(true)}>
+                          <i className="fa-solid fa-plus"></i> 캐릭터 추가
+                      </button>
+                  )}
+              </div>
+          </div>
+
+          <div className={styles.grid}>
+              {/* Left Column: Progress */}
+              <div className={styles.sideCol}>
+                <div className={styles.card}>
+                    <h2>진행도</h2>
+                    <div className={styles.progressItem}>
+                        <div className={styles.progressLabel}>
+                            <span>일일 숙제</span>
+                            <span>{calculateProgress('daily')}%</span>
+                        </div>
+                        <div className={styles.progressBar}>
+                            <div className={styles.progressFill} style={{ width: `${calculateProgress('daily')}%`, background: '#0071E3' }}></div>
+                        </div>
+                    </div>
+                    <div className={styles.progressItem}>
+                        <div className={styles.progressLabel}>
+                            <span>주간 숙제</span>
+                            <span>{calculateProgress('weekly')}%</span>
+                        </div>
+                        <div className={styles.progressBar}>
+                            <div className={styles.progressFill} style={{ width: `${calculateProgress('weekly')}%`, background: '#34C759' }}></div>
+                        </div>
+                    </div>
+                </div>
+              </div>
+
+              {/* Right Column: Tasks */}
+              <div className={styles.mainCol}>
+                  <div className={styles.tabs}>
+                      <button 
+                        className={`${styles.tab} ${activeTab === 'daily' ? styles.active : ''}`}
+                        onClick={() => setActiveTab('daily')}
+                      >
+                        일일 숙제
+                      </button>
+                      <button 
+                        className={`${styles.tab} ${activeTab === 'weekly' ? styles.active : ''}`}
+                        onClick={() => setActiveTab('weekly')}
+                      >
+                        주간 숙제
+                      </button>
+                  </div>
+
+                  <div className={styles.taskList}>
+                      {activeTab === 'daily' && (
+                          <>
+                            <h3 className={styles.sectionTitle}>필수 미션</h3>
+                            <div className={styles.taskGrid}>
+                                <TaskCard title="일일 미션" path="daily.dailyMission" value={activeHomework.daily.dailyMission} icon="fa-solid fa-flag" color="#FF3B30" />
+                                <TaskCard title="아르바이트" path="daily.partTimeJob" value={activeHomework.daily.partTimeJob} icon="fa-solid fa-briefcase" color="#FF9500" />
+                            </div>
+
+                            <h3 className={styles.sectionTitle}>던전</h3>
+                            <div className={styles.taskGrid}>
+                                <TaskCard title="요일 던전" path="daily.dailyDungeon" value={activeHomework.daily.dailyDungeon} icon="fa-regular fa-calendar" />
+                                <TaskCard title="은동전" path="daily.silverCoin" value={activeHomework.daily.silverCoin} icon="fa-solid fa-coins" color="#A9A9A9" />
+                                <TaskCard title="심층 던전" path="daily.deepDungeon" value={activeHomework.daily.deepDungeon} icon="fa-solid fa-dungeon" color="#5856D6" />
+                            </div>
+
+                            <h3 className={styles.sectionTitle}>상점 & 교환</h3>
+                            <div className={styles.taskGrid}>
+                                <TaskCard title="보석 상자" path="daily.gemBox" value={activeHomework.daily.gemBox} icon="fa-solid fa-gem" color="#5AC8FA" />
+                                <TaskCard title="무료 상품" path="daily.dailyGift" value={activeHomework.daily.dailyGift} icon="fa-solid fa-gift" color="#FF2D55" />
+                            </div>
+                          </>
+                      )}
+
+                      {activeTab === 'weekly' && (
+                          <>
+                            <h3 className={styles.sectionTitle}>주간 숙제</h3>
+                            <div className={styles.taskGrid}>
+                                <TaskCard title="결계" path="weekly.barrier" value={activeHomework.weekly.barrier} icon="fa-solid fa-shield" color="#0071E3" />
+                                <TaskCard title="검은 구멍" path="weekly.blackHole" value={activeHomework.weekly.blackHole} icon="fa-solid fa-circle" color="#1C1C1E" />
+                                <TaskCard title="필드 보스" path="weekly.fieldBoss" value={activeHomework.weekly.fieldBoss} icon="fa-solid fa-dragon" color="#FF3B30" />
+                                <TaskCard title="어비스" path="weekly.abyss" value={activeHomework.weekly.abyss} icon="fa-solid fa-dungeon" color="#5856D6" />
+                                <TaskCard title="레이드" path="weekly.raid" value={activeHomework.weekly.raid} icon="fa-solid fa-users" color="#FF9500" />
+                            </div>
+                          </>
                       )}
                   </div>
-              ))}
-
-              {isAdding ? (
-                  <div className={styles.addCharForm}>
-                      <input 
-                        className={styles.charInput} 
-                        value={newCharName} 
-                        onChange={(e) => setNewCharName(e.target.value)}
-                        placeholder="캐릭터명"
-                        autoFocus
-                      />
-                      <button className={styles.confirmBtn} onClick={handleAddCharacter}>추가</button>
-                      <button className={styles.charChip} onClick={() => setIsAdding(false)}>취소</button>
-                  </div>
-              ) : (
-                  <button className={`${styles.charChip} ${styles.addCharBtn}`} onClick={() => setIsAdding(true)}>
-                      <i className="fa-solid fa-plus"></i> 캐릭터 추가
-                  </button>
-              )}
-          </div>
-      </div>
-
-      <div className={styles.grid}>
-          {/* Left Column: Progress */}
-          <div className={styles.sideCol}>
-            <div className={styles.card}>
-                <h2>진행도</h2>
-                <div className={styles.progressItem}>
-                    <div className={styles.progressLabel}>
-                        <span>일일 숙제</span>
-                        <span>{calculateProgress('daily')}%</span>
-                    </div>
-                    <div className={styles.progressBar}>
-                        <div className={styles.progressFill} style={{ width: `${calculateProgress('daily')}%`, background: '#0071E3' }}></div>
-                    </div>
-                </div>
-                <div className={styles.progressItem}>
-                    <div className={styles.progressLabel}>
-                        <span>주간 숙제</span>
-                        <span>{calculateProgress('weekly')}%</span>
-                    </div>
-                    <div className={styles.progressBar}>
-                        <div className={styles.progressFill} style={{ width: `${calculateProgress('weekly')}%`, background: '#34C759' }}></div>
-                    </div>
-                </div>
-            </div>
-          </div>
-
-          {/* Right Column: Tasks */}
-          <div className={styles.mainCol}>
-              <div className={styles.tabs}>
-                  <button 
-                    className={`${styles.tab} ${activeTab === 'daily' ? styles.active : ''}`}
-                    onClick={() => setActiveTab('daily')}
-                  >
-                    일일 숙제
-                  </button>
-                  <button 
-                    className={`${styles.tab} ${activeTab === 'weekly' ? styles.active : ''}`}
-                    onClick={() => setActiveTab('weekly')}
-                  >
-                    주간 숙제
-                  </button>
-              </div>
-
-              <div className={styles.taskList}>
-                  {activeTab === 'daily' && (
-                      <>
-                        <h3 className={styles.sectionTitle}>필수 미션</h3>
-                        <div className={styles.taskGrid}>
-                            <TaskCard title="일일 미션" path="daily.dailyMission" value={activeHomework.daily.dailyMission} icon="fa-solid fa-flag" color="#FF3B30" />
-                            <TaskCard title="아르바이트" path="daily.partTimeJob" value={activeHomework.daily.partTimeJob} icon="fa-solid fa-briefcase" color="#FF9500" />
-                        </div>
-
-                        <h3 className={styles.sectionTitle}>던전</h3>
-                        <div className={styles.taskGrid}>
-                            <TaskCard title="요일 던전" path="daily.dailyDungeon" value={activeHomework.daily.dailyDungeon} icon="fa-regular fa-calendar" />
-                            <TaskCard title="은동전" path="daily.silverCoin" value={activeHomework.daily.silverCoin} icon="fa-solid fa-coins" color="#A9A9A9" />
-                            <TaskCard title="심층 던전" path="daily.deepDungeon" value={activeHomework.daily.deepDungeon} icon="fa-solid fa-dungeon" color="#5856D6" />
-                        </div>
-
-                        <h3 className={styles.sectionTitle}>상점 & 교환</h3>
-                        <div className={styles.taskGrid}>
-                            <TaskCard title="보석 상자" path="daily.gemBox" value={activeHomework.daily.gemBox} icon="fa-solid fa-gem" color="#5AC8FA" />
-                            <TaskCard title="무료 상품" path="daily.dailyGift" value={activeHomework.daily.dailyGift} icon="fa-solid fa-gift" color="#FF2D55" />
-                        </div>
-                      </>
-                  )}
-
-                  {activeTab === 'weekly' && (
-                      <>
-                        <h3 className={styles.sectionTitle}>주간 숙제</h3>
-                        <div className={styles.taskGrid}>
-                            <TaskCard title="결계" path="weekly.barrier" value={activeHomework.weekly.barrier} icon="fa-solid fa-shield" color="#0071E3" />
-                            <TaskCard title="검은 구멍" path="weekly.blackHole" value={activeHomework.weekly.blackHole} icon="fa-solid fa-circle" color="#1C1C1E" />
-                            <TaskCard title="필드 보스" path="weekly.fieldBoss" value={activeHomework.weekly.fieldBoss} icon="fa-solid fa-dragon" color="#FF3B30" />
-                            <TaskCard title="어비스" path="weekly.abyss" value={activeHomework.weekly.abyss} icon="fa-solid fa-dungeon" color="#5856D6" />
-                            <TaskCard title="레이드" path="weekly.raid" value={activeHomework.weekly.raid} icon="fa-solid fa-users" color="#FF9500" />
-                        </div>
-                      </>
-                  )}
               </div>
           </div>
-      </div>
+        </>
+      )}
     </div>
   );
 }
