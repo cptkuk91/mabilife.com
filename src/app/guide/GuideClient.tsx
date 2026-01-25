@@ -37,7 +37,19 @@ const formatRelativeTime = (dateString: string) => {
 
 // HTML 태그 제거하여 설명 추출
 const extractDescription = (html: string, maxLength: number = 80) => {
-  const text = html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ');
+  const text = html
+    .replace(/<[^>]*>/g, "") // HTML 태그 제거
+    .replace(/&nbsp;/g, " ") // 공백 처리
+    .replace(/&lsquo;/g, "'") // 왼쪽 작은따옴표
+    .replace(/&rsquo;/g, "'") // 오른쪽 작은따옴표
+    .replace(/&ldquo;/g, '"') // 왼쪽 큰따옴표
+    .replace(/&rdquo;/g, '"') // 오른쪽 큰따옴표
+    .replace(/&lt;/g, "<") // 부등호 <
+    .replace(/&gt;/g, ">") // 부등호 >
+    .replace(/&amp;/g, "&") // 앰퍼샌드
+    .replace(/&quot;/g, '"') // 따옴표
+    .replace(/\s+/g, " ") // 연속된 공백을 하나로
+    .trim();
   return text.length > maxLength ? text.slice(0, maxLength) + '...' : text;
 };
 
