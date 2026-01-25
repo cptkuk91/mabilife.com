@@ -518,3 +518,45 @@
     gap: 8px;
   }
 }
+
+/* Load More */
+.loadMoreContainer {
+  display: flex;
+  justify-content: center;
+  margin-top: 40px;
+  grid-column: 1 / -1;
+}
+
+.loadMoreBtn {
+  background: white;
+  border: 1px solid #E5E5EA;
+  color: var(--text-title);
+  padding: 12px 32px;
+  border-radius: 99px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.loadMoreBtn:hover {
+  background: #F5F5F7;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.loadMoreBtn i {
+  font-size: 12px;
+}
+
+.loadingMore {
+  text-align: center;
+  padding: 30px;
+  color: var(--text-sub);
+  font-size: 14px;
+  grid-column: 1 / -1;
+}

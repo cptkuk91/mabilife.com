@@ -64,26 +64,47 @@ export default function GuideClient() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [hasMore, setHasMore] = useState(true);
+
+  const LIMIT = 20;
 
   const categories = ["전체", "초보 가이드", "전투/던전", "메인스트림", "생활/알바", "패션/뷰티", "돈벌기"];
 
   useEffect(() => {
-    loadGuides();
+    // 탭이나 검색어가 바뀌면 초기화 후 로드
+    setGuides([]);
+    setHasMore(true);
+    loadGuides(true);
   }, [activeTab, searchQuery]);
 
-  const loadGuides = async () => {
+  const loadGuides = async (isInitial = false) => {
     setLoading(true);
+    // 초기 로드면 skip 0, 아니면 현재 개수만큼 skip
+    const currentSkip = isInitial ? 0 : guides.length;
+
     const result = await getGuides({
       category: activeTab === "전체" ? undefined : activeTab,
       search: searchQuery || undefined,
-      limit: 20,
+      limit: LIMIT,
+      skip: currentSkip,
       sort: 'latest'
     });
 
     if (result.success && result.data) {
-      setGuides(result.data as any[]);
+      const newGuides = result.data as any[];
+      
+      // 가져온 데이터가 limit보다 적으면 더 이상 데이터가 없음
+      if (newGuides.length < LIMIT) {
+        setHasMore(false);
+      }
+
+      setGuides(prev => isInitial ? newGuides : [...prev, ...newGuides]);
     }
     setLoading(false);
+  };
+
+  const handleLoadMore = () => {
+    loadGuides(false);
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -150,7 +171,7 @@ export default function GuideClient() {
       {/* Search Result Info */}
       {searchQuery && (
         <div className={styles.searchInfo}>
-          <span>&quot;{searchQuery}&quot; 검색 결과 {guides.length}건</span>
+          <span>&quot;{searchQuery}&quot; 검색 결과</span>
           <button onClick={handleClearSearch} className={styles.clearSearchBtn}>
             검색 초기화
           </button>
@@ -177,7 +198,7 @@ export default function GuideClient() {
 
       {/* Guide Grid/List */}
       <div className={viewMode === 'grid' ? styles.guideGrid : styles.guideList}>
-        {loading ? (
+        {loading && guides.length === 0 ? (
           <div className={styles.loading}>로딩 중...</div>
         ) : guides.length === 0 ? (
           <div className={styles.empty}>
@@ -187,70 +208,89 @@ export default function GuideClient() {
               첫 공략 작성하기
             </button>
           </div>
-        ) : viewMode === 'grid' ? (
-          // Grid View
-          guides.map((guide, index) => (
-            <Link href={`/guide/${guide.slug || guide._id}`} key={guide._id} className={styles.guideCard}>
-              <div className={styles.cardThumb}>
-                <Image
-                  src={guide.thumbnail || getPlaceholderImage(index)}
-                  alt={guide.title}
-                  fill
-                  className={styles.thumbImage}
-                  sizes="(max-width: 600px) 100vw, (max-width: 900px) 50vw, 33vw"
-                  priority={index < 3}
-                />
-              </div>
-              <div className={styles.cardBody}>
-                <div className={styles.cardCat}>{guide.category}</div>
-                <div className={styles.cardT}>{guide.title}</div>
-                <div className={styles.cardDesc}>{extractDescription(guide.content)}</div>
-                <div className={styles.cardFooter}>
-                  <div className={styles.cardAuth}>
-                    <img src={guide.author?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${guide.author?.id}`} alt="Author" />
-                    <span>{guide.author?.name || '익명'}</span>
-                  </div>
-                  <div className={styles.cardStats}>
-                    <span><i className="fa-regular fa-eye"></i> {guide.views || 0}</span>
-                    <span><i className="fa-regular fa-heart"></i> {guide.likes || 0}</span>
-                  </div>
-                </div>
-              </div>
-            </Link>
-          ))
         ) : (
-          // List View
-          guides.map((guide) => {
-            const style = categoryStyles[guide.category] || { icon: "fa-lightbulb", bg: "#EAF4FF", color: "#0071E3" };
-            return (
-              <Link href={`/guide/${guide.slug || guide._id}`} key={guide._id} className={styles.listItem}>
-                <div className={styles.listIcon} style={{ background: style.bg, color: style.color }}>
-                  <i className={`fa-solid ${style.icon}`}></i>
-                </div>
-                <div className={styles.listContent}>
-                  <div className={styles.listHeader}>
-                    <span className={styles.listCat}>{guide.category}</span>
-                    <span className={styles.listTime}>{formatRelativeTime(guide.createdAt)}</span>
+          <>
+            {viewMode === 'grid' ? (
+              // Grid View
+              guides.map((guide, index) => (
+                <Link href={`/guide/${guide.slug || guide._id}`} key={guide._id} className={styles.guideCard}>
+                  <div className={styles.cardThumb}>
+                    <Image
+                      src={guide.thumbnail || getPlaceholderImage(index)}
+                      alt={guide.title}
+                      fill
+                      className={styles.thumbImage}
+                      sizes="(max-width: 600px) 100vw, (max-width: 900px) 50vw, 33vw"
+                      priority={index < 3}
+                    />
                   </div>
-                  <div className={styles.listTitle}>{guide.title}</div>
-                  <div className={styles.listDesc}>{extractDescription(guide.content, 100)}</div>
-                  <div className={styles.listFooter}>
-                    <div className={styles.listAuthor}>
-                      <img src={guide.author?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${guide.author?.id}`} alt="Author" />
-                      <span>{guide.author?.name || '익명'}</span>
-                    </div>
-                    <div className={styles.listStats}>
-                      <span><i className="fa-regular fa-eye"></i> {guide.views || 0}</span>
-                      <span><i className="fa-regular fa-heart"></i> {guide.likes || 0}</span>
-                      <span><i className="fa-regular fa-comment"></i> {guide.commentCount || 0}</span>
+                  <div className={styles.cardBody}>
+                    <div className={styles.cardCat}>{guide.category}</div>
+                    <div className={styles.cardT}>{guide.title}</div>
+                    <div className={styles.cardDesc}>{extractDescription(guide.content)}</div>
+                    <div className={styles.cardFooter}>
+                      <div className={styles.cardAuth}>
+                        <img src={guide.author?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${guide.author?.id}`} alt="Author" />
+                        <span>{guide.author?.name || '익명'}</span>
+                      </div>
+                      <div className={styles.cardStats}>
+                        <span><i className="fa-regular fa-eye"></i> {guide.views || 0}</span>
+                        <span><i className="fa-regular fa-heart"></i> {guide.likes || 0}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </Link>
-            );
-          })
+                </Link>
+              ))
+            ) : (
+              // List View
+              guides.map((guide) => {
+                const style = categoryStyles[guide.category] || { icon: "fa-lightbulb", bg: "#EAF4FF", color: "#0071E3" };
+                return (
+                  <Link href={`/guide/${guide.slug || guide._id}`} key={guide._id} className={styles.listItem}>
+                    <div className={styles.listIcon} style={{ background: style.bg, color: style.color }}>
+                      <i className={`fa-solid ${style.icon}`}></i>
+                    </div>
+                    <div className={styles.listContent}>
+                      <div className={styles.listHeader}>
+                        <span className={styles.listCat}>{guide.category}</span>
+                        <span className={styles.listTime}>{formatRelativeTime(guide.createdAt)}</span>
+                      </div>
+                      <div className={styles.listTitle}>{guide.title}</div>
+                      <div className={styles.listDesc}>{extractDescription(guide.content, 100)}</div>
+                      <div className={styles.listFooter}>
+                        <div className={styles.listAuthor}>
+                          <img src={guide.author?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${guide.author?.id}`} alt="Author" />
+                          <span>{guide.author?.name || '익명'}</span>
+                        </div>
+                        <div className={styles.listStats}>
+                          <span><i className="fa-regular fa-eye"></i> {guide.views || 0}</span>
+                          <span><i className="fa-regular fa-heart"></i> {guide.likes || 0}</span>
+                          <span><i className="fa-regular fa-comment"></i> {guide.commentCount || 0}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })
+            )}
+          </>
         )}
       </div>
+
+      {loading && guides.length > 0 && (
+         <div className={styles.loadingMore}>
+           <i className="fa-solid fa-spinner fa-spin"></i> 로딩 중...
+         </div>
+      )}
+
+      {/* Load More Button */}
+      {!loading && hasMore && guides.length > 0 && (
+        <div className={styles.loadMoreContainer}>
+          <button onClick={handleLoadMore} className={styles.loadMoreBtn}>
+            더 보기 <i className="fa-solid fa-chevron-down"></i>
+          </button>
+        </div>
+      )}
       
       {/* Floating Write Button */}
       <button className={styles.writeBtn} onClick={handleWriteClick} title="공략 작성">
