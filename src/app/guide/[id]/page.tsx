@@ -4,9 +4,21 @@ import { getGuideById } from "@/actions/guide";
 
 const SITE_URL = "https://www.mabilife.com";
 
-// HTML 태그 제거 함수
+// HTML 태그 제거 및 특수문자 처리를 위한 함수
 function stripHtml(html: string): string {
-  return html.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
+  return html
+    .replace(/<[^>]*>/g, "") // HTML 태그 제거
+    .replace(/&nbsp;/g, " ") // 공백 처리
+    .replace(/&lsquo;/g, "'") // 왼쪽 작은따옴표
+    .replace(/&rsquo;/g, "'") // 오른쪽 작은따옴표
+    .replace(/&ldquo;/g, '"') // 왼쪽 큰따옴표
+    .replace(/&rdquo;/g, '"') // 오른쪽 큰따옴표
+    .replace(/&lt;/g, "<") // 부등호 <
+    .replace(/&gt;/g, ">") // 부등호 >
+    .replace(/&amp;/g, "&") // 앰퍼샌드
+    .replace(/&quot;/g, '"') // 따옴표
+    .replace(/\s+/g, " ") // 연속된 공백을 하나로
+    .trim();
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
