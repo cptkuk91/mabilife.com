@@ -116,6 +116,33 @@
   margin: 20px 0;
 }
 
+/* List Styles */
+.tipContent ul,
+.tipContent ol {
+  margin: 16px 0 24px 24px;
+  padding-left: 4px; /* Slight extra padding for the marker */
+}
+
+.tipContent li {
+  margin-bottom: 8px;
+  line-height: 1.6;
+  padding-left: 4px; /* Space between marker and text */
+}
+
+.tipContent li::marker {
+  color: black;
+  font-weight: 600;
+  font-size: 1.1em;
+}
+
+.tipContent ul {
+  list-style-type: disc;
+}
+
+.tipContent ol {
+  list-style-type: decimal;
+}
+
 .commentsSection {
   margin-top: 60px;
   padding: 30px;
