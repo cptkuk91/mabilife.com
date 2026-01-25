@@ -1,4 +1,6 @@
-import puppeteer from 'puppeteer';
+import chromium from '@sparticuz/chromium';
+import puppeteerCore from 'puppeteer-core';
+import puppeteer from 'puppeteer'; 
 
 const SERVERS = ['데이안', '아이라', '던컨', '알리사', '메이븐', '라사', '칼릭스'];
 
@@ -19,15 +21,28 @@ export interface RankingData {
 }
 
 export async function crawlRankingData(): Promise<RankingData[]> {
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
-  });
-  
-  const allResults: RankingData[] = [];
+  let browser;
+  const isLocal = process.env.NODE_ENV === 'development';
 
   try {
-    const page = await browser.newPage();
+    if (isLocal) {
+        // Local: Use full puppeteer
+        browser = await puppeteer.launch({
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        });
+    } else {
+        // Vercel / Production: Use puppeteer-core + chromium
+        browser = await puppeteerCore.launch({
+            args: (chromium as any).args,
+            defaultViewport: (chromium as any).defaultViewport,
+            executablePath: await (chromium as any).executablePath(),
+            headless: (chromium as any).headless,
+        });
+    }
+  
+    const allResults: RankingData[] = [];
+    const page: any = await browser.newPage();
     // Set viewport large enough
     await page.setViewport({ width: 1920, height: 1080 });
     await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
@@ -47,8 +62,7 @@ export async function crawlRankingData(): Promise<RankingData[]> {
         const title = await page.title();
         if (title.includes('Just a moment')) {
             console.error('Blocked by Cloudflare challenge.');
-            continue; // Verify next type if this one fails? Or abort? Abort seems safer.
-            // But let's verify if just a fluke.
+            continue; 
         }
 
         // Wait for initial load
@@ -73,7 +87,7 @@ export async function crawlRankingData(): Promise<RankingData[]> {
                     await new Promise(r => setTimeout(r, 500)); 
 
                     // Click Option
-                    await page.evaluate((targetServer) => {
+                    await page.evaluate((targetServer: string) => {
                         const options = document.querySelectorAll('li, .option, a');
                         for (const opt of options) {
                             if ((opt as HTMLElement).innerText.includes(targetServer)) {
@@ -103,7 +117,7 @@ export async function crawlRankingData(): Promise<RankingData[]> {
             }
 
             // Scrape
-            const serverData = await page.evaluate((currentServer, currentType) => {
+            const serverData = await page.evaluate((currentServer: string, currentType: string) => {
                 const results: RankingData[] = [];
                 const rows = document.querySelectorAll('.ranking_list li, .tbl_list tr, li');
                 
@@ -151,12 +165,6 @@ export async function crawlRankingData(): Promise<RankingData[]> {
 
             console.log(`  - Found ${serverData.length} entries for ${serverName} (${rType.name})`);
             allResults.push(...serverData);
-            
-            // Should current server be reset to '데이안' for next iteration? 
-            // The site might persist selection. 
-            // But we iterate "serverName of SERVERS". Next loop we check "if !== 데이안".
-            // If we are at '아이라' and next is '던컨', we try to switch.
-            // If current is '칼릭스' and next type starts, we reload page via goto(), so it defaults reset usually.
         }
     }
 
@@ -164,8 +172,8 @@ export async function crawlRankingData(): Promise<RankingData[]> {
 
   } catch (error) {
     console.error('Crawling failed:', error);
-    return allResults; // Return whatever we got
+    return []; // Return empty array on failure
   } finally {
-    await browser.close();
+    if (browser) await browser.close();
   }
 }
