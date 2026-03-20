@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, Model } from 'mongoose';
+import { Schema, Document, Model } from 'mongoose';
 import { connectToDatabase } from '@/lib/mongodb';
 
 export type RuneGrade = 'mythic' | 'legendary' | 'epic' | 'normal';

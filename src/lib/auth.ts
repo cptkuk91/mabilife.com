@@ -52,7 +52,7 @@ export const authOptions: NextAuthOptions = {
       }
       return true;
     },
-    async jwt({ token, account, trigger }) {
+    async jwt({ token, account }) {
       // 로그인 시 또는 토큰에 userId가 없을 때 DB에서 조회
       if (account || !token.userId) {
         try {

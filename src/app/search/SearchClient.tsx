@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Suspense } from "react";
 import { getGuides } from "@/actions/guide";
@@ -51,7 +51,6 @@ const extractText = (html: string, maxLength: number = 100) => {
 type SearchTab = '통합' | '공략' | '커뮤니티';
 
 function SearchContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get("q") || "";
 

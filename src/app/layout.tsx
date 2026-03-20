@@ -1,12 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
-// import "./fontawesome.css"; // Removed local CSS
-// import GoogleAnalytics from "@/components/GoogleAnalytics"; // Removed custom component
-import { GoogleAnalytics } from '@next/third-parties/google'; // Added optimized library
+import { GoogleAnalytics } from "@next/third-parties/google";
 import Navbar from "@/components/Navbar";
 import AuthProvider from "@/components/AuthProvider";
 import Footer from "@/components/Footer";
-import { Noto_Sans_KR } from 'next/font/google';
+import { Noto_Sans_KR } from "next/font/google";
 
 const notoSansKr = Noto_Sans_KR({
   subsets: ['latin'],
@@ -138,7 +136,6 @@ export default function RootLayout({
           <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
         ) : null}
         <AuthProvider>
-          {/* <GoogleAnalytics /> Removed old usage */}
           <Navbar />
           {children}
           <Footer />

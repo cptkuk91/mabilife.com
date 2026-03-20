@@ -11,7 +11,7 @@ import styles from "./write.module.css";
 
 function GuideWriteContent() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const searchParams = useSearchParams();
   const editId = searchParams.get("edit");
   const isEditMode = !!editId;

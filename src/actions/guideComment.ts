@@ -1,7 +1,7 @@
 "use server";
 
 import { auth } from "@/lib/auth";
-import getGuideCommentModel, { IGuideComment } from "@/models/GuideComment";
+import getGuideCommentModel from "@/models/GuideComment";
 import { revalidatePath } from "next/cache";
 
 export interface GuideCommentResponse {

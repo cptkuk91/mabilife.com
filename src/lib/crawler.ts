@@ -68,7 +68,7 @@ export async function crawlRankingData(): Promise<RankingData[]> {
         // Wait for initial load
         try {
             await page.waitForSelector('.ranking_box, .ranking_list, li', { timeout: 10000 });
-        } catch(e) { console.log('Wait timeout, continuing...'); }
+        } catch { console.log('Wait timeout, continuing...'); }
 
         // Loop through servers for this type
         for (const serverName of SERVERS) {
@@ -80,7 +80,7 @@ export async function crawlRankingData(): Promise<RankingData[]> {
                     // Click Dropdown
                     await page.evaluate(() => {
                         const dropdowns = document.querySelectorAll('.select_box, .dropdown, .select');
-                        let serverDropdown = dropdowns[0]; 
+                        const serverDropdown = dropdowns[0];
                         if (serverDropdown) (serverDropdown as HTMLElement).click();
                     });
                     
@@ -112,7 +112,7 @@ export async function crawlRankingData(): Promise<RankingData[]> {
                     await page.evaluate(() => { window.scrollTo(0, document.body.scrollHeight); });
                     await new Promise(r => setTimeout(r, 800));
                 }
-            } catch (e) {
+            } catch {
                 console.log('Scroll failed...');
             }
 

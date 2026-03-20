@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, Model } from 'mongoose';
+import { Schema, Document, Model } from 'mongoose';
 import { connectToAuthDatabase } from '@/lib/mongodb';
 
 export interface IUser extends Document {

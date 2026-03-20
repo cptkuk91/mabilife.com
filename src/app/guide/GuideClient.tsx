@@ -69,7 +69,7 @@ type ViewMode = 'grid' | 'list';
 
 export default function GuideClient() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const [guides, setGuides] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("전체");

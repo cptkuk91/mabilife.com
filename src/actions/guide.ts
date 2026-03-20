@@ -44,7 +44,7 @@ export async function createGuide(input: CreateGuideInput): Promise<GuideRespons
     // Generate unique slug
     let slug = generateSlug(input.title);
     let counter = 1;
-    let originalSlug = slug;
+    const originalSlug = slug;
     
     // Check for duplicate slug
     while (await Guide.findOne({ slug })) {
@@ -191,7 +191,7 @@ export async function getGuideById(idOrSlug: string): Promise<GuideResponse> {
       if (guide && !guide.slug) {
         let slug = generateSlug(guide.title);
         let counter = 1;
-        let originalSlug = slug;
+        const originalSlug = slug;
         
         while (await Guide.findOne({ slug, _id: { $ne: guide._id } })) {
           slug = `${originalSlug}-${counter}`;
@@ -359,15 +359,14 @@ export async function toggleGuideLike(id: string): Promise<GuideResponse> {
     const userId = (session.user as any).id;
     const hasLiked = guide.likedBy.includes(userId);
 
-    let updatedGuide;
     if (hasLiked) {
-      updatedGuide = await Guide.findByIdAndUpdate(
+      await Guide.findByIdAndUpdate(
         id,
         { $pull: { likedBy: userId }, $inc: { likes: -1 } },
         { timestamps: false, new: true } // Return new to confirm
       );
     } else {
-      updatedGuide = await Guide.findByIdAndUpdate(
+      await Guide.findByIdAndUpdate(
         id,
         { $push: { likedBy: userId }, $inc: { likes: 1 } },
         { timestamps: false, new: true }

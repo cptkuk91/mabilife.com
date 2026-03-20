@@ -245,7 +245,7 @@ export async function toggleTask(homeworkId: string, path: string, value: any) {
                 { $set: { [path]: value } },
                 { new: true }
             );
-        } catch (e) {
+        } catch {
             console.log('[toggleTask] ObjectId conversion failed');
         }
     }

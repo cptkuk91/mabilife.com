@@ -9,7 +9,7 @@ import { getUserCharacters, toggleTask, createCharacter, deleteCharacter } from 
 import { IHomeworkData } from "@/types/homework";
 
 export default function HomeworkClient() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   
@@ -241,89 +241,6 @@ export default function HomeworkClient() {
     </div>
   );
   
-  const ArrayTaskCard = ({ title, path, values, max }: any) => (
-      <div className={styles.taskCard}>
-          <div className={styles.taskInfo}>
-              <div className={styles.taskTitle}>{title}</div>
-              <div className={styles.steps}>
-                  {values.map((v: boolean, i: number) => (
-                      <div 
-                        key={i} 
-                        className={`${styles.step} ${v ? styles.stepDone : ''}`}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            handleToggle(`${path}.${i}`, v);
-                        }}
-                      >
-                          {i + 1}
-                      </div>
-                  ))}
-              </div>
-          </div>
-      </div>
-  );
-
-  const handleUpdateValue = async (path: string, newVal: any) => {
-    if (!requireAuth()) return;
-    if (!activeHomework) return;
-    
-    const keys = path.split('.');
-    const newChars = JSON.parse(JSON.stringify(characters));
-    const targetChar = newChars[activeCharIndex];
-    let ref = targetChar;
-    for (let i = 0; i < keys.length - 1; i++) {
-        ref = ref[keys[i]];
-    }
-    const lastKey = keys[keys.length - 1];
-    ref[lastKey] = newVal;
-    
-    setCharacters(newChars);
-    await toggleTask(activeHomework._id, path, newVal);
-  };
-
-  const WeeklyCounter = ({ title, path, value, max }: any) => {
-      const safeValue = typeof value === 'number' ? value : 0;
-      const isCompleted = safeValue >= max;
-      return (
-          <div className={`${styles.weeklyCard} ${isCompleted ? styles.completed : ''}`}>
-              <div className={styles.weeklyCardHeader}>
-                  <div className={styles.weeklyTitle}>{title}</div>
-                  <div className={styles.weeklyCount}>{safeValue}/{max}</div>
-              </div>
-              <div className={styles.weeklyProgress}>
-                  <div className={styles.weeklyFill} style={{ width: `${(safeValue / max) * 100}%` }}></div>
-              </div>
-              <div className={styles.weeklyControls}>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                      <button 
-                        className={styles.weeklyBtn} 
-                        onClick={() => handleUpdateValue(path, Math.max(0, safeValue - 1))}
-                        disabled={safeValue <= 0}
-                      >
-                          <i className="fa-solid fa-minus"></i>
-                      </button>
-                      <button 
-                        className={styles.weeklyBtn} 
-                        onClick={() => handleUpdateValue(path, Math.min(max, safeValue + 1))}
-                        disabled={safeValue >= max}
-                      >
-                          <i className="fa-solid fa-plus"></i>
-                      </button>
-                  </div>
-                  <button 
-                    className={styles.weeklyMaxBtn}
-                    onClick={() => handleUpdateValue(path, max)}
-                  >
-                      MAX
-                  </button>
-              </div>
-          </div>
-      );
-  };
-
-  // if (loading) return <div className={styles.loading}>로딩중...</div>;
-  // if (!activeHomework) return null; // Should have at least one character
-
   return (
     <div className={styles.container}>
       {deleteModal.isOpen && (
