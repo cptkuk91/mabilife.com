@@ -4,11 +4,41 @@
 
 ## 0. 작업 진행 현황
 
+완료
+- [x] `src/lib/s3-upload.ts` 제거
+- [x] `src/components/GoogleAnalytics.tsx` 제거
+- [x] `public/next.svg` 제거
+- [x] `public/vercel.svg` 제거
+- [x] `public/globe.svg` 제거
+- [x] `public/window.svg` 제거
+- [x] `public/file.svg` 제거
+- [x] `src/app/homework/HomeworkClient.tsx` 미사용 선언 정리
+- [x] `src/components/Footer.tsx` 미사용 선언 정리
+- [x] `src/components/Navbar.tsx` 미사용 선언 정리
+- [x] `src/actions/guide.ts` 미사용 선언 정리
+- [x] `src/actions/guideComment.ts` 미사용 선언 정리
+- [x] `src/actions/homework.ts` 미사용 선언 정리
+- [x] `src/app/community/[id]/PostDetailClient.tsx` 미사용 선언 정리
+- [x] `src/app/guide/GuideClient.tsx` 미사용 선언 정리
+- [x] `src/app/guide/write/GuideWriteClient.tsx` 미사용 선언 정리
+- [x] `src/app/search/SearchClient.tsx` 미사용 선언 정리
+- [x] `src/lib/auth.ts` 미사용 선언 정리
+- [x] `src/lib/crawler.ts` 미사용 선언 정리
+- [x] `src/models/Rune.ts` 미사용 import 정리
+- [x] `src/models/User.ts` 미사용 import 정리
+- [x] `src/app/layout.tsx` 레거시 주석 정리
+- [x] 미사용 의존성 `dotenv` 제거 완료
+- [x] `README.md` 제거
+- [x] `plan.md` 제거
+- [x] `public/tinymce/README.md` 제거
+- [x] `public/tinymce/CHANGELOG.md` 제거
+- [x] `public/tinymce/package.json` 제거
+- [x] `public/tinymce/bower.json` 제거
+- [x] `public/tinymce/composer.json` 제거
+- [x] `public/tinymce/tinymce.d.ts` 제거
+- [x] 삭제/정리 후 `npm run build` 검증 완료
+
 대기
-- [ ] `package.json`의 `dotenv` 제거 여부 확정
-- [ ] `README.md` 제거 또는 전면 재작성
-- [ ] `plan.md` 제거 또는 archive
-- [ ] `public/tinymce` 문서/메타 파일 1차 정리
 - [ ] `public/tinymce` 런타임 축소 후보 smoke test 후 정리
 - [ ] `public/BingSiteAuth.xml` 운영 여부 확인
 - [ ] `public/naver00052002924961f6ee72b77324282076.html` 운영 여부 확인
@@ -26,39 +56,39 @@
 
 ## 1. 바로 제거 가능한 high-confidence 후보
 
-| 경로 | 분류 | 근거 |
-| --- | --- | --- |
-| `src/lib/s3-upload.ts` | 죽은 파일 | 프로젝트 내부 inbound reference 0개. 현재 업로드 경로는 `src/actions/upload.ts` -> `src/lib/s3.ts` 를 사용 중. 이 파일만 `nanoid`를 참조하는데 `package.json`에는 `nanoid`가 없어서 사실상 방치된 레거시 모듈로 보임. |
-| `src/components/GoogleAnalytics.tsx` | 죽은 파일 | 프로젝트 내부 inbound reference 0개. `src/app/layout.tsx` 는 이미 `@next/third-parties/google` 의 `GoogleAnalytics`를 사용하고 있고, 이 컴포넌트는 주석으로만 남아 있음. |
-| `public/next.svg` | 불필요 파일 | 코드/메타데이터/스타일 어디에서도 참조되지 않음. `create-next-app` 기본 샘플 자산으로 보임. |
-| `public/vercel.svg` | 불필요 파일 | 코드/메타데이터/스타일 어디에서도 참조되지 않음. `create-next-app` 기본 샘플 자산으로 보임. |
-| `public/globe.svg` | 불필요 파일 | 코드/메타데이터/스타일 어디에서도 참조되지 않음. `create-next-app` 기본 샘플 자산으로 보임. |
-| `public/window.svg` | 불필요 파일 | 코드/메타데이터/스타일 어디에서도 참조되지 않음. `create-next-app` 기본 샘플 자산으로 보임. |
-| `public/file.svg` | 불필요 파일 | 코드/메타데이터/스타일 어디에서도 참조되지 않음. `create-next-app` 기본 샘플 자산으로 보임. |
+| 상태 | 경로 | 분류 | 근거 |
+| --- | --- | --- | --- |
+| [x] | `src/lib/s3-upload.ts` | 죽은 파일 | 프로젝트 내부 inbound reference 0개. 현재 업로드 경로는 `src/actions/upload.ts` -> `src/lib/s3.ts` 를 사용 중. 이 파일만 `nanoid`를 참조하는데 `package.json`에는 `nanoid`가 없어서 사실상 방치된 레거시 모듈로 보임. |
+| [x] | `src/components/GoogleAnalytics.tsx` | 죽은 파일 | 프로젝트 내부 inbound reference 0개. `src/app/layout.tsx` 는 이미 `@next/third-parties/google` 의 `GoogleAnalytics`를 사용하고 있고, 이 컴포넌트는 주석으로만 남아 있음. |
+| [x] | `public/next.svg` | 불필요 파일 | 코드/메타데이터/스타일 어디에서도 참조되지 않음. `create-next-app` 기본 샘플 자산으로 보임. |
+| [x] | `public/vercel.svg` | 불필요 파일 | 코드/메타데이터/스타일 어디에서도 참조되지 않음. `create-next-app` 기본 샘플 자산으로 보임. |
+| [x] | `public/globe.svg` | 불필요 파일 | 코드/메타데이터/스타일 어디에서도 참조되지 않음. `create-next-app` 기본 샘플 자산으로 보임. |
+| [x] | `public/window.svg` | 불필요 파일 | 코드/메타데이터/스타일 어디에서도 참조되지 않음. `create-next-app` 기본 샘플 자산으로 보임. |
+| [x] | `public/file.svg` | 불필요 파일 | 코드/메타데이터/스타일 어디에서도 참조되지 않음. `create-next-app` 기본 샘플 자산으로 보임. |
 
 ## 2. 죽은 코드 / 미사용 선언
 
 아래는 `eslint src` 기준으로 바로 정리 가능한 미사용 선언들이다.
 
-| 경로 | 죽은 코드 | 비고 |
-| --- | --- | --- |
-| `src/app/homework/HomeworkClient.tsx` | `session` | `useSession()` 결과를 읽지 않음 |
-| `src/app/homework/HomeworkClient.tsx` | `ArrayTaskCard` | 선언만 있고 렌더 경로가 전혀 없음 |
-| `src/app/homework/HomeworkClient.tsx` | `WeeklyCounter` | 선언만 있고 렌더 경로가 전혀 없음 |
-| `src/app/homework/HomeworkClient.tsx` | `max` 파라미터 | `ArrayTaskCard` 내부에서도 읽지 않음 |
-| `src/components/Footer.tsx` | `Link` import | 전부 `<a>` 태그만 사용 |
-| `src/components/Navbar.tsx` | `isLinkDropdownOpen` 상태값 | 현재 렌더 트리에 링크 드롭다운 UI 자체가 없음. 사실상 `linkDropdownRef`/outside click 분기까지 묶여서 레거시 코드 가능성 높음 |
-| `src/actions/guide.ts` | `updatedGuide` | assign만 하고 읽지 않음 |
-| `src/actions/guideComment.ts` | `IGuideComment` import | 미사용 import |
-| `src/actions/homework.ts` | `catch (e)` 의 `e` | 미사용 catch 변수 |
-| `src/app/community/[id]/PostDetailClient.tsx` | `use` import | 미사용 import |
-| `src/app/guide/GuideClient.tsx` | `session` | `useSession()` 결과를 읽지 않음 |
-| `src/app/guide/write/GuideWriteClient.tsx` | `session` | `useSession()` 결과를 읽지 않음 |
-| `src/app/search/SearchClient.tsx` | `router` | 선언 후 사용처 없음 |
-| `src/lib/auth.ts` | `trigger` | NextAuth `jwt` callback 파라미터 미사용 |
-| `src/lib/crawler.ts` | 두 군데 `catch (e)` 의 `e` | 미사용 catch 변수 |
-| `src/models/Rune.ts` | `mongoose` default import | named import만 실제 사용 |
-| `src/models/User.ts` | `mongoose` default import | named import만 실제 사용 |
+| 상태 | 경로 | 죽은 코드 | 비고 |
+| --- | --- | --- | --- |
+| [x] | `src/app/homework/HomeworkClient.tsx` | `session` | `useSession()` 결과를 읽지 않음 |
+| [x] | `src/app/homework/HomeworkClient.tsx` | `ArrayTaskCard` | 선언만 있고 렌더 경로가 전혀 없음 |
+| [x] | `src/app/homework/HomeworkClient.tsx` | `WeeklyCounter` | 선언만 있고 렌더 경로가 전혀 없음 |
+| [x] | `src/app/homework/HomeworkClient.tsx` | `max` 파라미터 | `ArrayTaskCard` 내부에서도 읽지 않음 |
+| [x] | `src/components/Footer.tsx` | `Link` import | 전부 `<a>` 태그만 사용 |
+| [x] | `src/components/Navbar.tsx` | `isLinkDropdownOpen` 상태값 | 현재 렌더 트리에 링크 드롭다운 UI 자체가 없음. 사실상 `linkDropdownRef`/outside click 분기까지 묶여서 레거시 코드 가능성 높음 |
+| [x] | `src/actions/guide.ts` | `updatedGuide` | assign만 하고 읽지 않음 |
+| [x] | `src/actions/guideComment.ts` | `IGuideComment` import | 미사용 import |
+| [x] | `src/actions/homework.ts` | `catch (e)` 의 `e` | 미사용 catch 변수 |
+| [x] | `src/app/community/[id]/PostDetailClient.tsx` | `use` import | 미사용 import |
+| [x] | `src/app/guide/GuideClient.tsx` | `session` | `useSession()` 결과를 읽지 않음 |
+| [x] | `src/app/guide/write/GuideWriteClient.tsx` | `session` | `useSession()` 결과를 읽지 않음 |
+| [x] | `src/app/search/SearchClient.tsx` | `router` | 선언 후 사용처 없음 |
+| [x] | `src/lib/auth.ts` | `trigger` | NextAuth `jwt` callback 파라미터 미사용 |
+| [x] | `src/lib/crawler.ts` | 두 군데 `catch (e)` 의 `e` | 미사용 catch 변수 |
+| [x] | `src/models/Rune.ts` | `mongoose` default import | named import만 실제 사용 |
+| [x] | `src/models/User.ts` | `mongoose` default import | named import만 실제 사용 |
 
 보조 정리 후보
 - `src/app/homework/HomeworkClient.tsx` 의 주석 처리된 loading return
