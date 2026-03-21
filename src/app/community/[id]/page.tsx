@@ -1,13 +1,9 @@
 import PostDetailClient from "./PostDetailClient";
 import type { Metadata } from "next";
 import { getPost } from "@/actions/post";
+import { htmlToPlainText } from "@/lib/text";
 
 const SITE_URL = "https://www.mabilife.com";
-
-// HTML 태그 제거 함수
-function stripHtml(html: string): string {
-  return html.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
-}
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
@@ -20,7 +16,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   }
 
   const post = result.post;
-  const content = stripHtml(post.content);
+  const content = htmlToPlainText(post.content);
   const title = content.slice(0, 50) + (content.length > 50 ? "..." : "");
   const description = content.slice(0, 160);
   const postType = post.type;

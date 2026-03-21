@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { getGuides } from "@/actions/guide";
 import styles from "./guide.module.css";
 import { useSession } from "next-auth/react";
+import { decodeHtmlEntities, extractPreviewText } from "@/lib/text";
 
 // 카테고리별 아이콘 및 색상 매핑
 const categoryStyles: Record<string, { icon: string; bg: string; color: string }> = {
@@ -33,24 +34,6 @@ const formatRelativeTime = (dateString: string) => {
   if (hours < 24) return `${hours}시간 전`;
   if (days < 7) return `${days}일 전`;
   return date.toLocaleDateString();
-};
-
-// HTML 태그 제거하여 설명 추출
-const extractDescription = (html: string, maxLength: number = 80) => {
-  const text = html
-    .replace(/<[^>]*>/g, "") // HTML 태그 제거
-    .replace(/&nbsp;/g, " ") // 공백 처리
-    .replace(/&lsquo;/g, "'") // 왼쪽 작은따옴표
-    .replace(/&rsquo;/g, "'") // 오른쪽 작은따옴표
-    .replace(/&ldquo;/g, '"') // 왼쪽 큰따옴표
-    .replace(/&rdquo;/g, '"') // 오른쪽 큰따옴표
-    .replace(/&lt;/g, "<") // 부등호 <
-    .replace(/&gt;/g, ">") // 부등호 >
-    .replace(/&amp;/g, "&") // 앰퍼샌드
-    .replace(/&quot;/g, '"') // 따옴표
-    .replace(/\s+/g, " ") // 연속된 공백을 하나로
-    .trim();
-  return text.length > maxLength ? text.slice(0, maxLength) + '...' : text;
 };
 
 // Placeholder 이미지 배열
@@ -238,8 +221,8 @@ export default function GuideClient() {
                   </div>
                   <div className={styles.cardBody}>
                     <div className={styles.cardCat}>{guide.category}</div>
-                    <div className={styles.cardT}>{guide.title}</div>
-                    <div className={styles.cardDesc}>{extractDescription(guide.content)}</div>
+                    <div className={styles.cardT}>{decodeHtmlEntities(guide.title)}</div>
+                    <div className={styles.cardDesc}>{extractPreviewText(guide.content)}</div>
                     <div className={styles.cardFooter}>
                       <div className={styles.cardAuth}>
                         <img src={guide.author?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${guide.author?.id}`} alt="Author" />
@@ -267,8 +250,8 @@ export default function GuideClient() {
                         <span className={styles.listCat}>{guide.category}</span>
                         <span className={styles.listTime}>{formatRelativeTime(guide.createdAt)}</span>
                       </div>
-                      <div className={styles.listTitle}>{guide.title}</div>
-                      <div className={styles.listDesc}>{extractDescription(guide.content, 100)}</div>
+                      <div className={styles.listTitle}>{decodeHtmlEntities(guide.title)}</div>
+                      <div className={styles.listDesc}>{extractPreviewText(guide.content, 100)}</div>
                       <div className={styles.listFooter}>
                         <div className={styles.listAuthor}>
                           <img src={guide.author?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${guide.author?.id}`} alt="Author" />

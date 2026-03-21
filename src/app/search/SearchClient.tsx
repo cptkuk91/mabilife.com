@@ -7,6 +7,7 @@ import { Suspense } from "react";
 import { getGuides } from "@/actions/guide";
 import { getPosts } from "@/actions/post";
 import styles from "./search.module.css";
+import { decodeHtmlEntities, extractPreviewText } from "@/lib/text";
 
 // 카테고리별 아이콘 매핑 (애플 스타일 - 모노크롬)
 const categoryIcons: Record<string, string> = {
@@ -40,12 +41,6 @@ const formatRelativeTime = (dateString: string) => {
   if (hours < 24) return `${hours}시간 전`;
   if (days < 7) return `${days}일 전`;
   return date.toLocaleDateString();
-};
-
-// HTML 태그 제거
-const extractText = (html: string, maxLength: number = 100) => {
-  const text = html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ');
-  return text.length > maxLength ? text.slice(0, maxLength) + '...' : text;
 };
 
 type SearchTab = '통합' | '공략' | '커뮤니티';
@@ -194,8 +189,8 @@ function SearchContent() {
                             <span className={styles.resultCategory}>{guide.category}</span>
                             <span className={styles.resultTime}>{formatRelativeTime(guide.createdAt)}</span>
                           </div>
-                          <div className={styles.resultTitle}>{guide.title}</div>
-                          <div className={styles.resultSnippet}>{extractText(guide.content)}</div>
+                          <div className={styles.resultTitle}>{decodeHtmlEntities(guide.title)}</div>
+                          <div className={styles.resultSnippet}>{extractPreviewText(guide.content)}</div>
                           <div className={styles.resultStats}>
                             <span><i className="fa-regular fa-eye"></i> {guide.views || 0}</span>
                             <span><i className="fa-regular fa-heart"></i> {guide.likes || 0}</span>
@@ -228,8 +223,8 @@ function SearchContent() {
                             <span className={styles.resultCategory}>{post.type}</span>
                             <span className={styles.resultTime}>{formatRelativeTime(post.createdAt)}</span>
                           </div>
-                          <div className={styles.resultTitle}>{extractText(post.content, 60)}</div>
-                          <div className={styles.resultSnippet}>{extractText(post.content, 120)}</div>
+                          <div className={styles.resultTitle}>{extractPreviewText(post.content, 60)}</div>
+                          <div className={styles.resultSnippet}>{extractPreviewText(post.content, 120)}</div>
                           <div className={styles.resultStats}>
                             <span><i className="fa-regular fa-eye"></i> {post.viewCount || 0}</span>
                             <span><i className="fa-regular fa-heart"></i> {post.likes || 0}</span>

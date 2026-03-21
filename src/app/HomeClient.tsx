@@ -9,6 +9,7 @@ import YouTuberSection from "@/components/YouTuberSection";
 import { getGuides, getGuideById } from "@/actions/guide";
 import { getPosts } from "@/actions/post";
 import { fetchMabinogiMobileYouTubers, YouTubeChannel } from "@/actions/youtube";
+import { decodeHtmlEntities, extractPreviewText } from "@/lib/text";
 
 // Editor's Choice 고정 ID
 const EDITORS_CHOICE_ID = "692fbf2c9e1c94a15a09f963";
@@ -69,12 +70,6 @@ const formatRelativeTime = (dateString: string) => {
   if (hours < 24) return `${hours}시간 전`;
   if (days < 7) return `${days}일 전`;
   return date.toLocaleDateString();
-};
-
-// HTML 태그 제거
-const extractText = (html: string, maxLength: number = 100) => {
-  const text = html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ');
-  return text.length > maxLength ? text.slice(0, maxLength) + '...' : text;
 };
 
 export default function HomeClient({ initialStats }: { initialStats?: any }) {
@@ -276,7 +271,7 @@ export default function HomeClient({ initialStats }: { initialStats?: any }) {
                               <span className={styles.resultCategory}>{post.type}</span>
                               <span className={styles.resultTime}>{formatRelativeTime(post.createdAt)}</span>
                             </div>
-                            <div className={styles.resultTitle}>{extractText(post.content, 50)}</div>
+                            <div className={styles.resultTitle}>{extractPreviewText(post.content, 50)}</div>
                             <div className={styles.resultStats}>
                               <span><i className="fa-regular fa-eye"></i> {post.viewCount || 0}</span>
                               <span><i className="fa-regular fa-heart"></i> {post.likes || 0}</span>
@@ -302,7 +297,7 @@ export default function HomeClient({ initialStats }: { initialStats?: any }) {
               <Link href={`/guide/${editorsChoice._id}`} className={`${styles.card} ${styles.colSpan8} ${styles.rowSpan2} ${styles.imgCard}`}>
                 <Image 
                   src={editorsChoice.thumbnail || getPlaceholderImage(0)} 
-                  alt={editorsChoice.title}
+                  alt={decodeHtmlEntities(editorsChoice.title)}
                   fill
                   sizes="(max-width: 768px) 100vw, 800px"
                   style={{ objectFit: 'cover', zIndex: 0 }}
@@ -315,9 +310,9 @@ export default function HomeClient({ initialStats }: { initialStats?: any }) {
                   zIndex: 1
                 }} />
                 
-                <div className={styles.cardCategory} style={{position: 'relative', zIndex: 2}}>Editor's Choice</div>
-                <div className={styles.cardTitle} style={{position: 'relative', zIndex: 2}}>{editorsChoice.title}</div>
-                <div className={styles.cardDesc} style={{position: 'relative', zIndex: 2}}>{extractText(editorsChoice.content, 80)}</div>
+                <div className={styles.cardCategory} style={{position: 'relative', zIndex: 2}}>Editor&apos;s Choice</div>
+                <div className={styles.cardTitle} style={{position: 'relative', zIndex: 2}}>{decodeHtmlEntities(editorsChoice.title)}</div>
+                <div className={styles.cardDesc} style={{position: 'relative', zIndex: 2}}>{extractPreviewText(editorsChoice.content, 80)}</div>
                 <div className={styles.cardFooter} style={{borderTopColor: 'rgba(255,255,255,0.2)', position: 'relative', zIndex: 2}}>
                   <Image 
                     src={editorsChoice.author?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${editorsChoice.author?.id}`} 
@@ -343,8 +338,10 @@ export default function HomeClient({ initialStats }: { initialStats?: any }) {
                   const isGuide = item._type === 'guide';
                   const category = isGuide ? item.category : item.type;
                   const color = categoryColors[category] || '#666';
-                  const title = isGuide ? item.title : extractText(item.content, 40);
-                  const desc = extractText(isGuide ? item.content : item.content, 60);
+                  const title = isGuide
+                    ? decodeHtmlEntities(item.title)
+                    : extractPreviewText(item.content, 40);
+                  const desc = extractPreviewText(item.content, 60);
                   const link = isGuide ? `/guide/${item._id}` : `/community/${item._id}`;
                   const authorName = item.author?.name || '익명';
                   const authorImage = item.author?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${item.author?.id || index}`;

@@ -1,25 +1,9 @@
 import TipDetailClient from "./TipDetailClient";
 import type { Metadata } from "next";
 import { getGuideById } from "@/actions/guide";
+import { decodeHtmlEntities, htmlToPlainText } from "@/lib/text";
 
 const SITE_URL = "https://www.mabilife.com";
-
-// HTML 태그 제거 및 특수문자 처리를 위한 함수
-function stripHtml(html: string): string {
-  return html
-    .replace(/<[^>]*>/g, "") // HTML 태그 제거
-    .replace(/&nbsp;/g, " ") // 공백 처리
-    .replace(/&lsquo;/g, "'") // 왼쪽 작은따옴표
-    .replace(/&rsquo;/g, "'") // 오른쪽 작은따옴표
-    .replace(/&ldquo;/g, '"') // 왼쪽 큰따옴표
-    .replace(/&rdquo;/g, '"') // 오른쪽 큰따옴표
-    .replace(/&lt;/g, "<") // 부등호 <
-    .replace(/&gt;/g, ">") // 부등호 >
-    .replace(/&amp;/g, "&") // 앰퍼샌드
-    .replace(/&quot;/g, '"') // 따옴표
-    .replace(/\s+/g, " ") // 연속된 공백을 하나로
-    .trim();
-}
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
@@ -32,8 +16,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   }
 
   const guide = result.data as any;
-  const title = guide.title;
-  const description = stripHtml(guide.content).slice(0, 160);
+  const title = decodeHtmlEntities(guide.title);
+  const description = htmlToPlainText(guide.content).slice(0, 160);
   const thumbnail = guide.thumbnail;
   const category = guide.category;
 
