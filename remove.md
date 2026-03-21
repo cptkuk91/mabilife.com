@@ -39,7 +39,6 @@
 - [x] 삭제/정리 후 `npm run build` 검증 완료
 
 대기
-- [ ] `public/tinymce` 런타임 축소 후보 smoke test 후 정리
 - [ ] `public/BingSiteAuth.xml` 운영 여부 확인
 - [ ] `public/naver00052002924961f6ee72b77324282076.html` 운영 여부 확인
 - [ ] `public/ads.txt` 운영 여부 확인
@@ -96,19 +95,19 @@
 
 ## 3. 패키지 / 의존성 정리 후보
 
-| 항목 | 근거 |
-| --- | --- |
-| `package.json` 의 `dotenv` | 프로젝트 전체에서 import/require/use 흔적이 없음. 현재 `.env`, `.env.local`은 Next가 자체 로딩하므로 불필요 가능성 높음 |
+| 상태 | 항목 | 근거 |
+| --- | --- | --- |
+| [x] | `package.json` 의 `dotenv` | 프로젝트 전체에서 import/require/use 흔적이 없음. 현재 `.env`, `.env.local`은 Next가 자체 로딩하므로 불필요 가능성 높음 |
 
 메모
 - `src/lib/s3-upload.ts` 에서만 `nanoid` 를 사용하지만 해당 파일 자체가 orphan 상태다. 즉 `nanoid` 를 추가해야 할 상태가 아니라, 오히려 `src/lib/s3-upload.ts` 를 제거하는 쪽이 자연스럽다.
 
 ## 4. 문서/메타 파일 정리 후보
 
-| 경로 | 판단 | 근거 |
-| --- | --- | --- |
-| `README.md` | 제거 또는 전면 재작성 | 현재 내용이 `create-next-app` 기본 README 그대로라 실제 프로젝트 정보와 맞지 않음 |
-| `plan.md` | 제거 또는 archive | 현재 구현과 어긋난 내용이 많음. 예: 상세 페이지를 `/post/[id]` 로 적어두었지만 실제 라우트는 `/community/[id]` |
+| 상태 | 경로 | 판단 | 근거 |
+| --- | --- | --- | --- |
+| [x] | `README.md` | 제거 또는 전면 재작성 | 현재 내용이 `create-next-app` 기본 README 그대로라 실제 프로젝트 정보와 맞지 않음 |
+| [x] | `plan.md` | 제거 또는 archive | 현재 구현과 어긋난 내용이 많음. 예: 상세 페이지를 `/post/[id]` 로 적어두었지만 실제 라우트는 `/community/[id]` |
 
 ## 5. TinyMCE 번들 축소 후보
 
@@ -118,80 +117,82 @@
 - 기본 테마/스킨 추정: `silver`, `oxide`, `default`
 
 현재 `public/tinymce` 크기
-- 약 `8.4M`
-- 파일 수 `218`
+- 약 `2.0M`
+- 파일 수 `81`
 
 ### 5-1. 즉시 제거 가능성이 매우 높은 파일
 
 아래는 브라우저 런타임에서 읽히지 않는 문서/패키지 메타 파일이다.
 
-- `public/tinymce/README.md`
-- `public/tinymce/CHANGELOG.md`
-- `public/tinymce/package.json`
-- `public/tinymce/bower.json`
-- `public/tinymce/composer.json`
-- `public/tinymce/tinymce.d.ts`
+- [x] `public/tinymce/README.md`
+- [x] `public/tinymce/CHANGELOG.md`
+- [x] `public/tinymce/package.json`
+- [x] `public/tinymce/bower.json`
+- [x] `public/tinymce/composer.json`
+- [x] `public/tinymce/tinymce.d.ts`
 
 ### 5-2. 브라우저 1회 smoke test 후 제거할 후보
 
 현재 설정으로 보아 아래 폴더/파일은 실제 앱에서 쓰이지 않을 가능성이 높다.
 
 사용하지 않는 plugin 폴더
-- `public/tinymce/plugins/accordion`
-- `public/tinymce/plugins/advlist`
-- `public/tinymce/plugins/autolink`
-- `public/tinymce/plugins/autoresize`
-- `public/tinymce/plugins/autosave`
-- `public/tinymce/plugins/codesample`
-- `public/tinymce/plugins/directionality`
-- `public/tinymce/plugins/emoticons`
-- `public/tinymce/plugins/fullscreen`
-- `public/tinymce/plugins/importcss`
-- `public/tinymce/plugins/insertdatetime`
-- `public/tinymce/plugins/media`
-- `public/tinymce/plugins/nonbreaking`
-- `public/tinymce/plugins/pagebreak`
-- `public/tinymce/plugins/preview`
-- `public/tinymce/plugins/quickbars`
-- `public/tinymce/plugins/save`
-- `public/tinymce/plugins/searchreplace`
-- `public/tinymce/plugins/table`
-- `public/tinymce/plugins/template`
-- `public/tinymce/plugins/visualblocks`
-- `public/tinymce/plugins/visualchars`
-- `public/tinymce/plugins/wordcount`
+- [x] `public/tinymce/plugins/accordion`
+- [x] `public/tinymce/plugins/advlist`
+- [x] `public/tinymce/plugins/autolink`
+- [x] `public/tinymce/plugins/autoresize`
+- [x] `public/tinymce/plugins/autosave`
+- [x] `public/tinymce/plugins/codesample`
+- [x] `public/tinymce/plugins/directionality`
+- [x] `public/tinymce/plugins/emoticons`
+- [x] `public/tinymce/plugins/fullscreen`
+- [x] `public/tinymce/plugins/importcss`
+- [x] `public/tinymce/plugins/insertdatetime`
+- [x] `public/tinymce/plugins/media`
+- [x] `public/tinymce/plugins/nonbreaking`
+- [x] `public/tinymce/plugins/pagebreak`
+- [x] `public/tinymce/plugins/preview`
+- [x] `public/tinymce/plugins/quickbars`
+- [x] `public/tinymce/plugins/save`
+- [x] `public/tinymce/plugins/searchreplace`
+- [x] `public/tinymce/plugins/table`
+- [x] `public/tinymce/plugins/template`
+- [x] `public/tinymce/plugins/visualblocks`
+- [x] `public/tinymce/plugins/visualchars`
+- [x] `public/tinymce/plugins/wordcount`
 
 사용하지 않을 가능성이 높은 대체 skin 폴더
-- `public/tinymce/skins/content/dark`
-- `public/tinymce/skins/content/document`
-- `public/tinymce/skins/content/tinymce-5`
-- `public/tinymce/skins/content/tinymce-5-dark`
-- `public/tinymce/skins/content/writer`
-- `public/tinymce/skins/ui/oxide-dark`
-- `public/tinymce/skins/ui/tinymce-5`
-- `public/tinymce/skins/ui/tinymce-5-dark`
+- [x] `public/tinymce/skins/content/dark`
+- [x] `public/tinymce/skins/content/document`
+- [x] `public/tinymce/skins/content/tinymce-5`
+- [x] `public/tinymce/skins/content/tinymce-5-dark`
+- [x] `public/tinymce/skins/content/writer`
+- [x] `public/tinymce/skins/ui/oxide-dark`
+- [x] `public/tinymce/skins/ui/tinymce-5`
+- [x] `public/tinymce/skins/ui/tinymce-5-dark`
 
 사용하지 않을 가능성이 높은 비최소화/보조 파일
-- `public/tinymce/tinymce.js`
-- `public/tinymce/themes/silver/theme.js`
-- `public/tinymce/themes/silver/index.js`
-- `public/tinymce/icons/default/icons.js`
-- `public/tinymce/icons/default/index.js`
-- `public/tinymce/models/dom/model.js`
-- `public/tinymce/models/dom/index.js`
+- [x] `public/tinymce/tinymce.js`
+- [x] `public/tinymce/themes/silver/theme.js`
+- [x] `public/tinymce/themes/silver/index.js`
+- [x] `public/tinymce/icons/default/icons.js`
+- [x] `public/tinymce/icons/default/index.js`
+- [x] `public/tinymce/models/dom/model.js`
+- [x] `public/tinymce/models/dom/index.js`
 
 주의
-- 위 5-2 항목은 `tinymce.min.js` 기준으로는 거의 불필요해 보이지만, TinyMCE 내부 동적 로딩 경로가 배포 모드에 따라 달라질 수 있으므로 에디터 페이지에서 이미지 업로드/링크 삽입/도움말 창까지 한 번 확인한 뒤 지우는 것이 안전하다.
+- 로컬 Puppeteer harness로 `tinymce.min.js` + 현재 에디터 설정(`lists link charmap anchor code help image`)을 실제 초기화해 요청 목록을 확인했다.
+- 실제 요청된 파일은 `tinymce.min.js`, `themes/silver/theme.min.js`, `icons/default/icons.min.js`, `models/dom/model.min.js`, 사용 중인 plugin의 `plugin.min.js`, `skins/content/default/content.min.css`, `skins/ui/oxide/content.min.css`, `skins/ui/oxide/skin.min.css`, `plugins/help/js/i18n/keynav/en.js` 뿐이었고 실패 요청은 없었다.
+- 위 목록에 포함되지 않은 5-2 항목만 제거했다.
 
 ## 6. 코드 참조는 없지만 운영 파일일 수 있는 항목
 
 아래는 코드 내부 reference 는 없지만 URL 직접 접근용 파일일 수 있어서, 서비스 운영 여부를 확인한 뒤 제거해야 한다.
 
-| 경로 | 확인 포인트 |
-| --- | --- |
-| `public/BingSiteAuth.xml` | Bing Webmaster 인증을 계속 쓰는지 |
-| `public/naver00052002924961f6ee72b77324282076.html` | Naver Search Advisor 인증을 계속 쓰는지 |
-| `public/ads.txt` | 광고 네트워크 연동을 계속 쓰는지 |
+| 상태 | 경로 | 확인 포인트 |
+| --- | --- | --- |
+| [ ] | `public/BingSiteAuth.xml` | Bing Webmaster 인증을 계속 쓰는지 |
+| [ ] | `public/naver00052002924961f6ee72b77324282076.html` | Naver Search Advisor 인증을 계속 쓰는지 |
+| [ ] | `public/ads.txt` | 광고 네트워크 연동을 계속 쓰는지 |
 
 ## 7. 참고 메모
 
