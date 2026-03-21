@@ -1,36 +1,67 @@
-/* --- Apple Aesthetic Variables --- */
+@import "tailwindcss";
+
+@theme static {
+  --font-app: var(--font-noto), -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  --color-app-bg: #F5F5F7;
+  --color-app-surface: #FFFFFF;
+  --color-app-title: #1D1D1F;
+  --color-app-body: #86868B;
+  --color-app-accent: #0071E3;
+  --color-app-accent-hover: #0077ED;
+  --color-app-glass: rgba(255, 255, 255, 0.8);
+  --color-app-main: #0F1419;
+  --color-app-sub: #536471;
+  --color-app-success: #00BA7C;
+  --color-app-warning: #FF9500;
+  --color-app-free-tag: #71767B;
+  --color-app-border: #EFF3F4;
+
+  --shadow-elev-card: 0 4px 24px rgba(0, 0, 0, 0.06);
+  --shadow-elev-hover: 0 8px 32px rgba(0, 0, 0, 0.12);
+  --shadow-elev-soft: 0 4px 20px rgba(0, 0, 0, 0.06);
+
+  --radius-surface-lg: 28px;
+  --radius-surface-md: 18px;
+  --radius-surface-xl: 24px;
+  --radius-panel: 20px;
+
+  --container-content: 980px;
+}
+
+/* --- Legacy Tokens kept during migration --- */
 :root {
-  --bg-color: #F5F5F7; /* Apple Off-White */
-  --card-bg: #FFFFFF;
-  --text-title: #1D1D1F; /* Almost Black */
-  --text-body: #86868B; /* Grey Text */
-  --accent: #0071E3; /* Apple Blue */
-  --accent-hover: #0077ED;
-  --glass: rgba(255, 255, 255, 0.8);
-  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.06);
-  --shadow-hover: 0 8px 32px rgba(0, 0, 0, 0.12);
-  --radius-lg: 28px;
-  --radius-md: 18px;
-  --radius-xl: 24px;
-  --max-width: 980px; /* Apple Standard Content Width */
-  --shadow: 0 4px 20px rgba(0,0,0,0.06);
+  --bg-color: var(--color-app-bg); /* Apple Off-White */
+  --card-bg: var(--color-app-surface);
+  --text-title: var(--color-app-title); /* Almost Black */
+  --text-body: var(--color-app-body); /* Grey Text */
+  --accent: var(--color-app-accent); /* Apple Blue */
+  --accent-hover: var(--color-app-accent-hover);
+  --glass: var(--color-app-glass);
+  --shadow-card: var(--shadow-elev-card);
+  --shadow-hover: var(--shadow-elev-hover);
+  --radius-lg: var(--radius-surface-lg);
+  --radius-md: var(--radius-surface-md);
+  --radius-xl: var(--radius-surface-xl);
+  --max-width: var(--container-content); /* Apple Standard Content Width */
+  --shadow: var(--shadow-elev-soft);
   
   /* Q&A / Community Specific Variables */
-  --text-main: #0F1419;
-  --text-sub: #536471;
-  --success: #00BA7C;
-  --warning: #FF9500; /* Orange */
-  --free-tag: #71767B; /* Grey for free talk */
-  --border: #EFF3F4;
-  --radius: 20px;
+  --text-main: var(--color-app-main);
+  --text-sub: var(--color-app-sub);
+  --success: var(--color-app-success);
+  --warning: var(--color-app-warning); /* Orange */
+  --free-tag: var(--color-app-free-tag); /* Grey for free talk */
+  --border: var(--color-app-border);
+  --radius: var(--radius-panel);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: var(--font-noto), -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  background-color: var(--bg-color);
-  color: var(--text-title);
+  font-family: var(--font-app);
+  background-color: var(--color-app-bg);
+  color: var(--color-app-title);
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
 }
@@ -48,434 +79,4 @@ a { text-decoration: none; color: inherit; }
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border-width: 0;
-}
-
-/* --- 1. Global Navigation (Apple Style) --- */
-.global-nav {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 48px; /* Apple Nav Height */
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  z-index: 1000;
-  border-bottom: 1px solid rgba(0,0,0,0.08);
-}
-
-.nav-content {
-  max-width: var(--max-width);
-  margin: 0 auto;
-  height: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 20px;
-}
-
-.nav-logo { font-weight: 600; font-size: 19px; letter-spacing: -0.5px; }
-.nav-logo i { margin-right: 6px; }
-
-.nav-links { display: flex; gap: 30px; font-size: 12px; color: var(--text-title); opacity: 0.8; }
-.nav-links a:hover { color: var(--accent); opacity: 1; transition: 0.3s; }
-
-/* Guide/Community Nav Menu Specifics */
-.nav-menu { display: flex; gap: 24px; font-size: 14px; color: var(--text-body); }
-.nav-menu a.active { color: var(--accent); font-weight: 600; }
-
-.search-btn-circle {
-  width: 32px; height: 32px; background: #E8E8ED; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 14px; cursor: pointer; color: var(--accent); transition: 0.2s;
-}
-.search-btn-circle:hover { background: #dcdce0; }
-
-/* --- Profile Dropdown Styles --- */
-.nav-profile-container {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.nav-profile-img {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  object-fit: cover;
-  cursor: pointer;
-  border: 2px solid transparent;
-  transition: 0.2s;
-}
-
-.nav-profile-img:hover {
-  border-color: var(--accent);
-}
-
-.nav-dropdown {
-  position: absolute;
-  top: 50px;
-  right: 0;
-  width: 220px;
-  background: var(--card-bg);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-hover);
-  padding: 8px;
-  z-index: 1001;
-  animation: fadeIn 0.2s ease-out;
-  border: 1px solid rgba(0,0,0,0.05);
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.dropdown-user-info {
-  padding: 12px 16px;
-}
-
-.dropdown-name {
-  font-weight: 700;
-  font-size: 15px;
-  color: var(--text-title);
-}
-
-.dropdown-email {
-  font-size: 12px;
-  color: var(--text-body);
-  margin-top: 2px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.dropdown-divider {
-  height: 1px;
-  background: var(--border);
-  margin: 6px 0;
-}
-
-.dropdown-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 16px;
-  font-size: 14px;
-  color: var(--text-title);
-  border-radius: 8px;
-  cursor: pointer;
-  transition: 0.2s;
-}
-
-.dropdown-item:hover {
-  background: #F5F5F7;
-  color: var(--accent);
-}
-
-.dropdown-item i {
-  width: 16px;
-  text-align: center;
-}
-
-/* --- Login Button Style --- */
-.nav-login-btn {
-  background: var(--accent);
-  color: white;
-  border: none;
-  padding: 8px 18px;
-  border-radius: 99px;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.nav-login-btn:hover {
-  background: var(--accent-hover);
-  transform: scale(1.02);
-}
-
-/* --- Nav Actions (Right Side) --- */
-.nav-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.nav-icon-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  color: var(--text-body);
-  background: transparent;
-  transition: all 0.2s ease;
-  cursor: pointer;
-}
-
-.nav-icon-btn:hover {
-  background: rgba(0, 0, 0, 0.05);
-  color: var(--accent);
-}
-
-/* Discord specific color on hover */
-.nav-icon-btn .fa-discord:hover {
-  color: #5865F2;
-}
-
-/* --- Mobile Dock Navigation --- */
-.mobile-dock {
-  display: none;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 80px;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
-  z-index: 1000;
-  padding: 8px 0 20px;
-  justify-content: space-around;
-  align-items: center;
-}
-
-.dock-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 8px 12px;
-  color: var(--text-body);
-  text-decoration: none;
-  transition: all 0.2s ease;
-  min-width: 60px;
-}
-
-.dock-item i {
-  font-size: 22px;
-  transition: transform 0.2s ease;
-}
-
-.dock-item span {
-  font-size: 10px;
-  font-weight: 500;
-}
-
-.dock-item.active {
-  color: var(--text-title);
-}
-
-.dock-item.active i {
-  transform: scale(1.1);
-}
-
-.dock-item:active {
-  transform: scale(0.95);
-}
-
-/* Dock Profile Image */
-.dock-profile-img {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid transparent;
-  transition: border-color 0.2s ease;
-}
-
-.dock-item.active .dock-profile-img {
-  border-color: var(--text-title);
-}
-
-/* Mobile Dock Dropdown */
-.dock-item-wrapper {
-  position: relative;
-}
-
-.mobile-dropdown {
-  position: absolute;
-  bottom: 70px;
-  right: -10px;
-  background: rgba(255, 255, 255, 0.98);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-radius: 16px;
-  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.12);
-  padding: 8px;
-  min-width: 160px;
-  animation: slideUp 0.2s ease-out;
-  border: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.mobile-dropdown-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--text-title);
-  border-radius: 10px;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.mobile-dropdown-item:hover,
-.mobile-dropdown-item:active {
-  background: #f5f5f7;
-}
-
-.mobile-dropdown-item i {
-  font-size: 16px;
-  width: 20px;
-  text-align: center;
-  color: var(--text-body);
-}
-
-.mobile-dropdown-up {
-  right: auto;
-  left: 50%;
-  transform: translateX(-50%);
-  animation: slideUpCenter 0.2s ease-out;
-}
-
-@keyframes slideUpCenter {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
-}
-
-/* --- Mobile Responsive --- */
-@media (max-width: 768px) {
-  /* Hide desktop nav menu and actions */
-  .nav-menu,
-  .nav-actions {
-    display: none;
-  }
-
-  /* Show mobile dock */
-  .mobile-dock {
-    display: flex;
-  }
-
-  /* Adjust top nav for mobile */
-  .global-nav {
-    height: 56px;
-  }
-
-  .nav-logo {
-    font-size: 17px;
-  }
-
-  /* Add bottom padding to body for dock */
-  body {
-    padding-bottom: 80px;
-  }
-}
-
-/* Mobile Menu Grid Panel */
-.mobile-menu-panel {
-  position: fixed;
-  bottom: 80px; /* Above dock */
-  left: 0;
-  right: 0;
-  background: rgba(255, 255, 255, 0.98);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-radius: 24px 24px 0 0;
-  padding: 24px 20px 30px;
-  box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.15);
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
-  z-index: 999;
-  animation: slideUpPanel 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  max-width: 600px;
-  margin: 0 auto; /* Center on larger mobile screens if any */
-}
-
-/* On very wide screens, keep it centered and not full width if wanted, or let it stick to bottom */
-@media (min-width: 601px) {
-    .mobile-menu-panel {
-        left: 50%;
-        transform: translateX(-50%);
-        width: 100%;
-        max-width: 500px;
-        bottom: 90px;
-        border-radius: 24px;
-    }
-}
-
-@keyframes slideUpPanel {
-  from { transform: translateY(100%); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-.menu-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px 12px;
-}
-
-.menu-grid-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  text-decoration: none;
-  color: var(--text-title);
-  width: 100%;
-}
-
-.menu-icon {
-  width: 50px;
-  height: 50px;
-  background: #F5F5F7;
-  border-radius: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 22px;
-  color: var(--text-title);
-  transition: all 0.2s ease;
-}
-
-.menu-grid-item:active .menu-icon {
-  background: #E8E8ED;
-  transform: scale(0.95);
-}
-
-.menu-grid-item span {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--text-body);
-  white-space: nowrap;
-}
-
-.mobile-dropdown-right {
-  right: 10px;
-  left: auto;
-  transform: none;
-  animation: slideUp 0.2s ease-out;
 }

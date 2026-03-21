@@ -7,7 +7,21 @@ import RichTextEditorWrapper, { RichTextEditorHandle } from "@/components/Editor
 import { createGuide, getGuideById, updateGuide } from "@/actions/guide";
 import { getPresignedUrlAction } from "@/actions/upload";
 
-import styles from "./write.module.css";
+const cn = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(" ");
+const pageClass = "mx-auto max-w-[800px] px-4 pb-20 pt-24 md:px-5 md:pt-28";
+const loadingClass = "rounded-[28px] bg-white px-6 py-24 text-center text-base text-app-body shadow-elev-card";
+const titleClass = "text-[34px] font-extrabold tracking-[-0.04em] text-app-title md:text-[40px]";
+const subtitleClass = "mt-1 text-[16px] text-app-body md:text-[20px]";
+const formClass = "mt-8 flex flex-col gap-6";
+const sectionCardClass = "rounded-[24px] bg-white p-5 shadow-elev-card md:p-6";
+const sectionLabelClass = "mb-3 block text-sm font-semibold text-app-title";
+const categoryButtonClass =
+  "rounded-full border border-app-border bg-white px-4 py-2 text-sm font-medium text-app-title transition hover:bg-app-bg";
+const activeCategoryButtonClass = "border-app-accent bg-app-accent text-white hover:bg-app-accent";
+const titleInputClass =
+  "w-full rounded-[16px] border border-black/10 bg-white px-5 py-4 text-[24px] font-bold tracking-[-0.03em] text-app-title outline-none transition placeholder:text-black/20 focus:border-app-accent";
+const actionButtonClass =
+  "rounded-[12px] px-5 py-3 text-sm font-semibold transition md:text-base";
 
 function GuideWriteContent() {
   const router = useRouter();
@@ -173,33 +187,34 @@ function GuideWriteContent() {
 
   if (isLoading) {
     return (
-      <div className={styles.pageContainer}>
-        <div className={styles.loading}>로딩 중...</div>
+      <div className={pageClass}>
+        <div className={loadingClass}>로딩 중...</div>
       </div>
     );
   }
 
   return (
-    <div className={styles.pageContainer}>
-      <header className={styles.hubHeader}>
+    <div className={pageClass}>
+      <header>
         <div>
-          <div className={styles.hubTitle}>{isEditMode ? "공략 수정" : "공략 작성"}</div>
-          <div className={styles.hubSubtitle}>
+          <div className={titleClass}>{isEditMode ? "공략 수정" : "공략 작성"}</div>
+          <div className={subtitleClass}>
             {isEditMode ? "공략 내용을 수정하세요." : "나만의 꿀팁을 다른 유저들과 공유해보세요."}
           </div>
         </div>
       </header>
 
-      <div className={styles.writeForm}>
+      <div className={formClass}>
         {/* Category Selection */}
-        <div className={styles.formGroup}>
-          <label className={styles.label}>카테고리</label>
-          <div className={styles.categorySelect}>
+        <div className={sectionCardClass}>
+          <label className={sectionLabelClass}>카테고리</label>
+          <div className="flex flex-wrap gap-2.5">
             {categories.map((cat) => (
               <button
+                type="button"
                 key={cat}
                 onClick={() => setCategory(cat)}
-                className={`${styles.categoryBtn} ${category === cat ? styles.active : ''}`}
+                className={cn(categoryButtonClass, category === cat && activeCategoryButtonClass)}
               >
                 {cat}
               </button>
@@ -208,22 +223,25 @@ function GuideWriteContent() {
         </div>
 
         {/* Thumbnail Upload */}
-        <div className={styles.formGroup}>
-          <label className={styles.label}>썸네일 이미지 (선택)</label>
+        <div className={sectionCardClass}>
+          <label className={sectionLabelClass}>썸네일 이미지 (선택)</label>
           {thumbnail ? (
-            <div className={styles.thumbnailPreview}>
-              <img src={thumbnail} alt="썸네일 미리보기" className={styles.thumbnailImage} />
+            <div className="relative max-w-[420px] overflow-hidden rounded-[16px]">
+              <img src={thumbnail} alt="썸네일 미리보기" className="block w-full rounded-[16px]" />
               <button
                 type="button"
                 onClick={handleRemoveThumbnail}
-                className={styles.removeThumbnailBtn}
+                className="absolute right-3 top-3 flex size-8 items-center justify-center rounded-full bg-black/60 text-white transition hover:bg-black/80"
               >
                 <i className="fa-solid fa-xmark"></i>
               </button>
             </div>
           ) : (
             <div
-              className={`${styles.thumbnailUpload} ${isDragging ? styles.dragging : ''}`}
+              className={cn(
+                "rounded-[16px] border-2 border-dashed border-black/15 bg-black/[0.015] px-5 py-12 text-center transition hover:border-app-accent hover:bg-app-accent/[0.02]",
+                isDragging && "border-app-accent bg-app-accent/[0.05]",
+              )}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
@@ -233,20 +251,20 @@ function GuideWriteContent() {
                 id="thumbnail-upload"
                 accept="image/*"
                 onChange={handleFileSelect}
-                className={styles.hiddenInput}
+                className="hidden"
                 disabled={isUploading}
               />
-              <label htmlFor="thumbnail-upload" className={styles.uploadLabel}>
+              <label htmlFor="thumbnail-upload" className="flex cursor-pointer flex-col items-center gap-3 text-app-body">
                 {isUploading ? (
                   <>
-                    <i className="fa-solid fa-spinner fa-spin"></i>
+                    <i className="fa-solid fa-spinner fa-spin text-3xl text-app-body"></i>
                     <span>업로드 중...</span>
                   </>
                 ) : (
                   <>
-                    <i className="fa-solid fa-image"></i>
+                    <i className="fa-solid fa-image text-3xl text-app-body"></i>
                     <span>클릭하거나 이미지를 드래그하세요</span>
-                    <span className={styles.uploadHint}>권장 크기: 1200 x 630px</span>
+                    <span className="text-xs text-app-body">권장 크기: 1200 x 630px</span>
                   </>
                 )}
               </label>
@@ -255,18 +273,19 @@ function GuideWriteContent() {
         </div>
 
         {/* Title Input */}
-        <div className={styles.formGroup}>
+        <div className={sectionCardClass}>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="제목을 입력하세요"
-            className={styles.titleInput}
+            className={titleInputClass}
           />
         </div>
 
         {/* Editor */}
-        <div className={styles.formGroup}>
+        <div className={sectionCardClass}>
+          <label className={sectionLabelClass}>내용</label>
           <RichTextEditorWrapper
             ref={editorRef}
             value={content}
@@ -277,17 +296,22 @@ function GuideWriteContent() {
         </div>
 
         {/* Action Buttons */}
-        <div className={styles.formActions}>
+        <div className="mt-2 flex justify-end gap-3">
           <button
+            type="button"
             onClick={() => router.back()}
-            className={styles.cancelBtn}
+            className={cn(actionButtonClass, "bg-app-bg text-app-title hover:bg-black/[0.08]")}
           >
             취소
           </button>
           <button
+            type="button"
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className={styles.submitBtn}
+            className={cn(
+              actionButtonClass,
+              "bg-app-accent text-white hover:bg-app-accent-hover disabled:cursor-not-allowed disabled:opacity-70",
+            )}
           >
             {isSubmitting ? '저장 중...' : isEditMode ? '수정하기' : '등록하기'}
           </button>
@@ -299,7 +323,7 @@ function GuideWriteContent() {
 
 export default function GuideWriteClient() {
   return (
-    <Suspense fallback={<div className={styles.pageContainer}><div className={styles.loading}>로딩 중...</div></div>}>
+    <Suspense fallback={<div className={pageClass}><div className={loadingClass}>로딩 중...</div></div>}>
       <GuideWriteContent />
     </Suspense>
   );

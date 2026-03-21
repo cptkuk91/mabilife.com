@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useMemo } from 'react';
-import styles from './runes.module.css';
+import { useState, useMemo, useDeferredValue } from 'react';
 import { RUNE_DATABASE, Rune } from '@/data/runes';
 
 // ... other types ...
@@ -536,6 +535,54 @@ interface RunesClientProps {
   initialRunes?: Rune[];
 }
 
+const cn = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(" ");
+const containerClass =
+  "mx-auto flex max-w-[var(--max-width)] flex-col gap-6 px-4 pb-20 pt-20 md:px-5 md:pt-24 lg:flex-row lg:gap-8";
+const sidebarClass =
+  "sticky top-16 z-10 -mx-4 flex gap-2 overflow-x-auto bg-app-bg px-4 py-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:-mx-5 md:px-5 lg:top-20 lg:mx-0 lg:w-[240px] lg:flex-shrink-0 lg:flex-col lg:gap-2 lg:self-start lg:overflow-visible lg:bg-transparent lg:px-0 lg:py-0";
+const categoryItemClass =
+  "flex shrink-0 items-center gap-3 rounded-full bg-white/70 px-4 py-2.5 text-left text-sm font-medium text-app-body shadow-elev-soft transition hover:bg-white hover:text-app-title lg:rounded-[18px] lg:bg-transparent lg:px-4 lg:py-3 lg:text-[15px] lg:shadow-none";
+const activeCategoryItemClass =
+  "bg-app-title text-white hover:bg-app-title hover:text-white lg:bg-white lg:text-app-accent lg:shadow-elev-soft";
+const contentClass = "min-w-0 flex-1";
+const headerClass = "mb-6";
+const titleClass = "text-[24px] font-bold tracking-[-0.03em] text-app-title md:text-[28px]";
+const descriptionClass = "mt-2 text-[15px] leading-6 text-app-body";
+const chipBarClass =
+  "mb-6 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
+const chipClass =
+  "shrink-0 rounded-full bg-black/[0.04] px-4 py-2 text-sm font-medium text-app-body transition hover:bg-black/[0.08] hover:text-app-title";
+const activeChipClass = "bg-app-accent text-white hover:bg-app-accent hover:text-white";
+const searchWrapperClass =
+  "mb-6 flex items-center gap-3 rounded-[18px] border border-black/8 bg-white px-4 py-3 shadow-elev-soft transition focus-within:border-app-accent focus-within:shadow-[0_0_0_3px_rgba(0,113,227,0.1)]";
+const searchInputClass =
+  "min-w-0 flex-1 border-none bg-transparent text-[15px] text-app-title outline-none placeholder:text-app-body/70";
+const sectionStackClass = "flex flex-col gap-6 md:gap-8";
+const slotSectionClass = "flex flex-col gap-3";
+const slotTitleClass = "flex items-center gap-2 text-[18px] font-bold text-app-title";
+const tableWrapperClass = "overflow-hidden rounded-[20px] border border-black/6 bg-white shadow-elev-card";
+const tableClass =
+  "w-full border-collapse text-left [&_th]:border-b [&_th]:border-black/6 [&_th]:bg-[#FBFBFD] [&_th]:px-4 [&_th]:py-3 [&_th]:text-[12px] [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-[0.08em] [&_th]:text-app-body md:[&_th]:px-6 [&_th]:normal-case [&_td]:border-b [&_td]:border-black/6 [&_td]:px-4 [&_td]:py-4 [&_td]:text-[14px] [&_td]:text-app-title md:[&_td]:px-6 md:[&_td]:text-[15px] [&_tbody_tr:last-child_td]:border-b-0 [&_tbody_tr:hover_td]:bg-black/[0.02]";
+const nameCellBaseClass = "font-medium";
+const emptyStateClass = "rounded-[24px] bg-white px-6 py-16 text-center text-app-body shadow-elev-card";
+
+const gradeClassMap: Record<string, string> = {
+  mythic: "font-semibold text-[#F5A623] [text-shadow:0_0_1px_rgba(245,166,35,0.3)]",
+  legendary: "font-semibold text-[#FF6B00]",
+  epic: "text-[#A335EE]",
+};
+
+const rankBadgeClassMap: Record<number, string> = {
+  1: "bg-[linear-gradient(135deg,#FFD700_0%,#FDB931_100%)] text-white shadow-[0_2px_6px_rgba(253,185,49,0.4)]",
+  2: "bg-[linear-gradient(135deg,#E0E0E0_0%,#BDBDBD_100%)] text-white shadow-[0_2px_6px_rgba(189,189,189,0.4)]",
+  3: "bg-[linear-gradient(135deg,#E6A570_0%,#CD7F32_100%)] text-white shadow-[0_2px_6px_rgba(205,127,50,0.4)]",
+};
+
+const getGradeClass = (grade?: string) => (grade ? gradeClassMap[grade] ?? "" : "");
+const getRankBadgeClass = (rank: number) =>
+  rankBadgeClassMap[rank] ??
+  "bg-transparent text-app-body shadow-none";
+
 export default function RunesClient({ initialRunes = [] }: RunesClientProps) {
   // Construct database from props, falling back to local file if empty
   const runesMap = useMemo(() => {
@@ -555,6 +602,7 @@ export default function RunesClient({ initialRunes = [] }: RunesClientProps) {
   const [activeSubJobId, setActiveSubJobId] = useState(activeJob ? activeJob.subJobs[0].id : '');
   const [dictionaryTab, setDictionaryTab] = useState("전체");
   const [searchTerm, setSearchTerm] = useState("");
+  const deferredSearchTerm = useDeferredValue(searchTerm.trim().toLowerCase());
 
   // When changing job, select first subjob of new job
   const handleJobChange = (jobId: string) => {
@@ -573,23 +621,25 @@ export default function RunesClient({ initialRunes = [] }: RunesClientProps) {
   const currentSubJob = activeJob ? (activeJob.subJobs.find(sub => sub.id === activeSubJobId) || activeJob.subJobs[0]) : null;
 
   return (
-    <div className={styles.container}>
+    <div className={containerClass}>
       {/* Sidebar Navigation */}
-      <nav className={styles.sidebar}>
+      <nav className={sidebarClass}>
         <button
-          className={`${styles.categoryItem} ${isDictionary ? styles.active : ''}`}
+          type="button"
+          className={cn(categoryItemClass, isDictionary && activeCategoryItemClass)}
           onClick={() => handleJobChange('rune-dictionary')}
         >
           <i className="fa-solid fa-book-journal-whills"></i>
           <span>전체 룬 도감</span>
         </button>
 
-        <div style={{ height: '1px', background: 'rgba(0,0,0,0.06)', margin: '8px 12px' }}></div>
+        <div className="mx-3 hidden h-px bg-black/6 lg:block"></div>
 
         {JOB_DATA.map((job) => (
           <button
             key={job.id}
-            className={`${styles.categoryItem} ${activeJobId === job.id ? styles.active : ''}`}
+            type="button"
+            className={cn(categoryItemClass, activeJobId === job.id && activeCategoryItemClass)}
             onClick={() => handleJobChange(job.id)}
           >
             <i className={job.icon}></i>
@@ -599,35 +649,36 @@ export default function RunesClient({ initialRunes = [] }: RunesClientProps) {
       </nav>
 
       {/* Main Content */}
-      <main className={styles.content}>
+      <main className={contentClass}>
         {isDictionary ? (
           <>
-            <div className={styles.header}>
-              <h1 className={styles.title}>전체 룬 도감</h1>
-              <p className={styles.description}>
+            <div className={headerClass}>
+              <h1 className={titleClass}>전체 룬 도감</h1>
+              <p className={descriptionClass}>
                 마비노기 모바일에 등장하는 모든 룬 정보를 획득처와 함께 확인해보세요.<br/>
                 (현재 {Object.keys(runesMap).length}개의 룬이 등록되어 있습니다)
               </p>
             </div>
 
             {/* Search Input */}
-            <div className={styles.searchWrapper}>
-              <i className="fa-solid fa-magnifying-glass"></i>
+            <div className={searchWrapperClass}>
+              <i className="fa-solid fa-magnifying-glass text-sm text-app-body"></i>
               <input 
                 type="text" 
                 placeholder="룬 이름 또는 효과를 검색해보세요" 
                 value={searchTerm} 
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className={styles.searchInput}
+                className={searchInputClass}
               />
             </div>
 
             {/* Dictionary Category Tabs */}
-            <div className={styles.subTabs}>
+            <div className={chipBarClass}>
               {["전체", "무기", "방어구", "장신구", "엠블럼", "보석"].map((tab) => (
                 <button
+                  type="button"
                   key={tab}
-                  className={`${styles.subTab} ${dictionaryTab === tab ? styles.active : ''}`}
+                  className={cn(chipClass, dictionaryTab === tab && activeChipClass)}
                   onClick={() => setDictionaryTab(tab)}
                 >
                   {tab}
@@ -635,36 +686,39 @@ export default function RunesClient({ initialRunes = [] }: RunesClientProps) {
               ))}
             </div>
 
-            <div className={styles.runeContentWrapper}>
+            <div className={sectionStackClass}>
               {["무기", "방어구", "장신구", "엠블럼", "보석"]
                 .filter(slot => dictionaryTab === "전체" || dictionaryTab === slot)
                 .map((slot) => {
                 const runesInSlot = Object.values(runesMap).filter((rune: Rune) => 
                   rune.slot === slot &&
-                  (searchTerm === "" || 
-                   rune.name.includes(searchTerm) || 
-                   rune.effect.includes(searchTerm))
+                  (deferredSearchTerm === "" || 
+                   rune.name.toLowerCase().includes(deferredSearchTerm) || 
+                   rune.effect.toLowerCase().includes(deferredSearchTerm))
                 );
                 if (runesInSlot.length === 0) return null;
 
                 return (
-                  <div key={slot} className={styles.slotSection}>
-                    <h3 className={styles.slotTitle}>{slot} <span style={{fontSize: '14px', color: 'var(--text-dim)', fontWeight: 'normal'}}>({runesInSlot.length})</span></h3>
-                    <div className={styles.runeTableWrapper}>
-                      <table className={styles.runeTable}>
+                  <div key={slot} className={slotSectionClass}>
+                    <h3 className={slotTitleClass}>
+                      {slot}
+                      <span className="text-sm font-normal text-app-body">({runesInSlot.length})</span>
+                    </h3>
+                    <div className={tableWrapperClass}>
+                      <table className={tableClass}>
                         <thead>
                           <tr>
-                            <th style={{width: '180px'}}>이름</th>
+                            <th className="w-[180px]">이름</th>
                             <th>효과</th>
                           </tr>
                         </thead>
                         <tbody>
                           {runesInSlot.map((rune) => (
                             <tr key={rune.id}>
-                              <td className={`${styles.nameCell} ${rune.grade ? styles[rune.grade] : ''}`}>
+                              <td className={cn(nameCellBaseClass, getGradeClass(rune.grade))}>
                                 {rune.name}
                               </td>
-                              <td style={{ fontSize: '14px', color: 'var(--text-body)', lineHeight: '1.5' }}>
+                              <td className="text-[14px] leading-6 text-app-body">
                                 {rune.effect}
                               </td>
                             </tr>
@@ -679,18 +733,19 @@ export default function RunesClient({ initialRunes = [] }: RunesClientProps) {
           </>
         ) : (
           <>
-            <div className={styles.header}>
-              <h1 className={styles.title}>{activeJob?.name}</h1>
-              <p className={styles.description}>{activeJob?.description}</p>
+            <div className={headerClass}>
+              <h1 className={titleClass}>{activeJob?.name}</h1>
+              <p className={descriptionClass}>{activeJob?.description}</p>
             </div>
 
             {/* Sub Job Tabs */}
             {activeJob?.subJobs && activeJob.subJobs.length > 0 && (
-              <div className={styles.subTabs}>
+              <div className={chipBarClass}>
                 {activeJob.subJobs.map((subJob) => (
                   <button
+                    type="button"
                     key={subJob.id}
-                    className={`${styles.subTab} ${activeSubJobId === subJob.id ? styles.active : ''}`}
+                    className={cn(chipClass, activeSubJobId === subJob.id && activeChipClass)}
                     onClick={() => setActiveSubJobId(subJob.id)}
                   >
                     {subJob.name}
@@ -701,7 +756,7 @@ export default function RunesClient({ initialRunes = [] }: RunesClientProps) {
 
             {/* Content Area */}
             {currentSubJob && currentSubJob.runeIds && currentSubJob.runeIds.length > 0 ? (
-              <div className={styles.runeContentWrapper}>
+              <div className={sectionStackClass}>
                 {["무기", "방어구", "장신구", "엠블럼", "보석"].map((slot) => {
                   // Map IDs to Rune objects and filter by current slot
                   const runesInSlot = currentSubJob.runeIds
@@ -712,32 +767,33 @@ export default function RunesClient({ initialRunes = [] }: RunesClientProps) {
                   if (runesInSlot.length === 0) return null;
 
                   return (
-                    <div key={slot} className={styles.slotSection}>
-                      <h3 className={styles.slotTitle}>{slot}</h3>
-                      <div className={styles.runeTableWrapper}>
-                        <table className={styles.runeTable}>
+                    <div key={slot} className={slotSectionClass}>
+                      <h3 className={slotTitleClass}>{slot}</h3>
+                      <div className={tableWrapperClass}>
+                        <table className={tableClass}>
                           <thead>
                             <tr>
-                              <th className={styles.rankHeader}>순위</th>
+                              <th className="w-[72px] text-center">순위</th>
                               <th>이름</th>
                             </tr>
                           </thead>
                           <tbody>
                             {runesInSlot.map((rune, index) => {
                               const rank = index + 1;
-                              let badgeClass = styles.rankNormal;
-                              if (rank === 1) badgeClass = styles.rank1;
-                              else if (rank === 2) badgeClass = styles.rank2;
-                              else if (rank === 3) badgeClass = styles.rank3;
 
                               return (
                                 <tr key={index}>
-                                  <td className={styles.rankCell}>
-                                    <span className={`${styles.rankBadge} ${badgeClass}`}>
+                                  <td className="w-[72px] px-2 text-center align-middle text-app-body">
+                                    <span
+                                      className={cn(
+                                        "inline-flex size-[26px] items-center justify-center rounded-full text-[13px] font-bold",
+                                        getRankBadgeClass(rank),
+                                      )}
+                                    >
                                       {rank}
                                     </span>
                                   </td>
-                                  <td className={`${styles.nameCell} ${rune.grade ? styles[rune.grade] : ''}`}>
+                                  <td className={cn(nameCellBaseClass, getGradeClass(rune.grade))}>
                                     {rune.name}
                                   </td>
                                 </tr>
@@ -751,10 +807,10 @@ export default function RunesClient({ initialRunes = [] }: RunesClientProps) {
                 })}
               </div>
             ) : (
-              <div className={styles.emptyState}>
+              <div className={emptyStateClass}>
                 <i className="fa-regular fa-file-lines"></i>
                 <p>아직 등록된 추천 룬 정보가 없습니다.</p>
-                <p style={{ fontSize: '14px' }}>곧 업데이트될 예정입니다!</p>
+                <p className="text-sm">곧 업데이트될 예정입니다!</p>
               </div>
             )}
           </>
