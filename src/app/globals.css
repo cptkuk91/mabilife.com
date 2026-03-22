@@ -2,6 +2,7 @@
 
 @theme static {
   --font-app: var(--font-noto), -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-display: var(--font-song), "Song Myung", "Noto Serif KR", serif;
 
   --color-app-bg: #F5F5F7;
   --color-app-surface: #FFFFFF;

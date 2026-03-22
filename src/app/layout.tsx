@@ -4,13 +4,19 @@ import { GoogleAnalytics } from "@next/third-parties/google";
 import Navbar from "@/components/Navbar";
 import AuthProvider from "@/components/AuthProvider";
 import Footer from "@/components/Footer";
-import { Noto_Sans_KR } from "next/font/google";
+import { Noto_Sans_KR, Song_Myung } from "next/font/google";
 
 const notoSansKr = Noto_Sans_KR({
   subsets: ['latin'],
   weight: ['400', '500', '700'],
   display: 'swap',
   variable: '--font-noto',
+});
+
+const songMyung = Song_Myung({
+  weight: '400',
+  display: 'swap',
+  variable: '--font-song',
 });
 
 const SITE_URL = "https://www.mabilife.com";
@@ -131,7 +137,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className={`${notoSansKr.variable} min-h-screen bg-app-bg pb-20 font-app text-app-title antialiased md:pb-0`}>
+      <body className={`${notoSansKr.variable} ${songMyung.variable} min-h-screen bg-app-bg pb-20 font-app text-app-title antialiased md:pb-0`}>
         {process.env.NEXT_PUBLIC_GA_ID ? (
           <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
         ) : null}

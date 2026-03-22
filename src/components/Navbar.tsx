@@ -7,6 +7,8 @@ import { useSession, signOut } from "next-auth/react";
 import { useState, useRef, useEffect } from "react";
 
 const cn = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(" ");
+const focusRingClass =
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C8A977]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-white";
 
 const NAV_ITEMS = [
   { href: "/guide", label: "공략", icon: "fa-book" },
@@ -38,6 +40,7 @@ export default function Navbar() {
   const mobileDropdownRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const user = session?.user as SessionUser | undefined;
+  const isHome = pathname === "/";
 
   const isActivePath = (href: string) => {
     if (href === "/") return pathname === "/";
@@ -68,13 +71,22 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="fixed inset-x-0 top-0 z-[1000] h-14 border-b border-black/8 bg-white/85 backdrop-blur-xl md:h-12">
-        <div className="mx-auto flex h-full max-w-[980px] items-center justify-between px-4 md:px-5">
+      <nav
+        className={cn(
+          "fixed inset-x-0 top-0 z-[1000] flex justify-center backdrop-blur-xl h-14 md:h-12",
+          isHome ? "border-b border-[#E7DDD0] bg-[#FBF8F2]/92" : "border-b border-black/8 bg-white/85",
+        )}
+      >
+        <div className="mx-auto flex h-full w-full max-w-[1140px] items-center justify-between px-4 sm:px-5 md:px-6">
           <Link
             href="/"
-            className="flex items-center gap-2 text-[17px] font-semibold tracking-[-0.03em] text-app-title transition hover:text-app-accent md:text-[19px]"
+            className={cn(
+              "flex items-center gap-2 text-[17px] font-semibold tracking-[-0.03em] text-app-title transition md:text-[19px]",
+              isHome ? "hover:text-[#8A6630]" : "hover:text-app-accent",
+              focusRingClass,
+            )}
           >
-            <i className="fa-solid fa-leaf text-[0.95em] text-app-accent"></i>
+            <i className={cn("fa-solid fa-leaf text-[0.95em]", isHome ? "text-[#B88B46]" : "text-app-accent")} aria-hidden="true"></i>
             <span>Mabi Life</span>
           </Link>
 
@@ -84,8 +96,10 @@ export default function Navbar() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "transition hover:text-app-accent",
-                  isActivePath(item.href) && "font-semibold text-app-accent"
+                  "transition-colors",
+                  isHome ? "hover:text-[#8A6630]" : "hover:text-app-accent",
+                  isActivePath(item.href) && (isHome ? "font-semibold text-[#8A6630]" : "font-semibold text-app-accent"),
+                  focusRingClass,
                 )}
               >
                 {item.label}
@@ -98,31 +112,48 @@ export default function Navbar() {
               href="https://discord.gg/VTW26TaR"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex size-9 items-center justify-center rounded-full text-base text-app-body transition hover:bg-black/5 hover:text-[#5865F2]"
-              title="디스코드"
+              className={cn(
+                "flex size-9 items-center justify-center rounded-full text-base text-app-body transition hover:bg-black/5 hover:text-[#5865F2]",
+                focusRingClass,
+              )}
+              aria-label="디스코드"
             >
-              <i className="fa-brands fa-discord"></i>
+              <i className="fa-brands fa-discord" aria-hidden="true"></i>
             </a>
             <a
               href="https://link.kakao.gg"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex size-9 items-center justify-center rounded-full text-base text-app-body transition hover:bg-black/5 hover:text-app-accent"
-              title="퀵링크"
+              className={cn(
+                "flex size-9 items-center justify-center rounded-full text-base text-app-body transition hover:bg-black/5 hover:text-app-accent",
+                focusRingClass,
+              )}
+              aria-label="퀵링크"
             >
-              <i className="fa-solid fa-link"></i>
+              <i className="fa-solid fa-link" aria-hidden="true"></i>
             </a>
 
             {session ? (
               <div className="relative flex items-center" ref={dropdownRef}>
-                <Image
-                  src={user?.image || "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"}
-                  alt="Profile"
-                  className="size-[34px] cursor-pointer rounded-full border-2 border-transparent object-cover transition hover:border-app-accent"
-                  width={34}
-                  height={34}
+                <button
+                  type="button"
+                  className={cn(
+                    "rounded-full border-2 border-transparent transition hover:border-app-accent",
+                    focusRingClass,
+                  )}
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                />
+                  aria-label="프로필 메뉴 열기"
+                  aria-expanded={isDropdownOpen}
+                  aria-haspopup="menu"
+                >
+                  <Image
+                    src={user?.image || "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"}
+                    alt="Profile"
+                    className="size-[34px] rounded-full object-cover"
+                    width={34}
+                    height={34}
+                  />
+                </button>
 
                 {isDropdownOpen && (
                   <div className="absolute right-0 top-12 z-[1001] w-[220px] rounded-[18px] border border-black/5 bg-white/95 p-2 shadow-elev-hover backdrop-blur-xl">
@@ -133,18 +164,24 @@ export default function Navbar() {
                     <div className="my-1 h-px bg-app-border"></div>
                     <Link
                       href="/profile"
-                      className="flex items-center gap-2.5 rounded-[10px] px-4 py-2.5 text-sm text-app-title transition hover:bg-app-bg hover:text-app-accent"
+                      className={cn(
+                        "flex items-center gap-2.5 rounded-[10px] px-4 py-2.5 text-sm text-app-title transition hover:bg-app-bg hover:text-app-accent",
+                        focusRingClass,
+                      )}
                       onClick={() => setIsDropdownOpen(false)}
                     >
-                      <i className="fa-regular fa-user w-4 text-center"></i>
+                      <i className="fa-regular fa-user w-4 text-center" aria-hidden="true"></i>
                       <span>마이페이지</span>
                     </Link>
                     <button
                       type="button"
-                      className="flex w-full items-center gap-2.5 rounded-[10px] px-4 py-2.5 text-left text-sm text-app-title transition hover:bg-app-bg hover:text-app-accent"
+                      className={cn(
+                        "flex w-full items-center gap-2.5 rounded-[10px] px-4 py-2.5 text-left text-sm text-app-title transition hover:bg-app-bg hover:text-app-accent",
+                        focusRingClass,
+                      )}
                       onClick={() => signOut()}
                     >
-                      <i className="fa-solid fa-arrow-right-from-bracket w-4 text-center"></i>
+                      <i className="fa-solid fa-arrow-right-from-bracket w-4 text-center" aria-hidden="true"></i>
                       <span>로그아웃</span>
                     </button>
                   </div>
@@ -153,7 +190,10 @@ export default function Navbar() {
             ) : (
               <Link
                 href="/login"
-                className="rounded-full bg-app-accent px-[18px] py-2 text-[13px] font-medium text-white transition hover:scale-[1.02] hover:bg-app-accent-hover"
+                className={cn(
+                  "rounded-full bg-app-accent px-[18px] py-2 text-[13px] font-medium text-white transition hover:scale-[1.02] hover:bg-app-accent-hover",
+                  focusRingClass,
+                )}
               >
                 로그인
               </Link>
@@ -162,15 +202,21 @@ export default function Navbar() {
         </div>
       </nav>
 
-      <nav className="fixed inset-x-0 bottom-0 z-[1000] flex h-20 items-center justify-around border-t border-black/8 bg-white/92 px-2 pb-5 pt-2 backdrop-blur-xl md:hidden">
+      <nav
+        className={cn(
+          "fixed inset-x-0 bottom-0 z-[1000] flex h-20 items-center justify-around px-2 pb-5 pt-2 backdrop-blur-xl md:hidden",
+          isHome ? "border-t border-[#E7DDD0] bg-[#FBF8F2]/94" : "border-t border-black/8 bg-white/92",
+        )}
+      >
         <Link
           href="/"
           className={cn(
             "flex min-w-[60px] flex-col items-center justify-center gap-1 px-3 py-2 text-app-body transition active:scale-95",
-            pathname === "/" && !isMenuOpen && "text-app-title"
+            pathname === "/" && !isMenuOpen && "text-app-title",
+            focusRingClass,
           )}
         >
-          <i className={cn("fa-solid fa-house text-[22px] transition", pathname === "/" && !isMenuOpen && "scale-110")}></i>
+          <i className={cn("fa-solid fa-house text-[22px] transition", pathname === "/" && !isMenuOpen && "scale-110")} aria-hidden="true"></i>
           <span className="text-[10px] font-medium">홈</span>
         </Link>
         
@@ -179,11 +225,15 @@ export default function Navbar() {
                 type="button"
                 className={cn(
                   "flex min-w-[60px] flex-col items-center justify-center gap-1 px-3 py-2 text-app-body transition active:scale-95",
-                  isMenuOpen && "text-app-title"
+                  isMenuOpen && "text-app-title",
+                  focusRingClass,
                 )}
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
+                aria-label="메뉴 열기"
+                aria-expanded={isMenuOpen}
+                aria-haspopup="menu"
             >
-                <i className={cn("fa-solid fa-bars text-[22px] transition", isMenuOpen && "scale-110")}></i>
+                <i className={cn("fa-solid fa-bars text-[22px] transition", isMenuOpen && "scale-110")} aria-hidden="true"></i>
                 <span className="text-[10px] font-medium">메뉴</span>
             </button>
 
@@ -194,11 +244,11 @@ export default function Navbar() {
                           <Link
                             key={item.href}
                             href={item.href}
-                            className="flex flex-col items-center gap-2 text-app-title"
+                            className={cn("flex flex-col items-center gap-2 text-app-title", focusRingClass)}
                             onClick={() => setIsMenuOpen(false)}
                           >
                             <div className="flex size-[50px] items-center justify-center rounded-[18px] bg-app-bg text-[22px] text-app-title transition active:scale-95 active:bg-black/[0.06]">
-                              <i className={`fa-solid ${item.icon}`}></i>
+                              <i className={`fa-solid ${item.icon}`} aria-hidden="true"></i>
                             </div>
                             <span className="whitespace-nowrap text-[11px] font-medium text-app-body">{item.label}</span>
                           </Link>
@@ -207,11 +257,12 @@ export default function Navbar() {
                           href="https://discord.gg/VTW26TaR"
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex flex-col items-center gap-2 text-app-title"
+                          className={cn("flex flex-col items-center gap-2 text-app-title", focusRingClass)}
                           onClick={() => setIsMenuOpen(false)}
+                          aria-label="디스코드"
                         >
                           <div className="flex size-[50px] items-center justify-center rounded-[18px] bg-app-bg text-[22px] text-[#5865F2] transition active:scale-95 active:bg-black/[0.06]">
-                            <i className="fa-brands fa-discord"></i>
+                            <i className="fa-brands fa-discord" aria-hidden="true"></i>
                           </div>
                           <span className="whitespace-nowrap text-[11px] font-medium text-app-body">디스코드</span>
                         </a>
@@ -219,11 +270,12 @@ export default function Navbar() {
                           href="https://link.kakao.gg"
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex flex-col items-center gap-2 text-app-title"
+                          className={cn("flex flex-col items-center gap-2 text-app-title", focusRingClass)}
                           onClick={() => setIsMenuOpen(false)}
+                          aria-label="퀵링크"
                         >
                           <div className="flex size-[50px] items-center justify-center rounded-[18px] bg-app-bg text-[22px] text-app-title transition active:scale-95 active:bg-black/[0.06]">
-                            <i className="fa-solid fa-link"></i>
+                            <i className="fa-solid fa-link" aria-hidden="true"></i>
                           </div>
                           <span className="whitespace-nowrap text-[11px] font-medium text-app-body">퀵링크</span>
                         </a>
@@ -238,9 +290,13 @@ export default function Navbar() {
               type="button"
               className={cn(
                 "flex min-w-[60px] flex-col items-center justify-center gap-1 px-3 py-2 text-app-body transition active:scale-95",
-                isActivePath("/profile") && "text-app-title"
+                isActivePath("/profile") && "text-app-title",
+                focusRingClass,
               )}
               onClick={() => setIsMobileDropdownOpen(!isMobileDropdownOpen)}
+              aria-label="모바일 프로필 메뉴 열기"
+              aria-expanded={isMobileDropdownOpen}
+              aria-haspopup="menu"
             >
               <Image
                 src={user?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.id || "user"}`}
@@ -259,21 +315,27 @@ export default function Navbar() {
               <div className="absolute bottom-[70px] right-0 min-w-40 rounded-2xl border border-black/6 bg-white/95 p-2 shadow-[0_-4px_24px_rgba(0,0,0,0.12)] backdrop-blur-xl">
                 <Link
                   href="/profile"
-                  className="flex items-center gap-3 rounded-[10px] px-4 py-3.5 text-[15px] font-medium text-app-title transition hover:bg-app-bg active:bg-app-bg"
+                  className={cn(
+                    "flex items-center gap-3 rounded-[10px] px-4 py-3.5 text-[15px] font-medium text-app-title transition hover:bg-app-bg active:bg-app-bg",
+                    focusRingClass,
+                  )}
                   onClick={() => setIsMobileDropdownOpen(false)}
                 >
-                  <i className="fa-regular fa-user w-5 text-center text-app-body"></i>
+                  <i className="fa-regular fa-user w-5 text-center text-app-body" aria-hidden="true"></i>
                   <span>마이페이지</span>
                 </Link>
                 <button
                   type="button"
-                  className="flex w-full items-center gap-3 rounded-[10px] px-4 py-3.5 text-left text-[15px] font-medium text-app-title transition hover:bg-app-bg active:bg-app-bg"
+                  className={cn(
+                    "flex w-full items-center gap-3 rounded-[10px] px-4 py-3.5 text-left text-[15px] font-medium text-app-title transition hover:bg-app-bg active:bg-app-bg",
+                    focusRingClass,
+                  )}
                   onClick={() => {
                     setIsMobileDropdownOpen(false);
                     signOut();
                   }}
                 >
-                  <i className="fa-solid fa-arrow-right-from-bracket w-5 text-center text-app-body"></i>
+                  <i className="fa-solid fa-arrow-right-from-bracket w-5 text-center text-app-body" aria-hidden="true"></i>
                   <span>로그아웃</span>
                 </button>
               </div>
@@ -282,9 +344,12 @@ export default function Navbar() {
         ) : (
           <Link
             href="/login"
-            className="flex min-w-[60px] flex-col items-center justify-center gap-1 px-3 py-2 text-app-body transition active:scale-95"
+            className={cn(
+              "flex min-w-[60px] flex-col items-center justify-center gap-1 px-3 py-2 text-app-body transition active:scale-95",
+              focusRingClass,
+            )}
           >
-            <i className="fa-solid fa-right-to-bracket text-[22px]"></i>
+            <i className="fa-solid fa-right-to-bracket text-[22px]" aria-hidden="true"></i>
             <span className="text-[10px] font-medium">로그인</span>
           </Link>
         )}

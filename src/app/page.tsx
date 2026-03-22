@@ -1,7 +1,12 @@
 import HomeClient from "./HomeClient";
 import type { Metadata } from "next";
+import { getGuides, getGuideById } from "@/actions/guide";
+import { getPosts } from "@/actions/post";
+import { getRankingStatistics } from "@/actions/ranking";
+import { fetchMabinogiMobileYouTubers } from "@/actions/youtube";
 
 const SITE_URL = "https://www.mabilife.com";
+const EDITORS_CHOICE_ID = "692fbf2c9e1c94a15a09f963";
 
 export const metadata: Metadata = {
   title: {
@@ -28,18 +33,25 @@ export const metadata: Metadata = {
   },
 };
 
-import { getRankingStatistics } from "@/actions/ranking";
-
 export default async function Home() {
-  const stats = await getRankingStatistics('total');
-  // stats might be null if no data, or contain jobStats etc.
+  const [stats, guideResult, postResult, editorsChoiceResult, youtubers] = await Promise.all([
+    getRankingStatistics("total"),
+    getGuides({ limit: 4, sort: "latest" }),
+    getPosts(1, 4),
+    getGuideById(EDITORS_CHOICE_ID),
+    fetchMabinogiMobileYouTubers(),
+  ]);
 
-  // We need to pass serializable data. getRankingStatistics returns plain object or mongoose doc?
-  // It returns Mongoose Documents if we used .lean()? 
-  // Wait, in previous steps I added .lean(), but Documents might have `_id` as ObjectId which is not serializable.
-  // We should serialize it.
-  
   const serializedStats = stats ? JSON.parse(JSON.stringify(stats)) : null;
+  const initialHomeData = {
+    guides: guideResult.success && guideResult.data ? JSON.parse(JSON.stringify(guideResult.data)) : [],
+    posts: postResult.success ? JSON.parse(JSON.stringify(postResult.posts)) : [],
+    editorsChoice:
+      editorsChoiceResult.success && editorsChoiceResult.data
+        ? JSON.parse(JSON.stringify(editorsChoiceResult.data))
+        : null,
+    youtubers: youtubers ? JSON.parse(JSON.stringify(youtubers)) : null,
+  };
 
-  return <HomeClient initialStats={serializedStats} />;
+  return <HomeClient initialStats={serializedStats} initialHomeData={initialHomeData} />;
 }
