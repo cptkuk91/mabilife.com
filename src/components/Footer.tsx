@@ -1,10 +1,10 @@
 export default function Footer() {
   return (
-    <footer className="mt-auto flex justify-center border-t border-[#E7DDD0] bg-[#FBF8F2] px-5 py-10 text-sm text-app-body md:py-12">
-      <div className="mx-auto w-full max-w-[1140px]">
+    <footer className="mt-auto flex justify-center border-t border-[#D7DCE2] bg-[#F4F1EA] px-5 py-10 text-sm text-app-body md:py-12">
+      <div className="mx-auto w-full max-w-[1240px]">
         <div className="flex flex-col items-center gap-5 text-center">
-          <div className="flex items-center gap-2 text-lg font-extrabold text-app-title">
-            <i className="fa-solid fa-leaf text-sm text-[#B88B46]" aria-hidden="true"></i>
+          <div className="flex items-center gap-2 text-lg font-extrabold text-[#132238]">
+            <i className="fa-solid fa-leaf text-sm text-[#23486D]" aria-hidden="true"></i>
             <span>Mabi Life</span>
           </div>
           <p className="max-w-[800px] text-[13px] leading-6 text-app-body/90">
@@ -17,7 +17,7 @@ export default function Footer() {
               href="https://www.kakao.gg/terms"
               target="_blank"
               rel="noopener noreferrer"
-              className="transition hover:text-[#8A6630] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C8A977]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#FBF8F2]"
+              className="transition hover:text-[#23486D] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E72C6]/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#F4F1EA]"
             >
               Terms of Service
             </a>
@@ -25,7 +25,7 @@ export default function Footer() {
               href="https://www.kakao.gg/privacy"
               target="_blank"
               rel="noopener noreferrer"
-              className="transition hover:text-[#8A6630] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C8A977]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#FBF8F2]"
+              className="transition hover:text-[#23486D] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E72C6]/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#F4F1EA]"
             >
               Privacy Policy
             </a>
@@ -33,7 +33,7 @@ export default function Footer() {
               href="https://www.instagram.com/next.uri/"
               target="_blank"
               rel="noopener noreferrer"
-              className="transition hover:text-[#8A6630] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C8A977]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#FBF8F2]"
+              className="transition hover:text-[#23486D] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E72C6]/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#F4F1EA]"
             >
               Instagram
             </a>

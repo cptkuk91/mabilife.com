@@ -7,25 +7,25 @@ type Props = {
   channels: YouTubeChannel[] | null;
 };
 
-const sectionShellClass = "flex w-full justify-center px-4 pb-4 pt-10 sm:px-5 md:px-6 md:pt-12";
-const sectionInnerClass = "mx-auto w-full max-w-[1140px]";
+const sectionShellClass = "w-full px-4 pb-4 pt-10 sm:px-6 md:pt-12 lg:px-8";
+const sectionInnerClass = "mx-auto w-full max-w-[1240px]";
 const frameClass =
-  "relative overflow-hidden rounded-[30px] border border-[#D8C6AF] bg-[linear-gradient(180deg,#FFFDFC_0%,#F8F2E8_100%)] shadow-[0_18px_46px_rgba(30,24,18,0.08)]";
+  "relative overflow-hidden rounded-[32px] border border-[#D7DCE2] bg-white/76 shadow-[0_20px_54px_rgba(11,18,28,0.08)] backdrop-blur-md";
 const frameInnerClass = "relative z-10 px-5 py-6 md:px-7 md:py-7";
 const badgeClass =
-  "inline-flex items-center gap-2 rounded-full border border-[#D6C09A]/55 bg-white/88 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#8A6630] backdrop-blur";
+  "inline-flex items-center gap-2 rounded-full border border-[#CCD4DD] bg-white/84 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#23486D]";
 const focusRingClass =
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C8A977]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#FAF6EF]";
-const titleClass = "mt-4 text-balance font-display text-[26px] leading-[1.04] tracking-[-0.05em] text-[#171311] md:text-[36px]";
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E72C6]/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#ECE9E1]";
+const titleClass = "mt-4 text-balance font-display text-[28px] leading-[0.96] tracking-[-0.05em] text-[#132238] md:text-[40px]";
 const moreLinkClass =
-  `inline-flex items-center gap-1.5 text-sm font-semibold text-[#7E5E32] transition-colors hover:text-[#59411E] ${focusRingClass}`;
+  `inline-flex items-center gap-1.5 text-sm font-semibold text-[#23486D] transition-colors hover:text-[#132238] ${focusRingClass}`;
 const gridClass = "mt-6 grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4";
 const cardClass =
-  `group relative overflow-hidden rounded-[24px] border border-[#E6DDD2] bg-white/92 px-4 py-5 text-center shadow-[0_12px_32px_rgba(25,21,18,0.05)] transition duration-300 hover:-translate-y-0.5 hover:border-[#C8A977]/55 hover:shadow-[0_18px_36px_rgba(25,21,18,0.08)] md:px-5 md:py-6 max-md:hover:translate-y-0 ${focusRingClass}`;
+  `group relative overflow-hidden rounded-[24px] border border-[#D8DDE2] bg-[#FDFBF8]/92 px-4 py-5 text-center shadow-[0_16px_44px_rgba(10,18,28,0.06)] transition duration-300 hover:-translate-y-1 hover:border-[#B8C1CB] hover:shadow-[0_24px_52px_rgba(10,18,28,0.1)] md:px-5 md:py-6 max-md:hover:translate-y-0 ${focusRingClass}`;
 const rankBadgeClass =
   "absolute right-3 top-3 flex size-7 items-center justify-center rounded-full text-[11px] font-bold md:right-4 md:top-4";
 const channelNameClass =
-  "mt-4 w-full truncate text-[14px] font-semibold tracking-[-0.01em] text-[#171311] transition group-hover:text-[#7A5422] md:text-[16px]";
+  "mt-4 w-full truncate text-[14px] font-semibold tracking-[-0.01em] text-[#132238] transition group-hover:text-[#23486D] md:text-[16px]";
 const statsClass =
   "mt-2 flex flex-col items-center gap-1 text-[11px] md:flex-row md:justify-center md:gap-2.5 md:text-xs";
 
@@ -57,9 +57,9 @@ export default function YouTuberSection({ channels }: Props) {
   return (
     <section className={sectionShellClass}>
       <div className={`${sectionInnerClass} ${frameClass}`}>
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(212,178,109,0.18),transparent_30%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(39,83,128,0.08),transparent_30%)]" />
         <div className={frameInnerClass}>
-          <div className="flex flex-col gap-4 border-b border-black/8 pb-5 md:flex-row md:items-end md:justify-between">
+          <div className="flex flex-col gap-4 border-b border-[#D7DCE2] pb-5 md:flex-row md:items-end md:justify-between">
             <div>
               <div className={badgeClass}>Creator Ledger</div>
               <h2 className={titleClass}>인기 크리에이터</h2>
@@ -87,7 +87,7 @@ export default function YouTuberSection({ channels }: Props) {
                 <div className={`${rankBadgeClass} ${getRankClass(index)}`}>{index + 1}</div>
 
                 <div className="flex flex-col items-center text-center">
-                  <div className="overflow-hidden rounded-full border-[3px] border-[#E9DFC9] bg-[#F7EEDC] transition group-hover:border-[#C8A977]/75">
+                  <div className="overflow-hidden rounded-full border-[3px] border-[#D6DDE6] bg-[#EEF2F6] transition group-hover:border-[#88A9CC]">
                     <Image
                       src={channel.thumbnailUrl}
                       alt={channel.title}
@@ -100,10 +100,10 @@ export default function YouTuberSection({ channels }: Props) {
                   <h3 className={channelNameClass}>{channel.title}</h3>
 
                   <div className={statsClass}>
-                    <span className="font-semibold text-[#A15E23]">
+                    <span className="font-semibold text-[#23486D]">
                       구독자 {formatSubscribers(channel.subscriberCount)}
                     </span>
-                    <span className="text-[#6B625B]">
+                    <span className="text-[#66707D]">
                       영상 {parseInt(channel.videoCount, 10).toLocaleString()}개
                     </span>
                   </div>

@@ -137,7 +137,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className={`${notoSansKr.variable} ${songMyung.variable} min-h-screen bg-app-bg pb-20 font-app text-app-title antialiased md:pb-0`}>
+      <body className={`${notoSansKr.variable} ${songMyung.variable} min-h-screen overflow-x-hidden bg-app-bg pb-20 font-app text-app-title antialiased md:pb-0`}>
         {process.env.NEXT_PUBLIC_GA_ID ? (
           <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
         ) : null}

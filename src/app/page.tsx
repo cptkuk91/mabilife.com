@@ -1,12 +1,11 @@
 import HomeClient from "./HomeClient";
 import type { Metadata } from "next";
-import { getGuides, getGuideById } from "@/actions/guide";
+import { getGuides } from "@/actions/guide";
 import { getPosts } from "@/actions/post";
 import { getRankingStatistics } from "@/actions/ranking";
 import { fetchMabinogiMobileYouTubers } from "@/actions/youtube";
 
 const SITE_URL = "https://www.mabilife.com";
-const EDITORS_CHOICE_ID = "692fbf2c9e1c94a15a09f963";
 
 export const metadata: Metadata = {
   title: {
@@ -34,11 +33,10 @@ export const metadata: Metadata = {
 };
 
 export default async function Home() {
-  const [stats, guideResult, postResult, editorsChoiceResult, youtubers] = await Promise.all([
+  const [stats, guideResult, postResult, youtubers] = await Promise.all([
     getRankingStatistics("total"),
-    getGuides({ limit: 4, sort: "latest" }),
+    getGuides({ limit: 6, sort: "latest" }),
     getPosts(1, 4),
-    getGuideById(EDITORS_CHOICE_ID),
     fetchMabinogiMobileYouTubers(),
   ]);
 
@@ -46,10 +44,6 @@ export default async function Home() {
   const initialHomeData = {
     guides: guideResult.success && guideResult.data ? JSON.parse(JSON.stringify(guideResult.data)) : [],
     posts: postResult.success ? JSON.parse(JSON.stringify(postResult.posts)) : [],
-    editorsChoice:
-      editorsChoiceResult.success && editorsChoiceResult.data
-        ? JSON.parse(JSON.stringify(editorsChoiceResult.data))
-        : null,
     youtubers: youtubers ? JSON.parse(JSON.stringify(youtubers)) : null,
   };
 
