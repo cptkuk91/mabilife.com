@@ -8,75 +8,66 @@ import { getGuides } from "@/actions/guide";
 import { useSession } from "next-auth/react";
 import { decodeHtmlEntities, extractPreviewText } from "@/lib/text";
 
-// 카테고리별 아이콘 및 색상 매핑
+/* ─── Notion palette ─────────────────────────────────── */
+const C = {
+  text: "#37352F",
+  sub: "#787774",
+  muted: "#9B9A97",
+  faint: "#B4B4B0",
+  border: "#E3E2DE",
+  bgSoft: "#F7F6F3",
+  bgCard: "#FBFBFA",
+  divider: "#F1F1EF",
+  blue: "#2F80ED",
+  blueHover: "#1A66CC",
+} as const;
+
 const categoryStyles: Record<string, { icon: string; bg: string; color: string }> = {
-  "초보 가이드": { icon: "fa-graduation-cap", bg: "#EAF4FF", color: "#0071E3" },
-  "전투/던전": { icon: "fa-dungeon", bg: "#FFEBEE", color: "#F44336" },
-  "메인스트림": { icon: "fa-book-open", bg: "#FFF3E0", color: "#FF9800" },
-  "생활/알바": { icon: "fa-hammer", bg: "#E8FAEB", color: "#00BA7C" },
-  "패션/뷰티": { icon: "fa-shirt", bg: "#F3E5F5", color: "#9C27B0" },
-  "돈벌기": { icon: "fa-sack-dollar", bg: "#FFF8E1", color: "#FF9500" },
+  "초보 가이드": { icon: "fa-graduation-cap", bg: "#E8F0FE", color: "#2F80ED" },
+  "전투/던전": { icon: "fa-dungeon", bg: "#FDECEC", color: "#EB5757" },
+  "메인스트림": { icon: "fa-book-open", bg: "#F5ECFE", color: "#9B51E0" },
+  "생활/알바": { icon: "fa-hammer", bg: "#E6F8EC", color: "#27AE60" },
+  "패션/뷰티": { icon: "fa-shirt", bg: "#FDECF4", color: "#E84393" },
+  돈벌기: { icon: "fa-sack-dollar", bg: "#FEF4E6", color: "#F2994A" },
 };
 
-// 상대적 시간 포맷
-const formatRelativeTime = (dateString: string) => {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diff = now.getTime() - date.getTime();
-
-  const minutes = Math.floor(diff / 60000);
-  const hours = Math.floor(diff / 3600000);
-  const days = Math.floor(diff / 86400000);
-
-  if (minutes < 1) return "방금 전";
-  if (minutes < 60) return `${minutes}분 전`;
-  if (hours < 24) return `${hours}시간 전`;
-  if (days < 7) return `${days}일 전`;
-  return date.toLocaleDateString();
+const categoryColors: Record<string, string> = {
+  "초보 가이드": "#2F80ED",
+  "전투/던전": "#EB5757",
+  "메인스트림": "#9B51E0",
+  "생활/알바": "#27AE60",
+  "패션/뷰티": "#E84393",
+  돈벌기: "#F2994A",
 };
 
-// Placeholder 이미지 배열
+const categories = ["전체", "초보 가이드", "전투/던전", "메인스트림", "생활/알바", "패션/뷰티", "돈벌기"];
+
 const placeholderImages = [
-  '/assets/placeholder/mm1.webp',
-  '/assets/placeholder/mm2.jpg',
-  '/assets/placeholder/mm3.jpg',
+  "/assets/placeholder/mm1.webp",
+  "/assets/placeholder/mm2.jpg",
+  "/assets/placeholder/mm3.jpg",
 ];
 
-// 인덱스에 따른 placeholder 이미지 반환
-const getPlaceholderImage = (index: number) => {
-  return placeholderImages[index % placeholderImages.length];
+/* ─── Utils ──────────────────────────────────────────── */
+
+const cn = (...c: Array<string | false | null | undefined>) => c.filter(Boolean).join(" ");
+const fr = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30 focus-visible:ring-offset-2";
+
+const relTime = (d: string) => {
+  const diff = Date.now() - new Date(d).getTime();
+  const m = Math.floor(diff / 60000);
+  const h = Math.floor(diff / 3600000);
+  const dy = Math.floor(diff / 86400000);
+  if (m < 1) return "방금 전";
+  if (m < 60) return `${m}분 전`;
+  if (h < 24) return `${h}시간 전`;
+  if (dy < 7) return `${dy}일 전`;
+  return new Date(d).toLocaleDateString("ko-KR", { month: "short", day: "numeric" });
 };
 
-type ViewMode = 'grid' | 'list';
+type ViewMode = "grid" | "list";
 
-const cn = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(" ");
-const pageClass = "mx-auto max-w-[var(--max-width)] px-4 pb-24 pt-20 md:px-5 md:pb-16";
-const headerClass = "mb-6 flex items-end justify-between gap-4";
-const titleClass = "text-[34px] font-extrabold tracking-[-0.04em] text-app-title md:text-[40px]";
-const subtitleClass = "mt-1 text-[16px] text-app-body md:text-[20px]";
-const chipBarClass =
-  "mb-5 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
-const chipClass =
-  "shrink-0 rounded-full bg-black/[0.04] px-4 py-2 text-sm font-medium text-app-body transition hover:bg-black/[0.08] hover:text-app-title";
-const activeChipClass = "bg-app-title text-white hover:bg-app-title hover:text-white";
-const searchBarClass =
-  "mb-5 flex flex-wrap items-center gap-3 rounded-[16px] border border-black/8 bg-white px-4 py-3 shadow-elev-soft transition focus-within:border-app-accent focus-within:shadow-[0_0_0_3px_rgba(0,113,227,0.1)]";
-const searchInputClass =
-  "min-w-0 flex-1 border-none bg-transparent text-[15px] text-app-title outline-none placeholder:text-app-body/80";
-const viewToggleClass = "mb-5 flex justify-end gap-1.5";
-const viewButtonClass =
-  "flex size-11 items-center justify-center rounded-[10px] border border-black/10 bg-white text-lg text-app-title transition hover:bg-app-bg";
-const activeViewButtonClass = "border-app-accent bg-app-accent text-white hover:bg-app-accent";
-const guideGridClass = "grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3";
-const guideCardClass =
-  "group flex flex-col overflow-hidden rounded-[22px] bg-white shadow-elev-card transition duration-300 hover:-translate-y-1 hover:shadow-elev-hover max-md:hover:translate-y-0";
-const guideListClass = "flex flex-col gap-3";
-const listItemClass =
-  "group flex gap-4 rounded-[22px] bg-white p-5 shadow-elev-soft transition duration-200 hover:bg-[#FAFAFC] hover:shadow-elev-card max-sm:p-4";
-const resultStatsClass =
-  "flex flex-wrap gap-3 text-[12px] text-app-body [&_span]:inline-flex [&_span]:items-center [&_span]:gap-1";
-const floatingWriteButtonClass =
-  "fixed bottom-[88px] right-5 z-[100] flex size-14 items-center justify-center rounded-full bg-app-accent text-white shadow-[0_4px_12px_rgba(0,113,227,0.3)] transition hover:bg-[#0062CC] md:bottom-10 md:right-10";
+/* ─── Component ──────────────────────────────────────── */
 
 export default function GuideClient() {
   const router = useRouter();
@@ -86,48 +77,32 @@ export default function GuideClient() {
   const [activeTab, setActiveTab] = useState("전체");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchInput, setSearchInput] = useState("");
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [hasMore, setHasMore] = useState(true);
-
   const LIMIT = 20;
 
-  const categories = ["전체", "초보 가이드", "전투/던전", "메인스트림", "생활/알바", "패션/뷰티", "돈벌기"];
-
   useEffect(() => {
-    // 탭이나 검색어가 바뀌면 초기화 후 로드
     setGuides([]);
     setHasMore(true);
     loadGuides(true);
   }, [activeTab, searchQuery]);
 
-  const loadGuides = async (isInitial = false) => {
+  const loadGuides = async (initial = false) => {
     setLoading(true);
-    // 초기 로드면 skip 0, 아니면 현재 개수만큼 skip
-    const currentSkip = isInitial ? 0 : guides.length;
-
+    const skip = initial ? 0 : guides.length;
     const result = await getGuides({
       category: activeTab === "전체" ? undefined : activeTab,
       search: searchQuery || undefined,
       limit: LIMIT,
-      skip: currentSkip,
-      sort: 'latest'
+      skip,
+      sort: "latest",
     });
-
     if (result.success && result.data) {
-      const newGuides = result.data as any[];
-      
-      // 가져온 데이터가 limit보다 적으면 더 이상 데이터가 없음
-      if (newGuides.length < LIMIT) {
-        setHasMore(false);
-      }
-
-      setGuides(prev => isInitial ? newGuides : [...prev, ...newGuides]);
+      const ng = result.data as any[];
+      if (ng.length < LIMIT) setHasMore(false);
+      setGuides((prev) => (initial ? ng : [...prev, ...ng]));
     }
     setLoading(false);
-  };
-
-  const handleLoadMore = () => {
-    loadGuides(false);
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -135,12 +110,12 @@ export default function GuideClient() {
     setSearchQuery(searchInput.trim());
   };
 
-  const handleClearSearch = () => {
+  const clearSearch = () => {
     setSearchInput("");
     setSearchQuery("");
   };
 
-  const handleWriteClick = () => {
+  const handleWrite = () => {
     if (status === "loading") return;
     if (status === "unauthenticated") {
       router.push("/login");
@@ -150,23 +125,30 @@ export default function GuideClient() {
   };
 
   return (
-    <div className={pageClass}>
+    <div className="mx-auto min-h-screen max-w-[1100px] bg-white px-5 pb-24 pt-16 sm:px-6 md:pb-16 md:pt-20 lg:px-8">
 
-      {/* Header */}
-      <header className={headerClass}>
-        <div>
-          <h1 className={titleClass}>공략</h1>
-          <div className={subtitleClass}>에린 생활에 필요한 모든 지식</div>
-        </div>
+      {/* ── Header ── */}
+      <header className="pb-6">
+        <div className="text-[11px] font-bold uppercase tracking-[0.08em] text-[#9B9A97]">Guides</div>
+        <h1 className="mt-1 text-[28px] font-bold tracking-[-0.03em] text-[#37352F] md:text-[32px]">
+          공략
+        </h1>
+        <p className="mt-1 text-[14px] text-[#787774]">에린 생활에 필요한 모든 지식</p>
       </header>
 
-      {/* Filter Tabs */}
-      <div className={chipBarClass}>
+      {/* ── Category Tabs ── */}
+      <div className="mb-5 flex gap-1.5 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {categories.map((cat) => (
           <button
             key={cat}
             type="button"
-            className={cn(chipClass, activeTab === cat && activeChipClass)}
+            className={cn(
+              "shrink-0 rounded-md px-3 py-1.5 text-[13px] font-medium transition",
+              activeTab === cat
+                ? "bg-[#37352F] text-white"
+                : "text-[#787774] hover:bg-[#F7F6F3] hover:text-[#37352F]",
+              fr,
+            )}
             onClick={() => setActiveTab(cat)}
           >
             {cat}
@@ -174,199 +156,286 @@ export default function GuideClient() {
         ))}
       </div>
 
-      {/* Search Bar */}
-      <form className={searchBarClass} onSubmit={handleSearch}>
-        <i className="fa-solid fa-magnifying-glass text-sm text-app-body"></i>
+      {/* ── Search Bar ── */}
+      <form
+        onSubmit={handleSearch}
+        className="mb-5 flex items-center gap-2.5 rounded-xl border border-[#E3E2DE] bg-white px-4 py-2.5 transition-shadow focus-within:border-[#2F80ED] focus-within:shadow-[0_0_0_3px_rgba(47,128,237,0.1)]"
+      >
+        <i className="fa-solid fa-magnifying-glass text-[13px] text-[#B4B4B0]" aria-hidden="true" />
         <input
           type="text"
           placeholder="공략 검색..."
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          className={searchInputClass}
+          className="min-w-0 flex-1 border-none bg-transparent py-0.5 text-[14px] text-[#37352F] outline-none placeholder:text-[#C4C4C0]"
         />
         {searchInput && (
           <button
             type="button"
-            className="flex size-8 items-center justify-center rounded-full text-sm text-app-body transition hover:bg-app-bg hover:text-app-title"
-            onClick={handleClearSearch}
+            onClick={clearSearch}
             aria-label="검색어 지우기"
+            className="flex size-6 items-center justify-center rounded-md text-[#B4B4B0] transition hover:bg-[#F1F1EF] hover:text-[#787774]"
           >
-            <i className="fa-solid fa-xmark"></i>
+            <i className="fa-solid fa-xmark text-[11px]" aria-hidden="true" />
           </button>
         )}
         <button
           type="submit"
-          className="rounded-[10px] bg-app-accent px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0062CC]"
+          className={cn(
+            "rounded-lg bg-[#2F80ED] px-3.5 py-1.5 text-[13px] font-medium text-white transition hover:bg-[#1A66CC]",
+            fr,
+          )}
         >
           검색
         </button>
       </form>
 
-      {/* Search Result Info */}
+      {/* ── Search Info Bar ── */}
       {searchQuery && (
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-[12px] bg-[#EAF4FF] px-4 py-3 text-sm text-app-accent">
+        <div className="mb-5 flex items-center justify-between rounded-lg border border-[#E8F0FE] bg-[#F0F6FF] px-4 py-2.5 text-[13px] text-[#2F80ED]">
           <span>&quot;{searchQuery}&quot; 검색 결과</span>
-          <button
-            type="button"
-            onClick={handleClearSearch}
-            className="text-[13px] underline underline-offset-2 transition hover:text-[#0062CC]"
-          >
-            검색 초기화
+          <button type="button" onClick={clearSearch} className="underline underline-offset-2 transition hover:text-[#1A66CC]">
+            초기화
           </button>
         </div>
       )}
 
-      {/* View Mode Toggle */}
-      <div className={viewToggleClass}>
-        <button
-          type="button"
-          className={cn(viewButtonClass, viewMode === 'grid' && activeViewButtonClass)}
-          onClick={() => setViewMode('grid')}
-          title="그리드 보기"
-        >
-          <i className="fa-solid fa-table-cells"></i>
-        </button>
-        <button
-          type="button"
-          className={cn(viewButtonClass, viewMode === 'list' && activeViewButtonClass)}
-          onClick={() => setViewMode('list')}
-          title="리스트 보기"
-        >
-          <i className="fa-solid fa-list"></i>
-        </button>
+      {/* ── View Toggle + Count ── */}
+      <div className="mb-4 flex items-center justify-between">
+        <span className="text-[13px] text-[#9B9A97]">
+          {!loading && guides.length > 0 && `${guides.length}개의 공략`}
+        </span>
+        <div className="flex gap-1">
+          <button
+            type="button"
+            className={cn(
+              "flex size-8 items-center justify-center rounded-md border text-[14px] transition",
+              viewMode === "grid"
+                ? "border-[#2F80ED] bg-[#2F80ED] text-white"
+                : "border-[#E3E2DE] text-[#9B9A97] hover:bg-[#F7F6F3] hover:text-[#37352F]",
+              fr,
+            )}
+            onClick={() => setViewMode("grid")}
+            title="그리드 보기"
+          >
+            <i className="fa-solid fa-table-cells" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            className={cn(
+              "flex size-8 items-center justify-center rounded-md border text-[14px] transition",
+              viewMode === "list"
+                ? "border-[#2F80ED] bg-[#2F80ED] text-white"
+                : "border-[#E3E2DE] text-[#9B9A97] hover:bg-[#F7F6F3] hover:text-[#37352F]",
+              fr,
+            )}
+            onClick={() => setViewMode("list")}
+            title="리스트 보기"
+          >
+            <i className="fa-solid fa-list" aria-hidden="true" />
+          </button>
+        </div>
       </div>
 
-      {/* Guide Grid/List */}
-      <div className={viewMode === 'grid' ? guideGridClass : guideListClass}>
+      {/* ── Guide Grid / List ── */}
+      <div className={viewMode === "grid" ? "grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3" : "flex flex-col gap-2"}>
         {loading && guides.length === 0 ? (
-          <div className="col-span-full rounded-[24px] bg-white px-6 py-16 text-center text-sm text-app-body shadow-elev-card">
-            로딩 중...
+          <div className="col-span-full flex flex-col items-center justify-center rounded-xl border border-[#E3E2DE] bg-[#FBFBFA] px-6 py-16 text-center">
+            <i className="fa-solid fa-spinner fa-spin text-[20px] text-[#B4B4B0]" aria-hidden="true" />
+            <p className="mt-3 text-[14px] text-[#9B9A97]">공략을 불러오고 있습니다…</p>
           </div>
         ) : guides.length === 0 ? (
-          <div className="col-span-full rounded-[28px] bg-white px-6 py-16 text-center shadow-elev-card">
-            <i className="fa-solid fa-file-circle-question mb-4 block text-5xl text-black/20"></i>
-            <p className="mb-5 text-[16px] text-app-body">아직 등록된 공략이 없습니다.</p>
+          <div className="col-span-full flex flex-col items-center justify-center rounded-xl border border-[#E3E2DE] bg-[#FBFBFA] px-6 py-16 text-center">
+            <div className="flex size-12 items-center justify-center rounded-full bg-[#F1F1EF] text-[20px] text-[#B4B4B0]">
+              <i className="fa-solid fa-file-circle-question" aria-hidden="true" />
+            </div>
+            <p className="mt-3 text-[15px] font-semibold text-[#37352F]">등록된 공략이 없습니다</p>
+            <p className="mt-1 text-[13px] text-[#9B9A97]">첫 번째 공략을 작성해보세요.</p>
             <button
               type="button"
-              onClick={handleWriteClick}
-              className="inline-flex items-center gap-2 rounded-full bg-app-accent px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#0062CC]"
+              onClick={handleWrite}
+              className={cn(
+                "mt-4 inline-flex items-center gap-1.5 rounded-lg bg-[#2F80ED] px-4 py-2 text-[13px] font-medium text-white transition hover:bg-[#1A66CC]",
+                fr,
+              )}
             >
-              첫 공략 작성하기
+              <i className="fa-solid fa-plus text-[10px]" aria-hidden="true" />
+              공략 작성하기
             </button>
           </div>
         ) : (
           <>
-            {viewMode === 'grid' ? (
-              // Grid View
-              guides.map((guide, index) => (
-                <Link href={`/guide/${guide.slug || guide._id}`} key={guide._id} className={guideCardClass}>
-                  <div className="relative h-[180px] overflow-hidden bg-app-bg">
-                    <Image
-                      src={guide.thumbnail || getPlaceholderImage(index)}
-                      alt={decodeHtmlEntities(guide.title)}
-                      fill
-                      className="object-cover transition duration-500 group-hover:scale-[1.03]"
-                      sizes="(max-width: 600px) 100vw, (max-width: 900px) 50vw, 33vw"
-                      priority={index < 3}
-                    />
-                  </div>
-                  <div className="flex flex-1 flex-col p-4">
-                    <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.12em] text-app-accent">
-                      {guide.category}
-                    </div>
-                    <div className="mb-2 overflow-hidden text-[17px] font-bold leading-[1.3] text-app-title [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
-                      {decodeHtmlEntities(guide.title)}
-                    </div>
-                    <div className="mb-3 flex-1 overflow-hidden text-[13px] leading-6 text-app-body [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
-                      {extractPreviewText(guide.content)}
-                    </div>
-                    <div className="mt-auto flex items-center justify-between gap-3 border-t border-black/6 pt-3">
-                      <div className="flex min-w-0 items-center gap-2 text-[12px] text-app-body">
-                        <img
-                          src={guide.author?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${guide.author?.id}`}
-                          alt="Author"
-                          className="size-6 rounded-full object-cover"
-                        />
-                        <span>{guide.author?.name || '익명'}</span>
-                      </div>
-                      <div className={resultStatsClass}>
-                        <span><i className="fa-regular fa-eye"></i> {guide.views || 0}</span>
-                        <span><i className="fa-regular fa-heart"></i> {guide.likes || 0}</span>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              ))
-            ) : (
-              // List View
-              guides.map((guide) => {
-                const style = categoryStyles[guide.category] || { icon: "fa-lightbulb", bg: "#EAF4FF", color: "#0071E3" };
-                return (
-                  <Link href={`/guide/${guide.slug || guide._id}`} key={guide._id} className={listItemClass}>
-                    <div
-                      className="flex size-14 shrink-0 items-center justify-center rounded-[14px] text-2xl max-sm:size-12 max-sm:text-xl"
-                      style={{ background: style.bg, color: style.color }}
-                    >
-                      <i className={`fa-solid ${style.icon}`}></i>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="mb-1 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
-                        <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-app-accent">{guide.category}</span>
-                        <span className="text-[12px] text-app-body">{formatRelativeTime(guide.createdAt)}</span>
-                      </div>
-                      <div className="mb-2 truncate text-[16px] font-semibold text-app-title">
-                        {decodeHtmlEntities(guide.title)}
-                      </div>
-                      <div className="mb-3 overflow-hidden text-[13px] leading-6 text-app-body [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
-                        {extractPreviewText(guide.content, 100)}
-                      </div>
-                      <div className="flex flex-wrap items-center justify-between gap-3 max-sm:flex-col max-sm:items-start">
-                        <div className="flex items-center gap-2 text-[12px] text-app-body">
-                          <img
-                            src={guide.author?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${guide.author?.id}`}
-                            alt="Author"
-                            className="size-5 rounded-full object-cover"
-                          />
-                          <span>{guide.author?.name || '익명'}</span>
-                        </div>
-                        <div className={resultStatsClass}>
-                          <span><i className="fa-regular fa-eye"></i> {guide.views || 0}</span>
-                          <span><i className="fa-regular fa-heart"></i> {guide.likes || 0}</span>
-                          <span><i className="fa-regular fa-comment"></i> {guide.commentCount || 0}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })
-            )}
+            {viewMode === "grid"
+              ? guides.map((g, i) => <GridCard key={g._id} guide={g} index={i} />)
+              : guides.map((g) => <ListRow key={g._id} guide={g} />)}
           </>
         )}
       </div>
 
+      {/* Loading indicator */}
       {loading && guides.length > 0 && (
-         <div className="col-span-full py-8 text-center text-sm text-app-body">
-           <i className="fa-solid fa-spinner fa-spin"></i> 로딩 중...
-         </div>
+        <div className="py-8 text-center text-[13px] text-[#B4B4B0]">
+          <i className="fa-solid fa-spinner fa-spin" aria-hidden="true" /> 불러오는 중…
+        </div>
       )}
 
-      {/* Load More Button */}
+      {/* Load More */}
       {!loading && hasMore && guides.length > 0 && (
-        <div className="mt-10 flex justify-center">
+        <div className="mt-8 flex justify-center">
           <button
             type="button"
-            onClick={handleLoadMore}
-            className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-8 py-3 text-[15px] font-semibold text-app-title shadow-elev-soft transition hover:-translate-y-0.5 hover:bg-app-bg hover:shadow-elev-card"
+            onClick={() => loadGuides(false)}
+            className={cn(
+              "inline-flex items-center gap-2 rounded-lg border border-[#E3E2DE] bg-white px-6 py-2.5 text-[14px] font-medium text-[#37352F] transition hover:bg-[#F7F6F3]",
+              fr,
+            )}
           >
-            더 보기 <i className="fa-solid fa-chevron-down"></i>
+            더 보기
+            <i className="fa-solid fa-chevron-down text-[10px] text-[#B4B4B0]" aria-hidden="true" />
           </button>
         </div>
       )}
-      
+
       {/* Floating Write Button */}
-      <button type="button" className={floatingWriteButtonClass} onClick={handleWriteClick} title="공략 작성">
-        <i className="fa-solid fa-pen-to-square"></i>
+      <button
+        type="button"
+        className={cn(
+          "fixed bottom-[88px] right-5 z-[100] flex size-12 items-center justify-center rounded-full bg-[#2F80ED] text-white shadow-[0_2px_12px_rgba(47,128,237,0.3)] transition hover:bg-[#1A66CC] hover:shadow-[0_4px_16px_rgba(47,128,237,0.4)] md:bottom-8 md:right-8",
+          fr,
+        )}
+        onClick={handleWrite}
+        title="공략 작성"
+      >
+        <i className="fa-solid fa-pen-to-square text-[16px]" aria-hidden="true" />
       </button>
     </div>
+  );
+}
+
+/* ─── Grid Card ──────────────────────────────────────── */
+
+function GridCard({ guide, index }: { guide: any; index: number }) {
+  const color = categoryColors[guide.category] || "#2F80ED";
+
+  return (
+    <Link
+      href={`/guide/${guide.slug || guide._id}`}
+      className="group overflow-hidden rounded-xl border border-[#E3E2DE] bg-white transition-all duration-200 hover:border-[#D3D1CB] hover:shadow-[0_2px_12px_rgba(0,0,0,0.06)]"
+    >
+      <div className="relative aspect-[16/9] overflow-hidden bg-[#F7F6F3]">
+        <Image
+          src={guide.thumbnail || placeholderImages[index % placeholderImages.length]}
+          alt={decodeHtmlEntities(guide.title)}
+          fill
+          className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+          sizes="(max-width:600px) 100vw, (max-width:900px) 50vw, 33vw"
+          priority={index < 3}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+        <div className="absolute left-3 top-3">
+          <span
+            className="rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-white backdrop-blur-sm"
+            style={{ backgroundColor: `${color}CC` }}
+          >
+            {guide.category}
+          </span>
+        </div>
+      </div>
+
+      <div className="p-4">
+        <h3 className="line-clamp-2 text-[15px] font-semibold leading-snug text-[#37352F]">
+          {decodeHtmlEntities(guide.title)}
+        </h3>
+        <p className="mt-1.5 line-clamp-2 text-[13px] leading-relaxed text-[#787774]">
+          {extractPreviewText(guide.content, 100)}
+        </p>
+
+        <div className="mt-3 flex items-center justify-between border-t border-[#F1F1EF] pt-3">
+          <div className="flex items-center gap-2 text-[12px] text-[#787774]">
+            <img
+              src={guide.author?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${guide.author?.id}`}
+              alt="Author"
+              className="size-5 rounded-full border border-[#E3E2DE] object-cover"
+            />
+            <span>{guide.author?.name || "익명"}</span>
+          </div>
+          <div className="flex items-center gap-2.5 text-[11px] tabular-nums text-[#B4B4B0]">
+            <span className="inline-flex items-center gap-1">
+              <i className="fa-regular fa-eye" aria-hidden="true" />
+              {guide.views || 0}
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <i className="fa-regular fa-heart" aria-hidden="true" />
+              {guide.likes || 0}
+            </span>
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+/* ─── List Row ───────────────────────────────────────── */
+
+function ListRow({ guide }: { guide: any }) {
+  const style = categoryStyles[guide.category] || { icon: "fa-lightbulb", bg: "#E8F0FE", color: "#2F80ED" };
+
+  return (
+    <Link
+      href={`/guide/${guide.slug || guide._id}`}
+      className="group flex gap-4 rounded-xl border border-[#E3E2DE] bg-white p-4 transition-all duration-200 hover:border-[#D3D1CB] hover:bg-[#FBFBFA]"
+    >
+      <div
+        className="flex size-12 shrink-0 items-center justify-center rounded-xl text-[20px]"
+        style={{ background: style.bg, color: style.color }}
+      >
+        <i className={`fa-solid ${style.icon}`} aria-hidden="true" />
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-between gap-3">
+          <span
+            className="text-[11px] font-semibold"
+            style={{ color: style.color }}
+          >
+            {guide.category}
+          </span>
+          <span className="text-[11px] text-[#B4B4B0]">{relTime(guide.createdAt)}</span>
+        </div>
+
+        <h3 className="mt-1 truncate text-[15px] font-semibold text-[#37352F] transition-colors group-hover:text-[#2F80ED]">
+          {decodeHtmlEntities(guide.title)}
+        </h3>
+
+        <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-[#787774]">
+          {extractPreviewText(guide.content, 100)}
+        </p>
+
+        <div className="mt-2.5 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-[12px] text-[#787774]">
+            <img
+              src={guide.author?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${guide.author?.id}`}
+              alt="Author"
+              className="size-5 rounded-full border border-[#E3E2DE] object-cover"
+            />
+            <span>{guide.author?.name || "익명"}</span>
+          </div>
+          <div className="flex items-center gap-2.5 text-[11px] tabular-nums text-[#B4B4B0]">
+            <span className="inline-flex items-center gap-1">
+              <i className="fa-regular fa-eye" aria-hidden="true" />
+              {guide.views || 0}
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <i className="fa-regular fa-heart" aria-hidden="true" />
+              {guide.likes || 0}
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <i className="fa-regular fa-comment" aria-hidden="true" />
+              {guide.commentCount || 0}
+            </span>
+          </div>
+        </div>
+      </div>
+    </Link>
   );
 }
