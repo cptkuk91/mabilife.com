@@ -6,7 +6,7 @@ import Image from "next/image";
 
 export default function LoginClient() {
   return (
-    <div className="flex min-h-full items-center justify-center px-5 py-10">
+    <div className="flex min-h-screen items-center justify-center px-5 py-10">
       <div className="w-full max-w-[520px] rounded-[28px] bg-white p-8 text-center shadow-elev-card md:p-10">
         <div className="flex flex-col gap-6">
           <div>
