@@ -28,12 +28,14 @@ export async function refreshRankingData() {
 
     await Ranking.insertMany(rankingDocs);
 
+    revalidatePath('/');
+    revalidatePath('/ranking');
     revalidatePath('/statistics');
     return { success: true, count: data.length, message: `성공적으로 ${data.length}개의 데이터를 업데이트했습니다.` };
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Action Error:', error);
-    return { success: false, message: error.message };
+    return { success: false, message: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
 
@@ -41,7 +43,7 @@ export async function getRankingStatistics(type: string = 'total') {
     await connectToDatabase();
 
     // Construct query to support legacy data (where rankingType might be missing) for 'total'
-    const query: any = {};
+    const query: Record<string, unknown> = {};
     if (type === 'total') {
         query.$or = [{ rankingType: 'total' }, { rankingType: { $exists: false } }];
     } else {

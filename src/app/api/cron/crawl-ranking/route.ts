@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { connectToDatabase } from '@/lib/mongodb';
 import Ranking from '@/models/Ranking';
 import { crawlRankingData } from '@/lib/crawler';
@@ -34,14 +35,19 @@ export async function GET() {
     await Ranking.insertMany(rankingDocs);
     console.log('Data saved to DB successfully.');
 
+    revalidatePath('/');
+    revalidatePath('/ranking');
+    revalidatePath('/statistics');
+
     return NextResponse.json({ 
         message: 'Ranking data crawled and saved successfully', 
         count: data.length, 
         date: batchDate 
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('API Error:', error);
-    return NextResponse.json({ message: 'Internal Server Error', error: error.message }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ message: 'Internal Server Error', error: message }, { status: 500 });
   }
 }
