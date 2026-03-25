@@ -44,9 +44,8 @@ async function launchBrowser(): Promise<Browser> {
   if (process.env.VERCEL) {
     return puppeteerCore.launch({
       args: chromium.args,
-      defaultViewport: chromium.defaultViewport,
       executablePath: await chromium.executablePath(),
-      headless: chromium.headless,
+      headless: 'shell',
     });
   }
 

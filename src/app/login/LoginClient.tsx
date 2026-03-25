@@ -4,7 +4,7 @@ import { signIn } from "next-auth/react";
 import Link from "next/link";
 import Image from "next/image";
 
-export default function LoginClient() {
+export default function LoginClient({ callbackUrl = "/" }: { callbackUrl?: string }) {
   return (
     <div className="flex min-h-screen items-center justify-center px-5 py-10">
       <div className="w-full max-w-[520px] rounded-[28px] bg-white p-8 text-center shadow-elev-card md:p-10">
@@ -32,13 +32,11 @@ export default function LoginClient() {
           <button
             type="button"
             className="flex w-full items-center justify-center gap-3 rounded-[14px] border border-black/10 bg-white px-4 py-3 text-[15px] font-semibold text-[#333] transition hover:border-black/15 hover:bg-black/[0.02]"
-            onClick={() => signIn("google", { callbackUrl: "/" })}
+            onClick={() => signIn("google", { callbackUrl })}
           >
-            <img
-              src="https://www.svgrepo.com/show/475656/google-color.svg"
-              alt="Google Logo"
-              className="h-5 w-5"
-            />
+            <span className="inline-flex h-5 w-5 items-center justify-center text-[18px] text-[#4285F4]" aria-hidden="true">
+              <i className="fa-brands fa-google" />
+            </span>
             <span>Google 계정으로 계속하기</span>
           </button>
 

@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 const SITE_URL = "https://www.mabilife.com";
 
 export const metadata: Metadata = {
-  title: "로그인 - Mabi Life",
+  title: "로그인",
   description: "Mabi Life에 로그인하고 더 많은 기능을 이용해보세요.",
   alternates: {
     canonical: `${SITE_URL}/login`,
@@ -15,6 +15,19 @@ export const metadata: Metadata = {
   },
 };
 
-export default function LoginPage() {
-  return <LoginClient />;
+interface LoginPageProps {
+  searchParams?: Promise<{
+    callbackUrl?: string | string[];
+  }>;
+}
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const params = await searchParams;
+  const requestedCallbackUrl = Array.isArray(params?.callbackUrl) ? params.callbackUrl[0] : params?.callbackUrl;
+  const callbackUrl =
+    requestedCallbackUrl && requestedCallbackUrl.startsWith("/") && !requestedCallbackUrl.startsWith("//")
+      ? requestedCallbackUrl
+      : "/";
+
+  return <LoginClient callbackUrl={callbackUrl} />;
 }
