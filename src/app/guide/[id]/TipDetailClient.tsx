@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useEffectEvent, useState } from "react";
@@ -40,6 +41,8 @@ const modalDangerButtonClass =
   "rounded-[12px] bg-[#FF3B30] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#E02B21] disabled:cursor-not-allowed disabled:opacity-60";
 const primaryButtonClass =
   "rounded-[12px] bg-app-accent px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0062CC] disabled:cursor-not-allowed disabled:opacity-60";
+
+const ConfirmDialog = dynamic(() => import("@/components/ui/ConfirmDialog"));
 
 type GuideAuthor = {
   id: string;
@@ -733,52 +736,47 @@ export default function TipDetailClient({ id }: { id: string }) {
       </div>
 
       {showDeleteModal && (
-        <div className={modalOverlayClass} onClick={() => setShowDeleteModal(false)}>
-          <div className={modalClass} onClick={(e) => e.stopPropagation()}>
-            <h3 className="mb-3 text-[20px] font-bold text-app-title">공략 삭제</h3>
-            <p className="text-[15px] text-app-body">정말로 이 공략을 삭제하시겠습니까?</p>
-            <p className="mt-2 text-[13px] text-[#FF3B30]">삭제된 공략은 복구할 수 없습니다.</p>
-            <div className={modalActionsClass}>
-              <button type="button" className={modalSecondaryButtonClass} onClick={() => setShowDeleteModal(false)}>
-                취소
-              </button>
-              <button
-                type="button"
-                className={modalDangerButtonClass}
-                onClick={handleDeleteGuide}
-                disabled={isDeleting}
-              >
-                {isDeleting ? "삭제 중..." : "삭제"}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDialog
+          title="공략 삭제"
+          description="정말로 이 공략을 삭제하시겠습니까?"
+          note="삭제된 공략은 복구할 수 없습니다."
+          confirmLabel="삭제"
+          processingLabel="삭제 중..."
+          isProcessing={isDeleting}
+          onCancel={() => setShowDeleteModal(false)}
+          onConfirm={() => {
+            void handleDeleteGuide();
+          }}
+          overlayClassName={modalOverlayClass}
+          panelClassName={modalClass}
+          actionsClassName={modalActionsClass}
+          titleClassName="mb-3 text-[20px] font-bold text-app-title"
+          descriptionClassName="text-[15px] text-app-body"
+          noteClassName="mt-2 text-[13px] text-[#FF3B30]"
+          cancelButtonClassName={modalSecondaryButtonClass}
+          confirmButtonClassName={modalDangerButtonClass}
+        />
       )}
 
       {showCommentDeleteModal && (
-        <div className={modalOverlayClass} onClick={() => setShowCommentDeleteModal(false)}>
-          <div className={modalClass} onClick={(e) => e.stopPropagation()}>
-            <h3 className="mb-3 text-[20px] font-bold text-app-title">댓글 삭제</h3>
-            <p className="text-[15px] text-app-body">정말로 이 댓글을 삭제하시겠습니까?</p>
-            <div className={modalActionsClass}>
-              <button
-                type="button"
-                className={modalSecondaryButtonClass}
-                onClick={() => setShowCommentDeleteModal(false)}
-              >
-                취소
-              </button>
-              <button
-                type="button"
-                className={modalDangerButtonClass}
-                onClick={handleConfirmDeleteComment}
-                disabled={isDeletingComment}
-              >
-                {isDeletingComment ? "삭제 중..." : "삭제"}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDialog
+          title="댓글 삭제"
+          description="정말로 이 댓글을 삭제하시겠습니까?"
+          confirmLabel="삭제"
+          processingLabel="삭제 중..."
+          isProcessing={isDeletingComment}
+          onCancel={() => setShowCommentDeleteModal(false)}
+          onConfirm={() => {
+            void handleConfirmDeleteComment();
+          }}
+          overlayClassName={modalOverlayClass}
+          panelClassName={modalClass}
+          actionsClassName={modalActionsClass}
+          titleClassName="mb-3 text-[20px] font-bold text-app-title"
+          descriptionClassName="text-[15px] text-app-body"
+          cancelButtonClassName={modalSecondaryButtonClass}
+          confirmButtonClassName={modalDangerButtonClass}
+        />
       )}
     </div>
   );

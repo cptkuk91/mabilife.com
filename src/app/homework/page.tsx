@@ -1,5 +1,9 @@
 import { Metadata } from 'next';
-import HomeworkClient from './HomeworkClient';
+import dynamic from 'next/dynamic';
+
+const HomeworkClient = dynamic(() => import('./HomeworkClient'), {
+  loading: () => <div className="min-h-screen bg-white" />,
+});
 
 const SITE_URL = "https://www.mabilife.com";
 

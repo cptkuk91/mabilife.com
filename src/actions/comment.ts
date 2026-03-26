@@ -1,9 +1,25 @@
 "use server";
 
 import { auth } from "@/lib/auth";
-import getCommentModel from "@/models/Comment";
+import { logger } from "@/lib/logger";
+import getCommentModel, { type IComment } from "@/models/Comment";
 import getPostModel from "@/models/Post";
 import { revalidatePath } from "next/cache";
+
+type SerializedComment = {
+  _id: string;
+  postId: string;
+  content: string;
+  author: IComment["author"];
+  parentId?: string | null;
+  likes: number;
+  likedBy: string[];
+  isAccepted: boolean;
+  acceptedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  replies: SerializedComment[];
+};
 
 export async function createComment(postId: string, content: string, parentId?: string) {
   try {
@@ -15,16 +31,18 @@ export async function createComment(postId: string, content: string, parentId?: 
     const Comment = await getCommentModel();
     const Post = await getPostModel();
 
-    const comment = await Comment.create({
+    const commentData: Pick<IComment, "postId" | "content" | "author" | "parentId"> = {
       postId,
       content,
-      parentId: parentId || null,
+      parentId: parentId || undefined,
       author: {
-        id: (session.user as any).id,
+        id: session.user.id,
         name: session.user.name || "익명",
         image: session.user.image || undefined,
       },
-    } as any) as any;
+    };
+
+    const comment = await Comment.create(commentData);
 
     // Increment comment count on post
     await Post.findByIdAndUpdate(postId, {
@@ -43,7 +61,7 @@ export async function createComment(postId: string, content: string, parentId?: 
       }
     };
   } catch (error) {
-    console.error("Create comment error:", error);
+    logger.error("Create comment error:", error);
     return { success: false, error: "댓글 작성에 실패했습니다." };
   }
 }
@@ -56,11 +74,11 @@ export async function getComments(postId: string) {
       .sort({ createdAt: 1 })
       .lean();
 
-    console.log("Raw comments from DB:", comments.map(c => ({ _id: c._id, isAccepted: c.isAccepted })));
+    logger.debug("Raw comments from DB:", comments.map(c => ({ _id: c._id, isAccepted: c.isAccepted })));
 
     // Organize comments into tree structure
-    const commentMap = new Map();
-    const rootComments: any[] = [];
+    const commentMap = new Map<string, SerializedComment>();
+    const rootComments: SerializedComment[] = [];
 
     // First pass: create map of all comments
     comments.forEach((comment) => {
@@ -69,14 +87,19 @@ export async function getComments(postId: string) {
         _id: comment._id.toString(),
         createdAt: comment.createdAt.toISOString(),
         updatedAt: comment.updatedAt.toISOString(),
+        acceptedAt: comment.acceptedAt?.toISOString() ?? null,
         replies: [],
-      };
+      } satisfies SerializedComment;
       commentMap.set(serialized._id, serialized);
     });
 
     // Second pass: organize into tree
     comments.forEach((comment) => {
       const serialized = commentMap.get(comment._id.toString());
+      if (!serialized) {
+        return;
+      }
+
       if (comment.parentId) {
         const parent = commentMap.get(comment.parentId);
         if (parent) {
@@ -89,7 +112,7 @@ export async function getComments(postId: string) {
 
     return { success: true, comments: rootComments };
   } catch (error) {
-    console.error("Get comments error:", error);
+    logger.error("Get comments error:", error);
     return { success: false, error: "댓글을 불러오는데 실패했습니다.", comments: [] };
   }
 }
@@ -110,7 +133,7 @@ export async function deleteComment(commentId: string, postId: string) {
       return { success: false, error: "댓글을 찾을 수 없습니다." };
     }
 
-    if (comment.author.id !== (session.user as any).id) {
+    if (comment.author.id !== session.user.id) {
       return { success: false, error: "삭제 권한이 없습니다." };
     }
 
@@ -132,7 +155,7 @@ export async function deleteComment(commentId: string, postId: string) {
 
     return { success: true, deletedCount: 1 + replyCount };
   } catch (error) {
-    console.error("Delete comment error:", error);
+    logger.error("Delete comment error:", error);
     return { success: false, error: "댓글 삭제에 실패했습니다." };
   }
 }
@@ -151,7 +174,7 @@ export async function updateComment(commentId: string, postId: string, content: 
       return { success: false, error: "댓글을 찾을 수 없습니다." };
     }
 
-    if (comment.author.id !== (session.user as any).id) {
+    if (comment.author.id !== session.user.id) {
       return { success: false, error: "수정 권한이 없습니다." };
     }
 
@@ -161,7 +184,7 @@ export async function updateComment(commentId: string, postId: string, content: 
 
     return { success: true };
   } catch (error) {
-    console.error("Update comment error:", error);
+    logger.error("Update comment error:", error);
     return { success: false, error: "댓글 수정에 실패했습니다." };
   }
 }
@@ -173,7 +196,7 @@ export async function toggleCommentLike(commentId: string) {
       return { success: false, error: "로그인이 필요합니다." };
     }
 
-    const userId = (session.user as any).id;
+    const userId = session.user.id;
     const Comment = await getCommentModel();
     const comment = await Comment.findById(commentId);
 
@@ -197,7 +220,7 @@ export async function toggleCommentLike(commentId: string) {
 
     return { success: true, liked: !isLiked };
   } catch (error) {
-    console.error("Toggle comment like error:", error);
+    logger.error("Toggle comment like error:", error);
     return { success: false, error: "좋아요 처리에 실패했습니다." };
   }
 }
@@ -247,7 +270,7 @@ export async function getWeeklyTopAnswerers(limit: number = 5) {
 
     return { success: true, answerers: topAnswerers };
   } catch (error) {
-    console.error("Get weekly top answerers error:", error);
+    logger.error("Get weekly top answerers error:", error);
     return { success: false, error: "지식인 랭킹을 불러오는데 실패했습니다.", answerers: [] };
   }
 }
@@ -259,7 +282,7 @@ export async function acceptComment(commentId: string, postId: string) {
       return { success: false, error: "로그인이 필요합니다." };
     }
 
-    const userId = (session.user as any).id;
+    const userId = session.user.id;
     const Comment = await getCommentModel();
     const Post = await getPostModel();
 
@@ -281,11 +304,11 @@ export async function acceptComment(commentId: string, postId: string) {
 
     // 이미 채택된 답변이 있는지 확인
     if (post.isSolved) {
-      console.log("Already solved - rejecting accept request");
+      logger.debug("Already solved - rejecting accept request");
       return { success: false, error: "이미 채택된 답변이 있습니다." };
     }
 
-    console.log("Proceeding with accept for comment:", commentId);
+    logger.debug("Proceeding with accept for comment:", commentId);
 
     // 댓글 확인
     const comment = await Comment.findById(commentId);
@@ -316,7 +339,7 @@ export async function acceptComment(commentId: string, postId: string) {
       { new: true }
     );
 
-    console.log("Comment accepted:", updatedComment?._id, "isAccepted:", updatedComment?.isAccepted);
+    logger.debug("Comment accepted:", updatedComment?._id, "isAccepted:", updatedComment?.isAccepted);
 
     // 게시글 해결됨 표시
     const updatedPost = await Post.findByIdAndUpdate(
@@ -325,14 +348,14 @@ export async function acceptComment(commentId: string, postId: string) {
       { new: true }
     );
 
-    console.log("Post updated:", updatedPost?._id, "isSolved:", updatedPost?.isSolved, "acceptedCommentId:", updatedPost?.acceptedCommentId);
+    logger.debug("Post updated:", updatedPost?._id, "isSolved:", updatedPost?.isSolved, "acceptedCommentId:", updatedPost?.acceptedCommentId);
 
     revalidatePath(`/community/${postId}`);
     revalidatePath("/community");
 
     return { success: true };
   } catch (error) {
-    console.error("Accept comment error:", error);
+    logger.error("Accept comment error:", error);
     return { success: false, error: "채택 처리에 실패했습니다." };
   }
 }

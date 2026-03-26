@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { connectToDatabase } from '@/lib/mongodb';
+import { logger } from '@/lib/logger';
 import Ranking from '@/models/Ranking';
-import { crawlRankingData } from '@/lib/crawler';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes max for crawling
@@ -10,11 +10,12 @@ export const maxDuration = 300; // 5 minutes max for crawling
 export async function GET() {
   try {
     await connectToDatabase();
+    const { crawlRankingData } = await import('@/lib/crawler');
     
     // 1. Crawl Data
-    console.log('Starting ranking crawl...');
+    logger.debug('Starting ranking crawl...');
     const data = await crawlRankingData();
-    console.log(`Crawled ${data.length} entries.`);
+    logger.debug(`Crawled ${data.length} entries.`);
 
     if (data.length === 0) {
         return NextResponse.json({ message: 'No data crawled. Check selectors or cloudflare protection.', success: false }, { status: 500 });
@@ -33,7 +34,7 @@ export async function GET() {
     }));
 
     await Ranking.insertMany(rankingDocs);
-    console.log('Data saved to DB successfully.');
+    logger.debug('Data saved to DB successfully.');
 
     revalidatePath('/');
     revalidatePath('/ranking');
@@ -46,7 +47,7 @@ export async function GET() {
     });
 
   } catch (error: unknown) {
-    console.error('API Error:', error);
+    logger.error('API Error:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({ message: 'Internal Server Error', error: message }, { status: 500 });
   }

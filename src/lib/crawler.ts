@@ -1,8 +1,6 @@
 import { existsSync } from 'node:fs';
-import chromium from '@sparticuz/chromium';
 import type { Browser, BrowserContext, Page } from 'puppeteer-core';
-import puppeteerCore from 'puppeteer-core';
-import puppeteer from 'puppeteer';
+import { logger } from '@/lib/logger';
 
 const OFFICIAL_RANKING_URL = 'https://mabinogimobile.nexon.com/Ranking/List';
 const LOCAL_CHROME_PATH = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
@@ -42,12 +40,19 @@ async function launchBrowser(): Promise<Browser> {
   const launchArgs = ['--no-sandbox', '--disable-setuid-sandbox'];
 
   if (process.env.VERCEL) {
+    const [{ default: chromium }, { default: puppeteerCore }] = await Promise.all([
+      import('@sparticuz/chromium'),
+      import('puppeteer-core'),
+    ]);
+
     return puppeteerCore.launch({
       args: chromium.args,
       executablePath: await chromium.executablePath(),
       headless: 'shell',
     });
   }
+
+  const { default: puppeteer } = await import('puppeteer');
 
   if (existsSync(LOCAL_CHROME_PATH)) {
     return puppeteer.launch({
@@ -214,12 +219,12 @@ export async function crawlRankingData(): Promise<RankingData[]> {
     const allResults: RankingData[] = [];
 
     for (const rankingType of RANKING_TYPES) {
-      console.log(`Starting crawl for Ranking Type: ${rankingType.name} (code: ${rankingType.code})`);
+      logger.debug(`Starting crawl for Ranking Type: ${rankingType.name} (code: ${rankingType.code})`);
       const browser = await launchBrowser();
 
       try {
         for (const server of SERVERS) {
-          console.log(`Processing server: ${server.name} for ${rankingType.name}`);
+          logger.debug(`Processing server: ${server.name} for ${rankingType.name}`);
 
           let currentPage = 1;
           let totalPages = MAX_PAGES_PER_SERVER;
@@ -235,7 +240,7 @@ export async function crawlRankingData(): Promise<RankingData[]> {
               const result = await fetchRankingChunk(page, rankingType, server, currentPage, chunkEnd);
               totalPages = Math.min(result.totalPages, MAX_PAGES_PER_SERVER);
               allResults.push(...result.items);
-              console.log(`  - Pages ${currentPage}-${Math.min(chunkEnd, totalPages)} fetched for ${server.name} (${rankingType.name})`);
+              logger.debug(`  - Pages ${currentPage}-${Math.min(chunkEnd, totalPages)} fetched for ${server.name} (${rankingType.name})`);
               currentPage = chunkEnd + 1;
             } finally {
               await context.close();
@@ -249,7 +254,7 @@ export async function crawlRankingData(): Promise<RankingData[]> {
 
     return allResults;
   } catch (error) {
-    console.error('Crawling failed:', error);
+    logger.error('Crawling failed:', error);
     return [];
   }
 }

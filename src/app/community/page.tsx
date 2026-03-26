@@ -1,5 +1,9 @@
-import CommunityClient from "./CommunityClient";
+import dynamic from "next/dynamic";
 import type { Metadata } from "next";
+
+const CommunityClient = dynamic(() => import("./CommunityClient"), {
+  loading: () => <div className="min-h-screen bg-white" />,
+});
 
 const SITE_URL = "https://www.mabilife.com";
 

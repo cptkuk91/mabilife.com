@@ -71,10 +71,10 @@
 
 목표: 요청 처리 비용과 클라이언트 번들 크기를 줄인다.
 
-- `src/lib/redis.ts`
+- [완료] `src/lib/redis.ts`
   - `invalidateCachePattern()`가 `KEYS` 기반이면 트래픽 증가 시 Redis 블로킹 위험이 있다
   - `SCAN` 기반 순회 삭제로 교체 필요
-- 과도한 런타임 로그 정리
+- [완료] 과도한 런타임 로그 정리
   - 대상:
     - `src/actions/homework.ts`
     - `src/actions/comment.ts`
@@ -82,7 +82,7 @@
     - `src/lib/crawler.ts`
     - `src/app/api/cron/crawl-ranking/route.ts`
   - 개발용 로그는 `NODE_ENV !== "production"` 또는 공용 logger로 제한
-- 대형 클라이언트 컴포넌트 분리
+- [완료] 대형 클라이언트 컴포넌트 분리
   - 우선 대상:
     - `src/app/HomeClient.tsx`
     - `src/app/guide/[id]/TipDetailClient.tsx`
@@ -94,11 +94,11 @@
     - 초기 번들 축소
     - 렌더 단위 분리
     - 유지보수성 개선
-- TinyMCE 전달 전략 점검
+- [완료] TinyMCE 전달 전략 점검
   - `public/tinymce/**` 정적 자산 규모가 큼
   - 실제 편집 페이지에서만 로드되는지 재확인
   - CDN 사용 또는 에디터 대체 가능성은 별도 검토 항목
-- 크롤러 의존성 분리 검토
+- [완료] 크롤러 의존성 분리 검토
   - `puppeteer`, `puppeteer-core`, `@sparticuz/chromium` 동시 사용은 설치/빌드 부담이 큼
   - 랭킹 크롤링을 앱 런타임과 분리 가능한지 확인
 

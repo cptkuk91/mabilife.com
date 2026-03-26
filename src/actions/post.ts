@@ -1,6 +1,7 @@
 "use server";
 
 import { auth } from "@/lib/auth";
+import { logger } from "@/lib/logger";
 import getPostModel from "@/models/Post";
 import getCommentModel from "@/models/Comment";
 import { revalidatePath } from "next/cache";
@@ -32,7 +33,7 @@ export async function createPost(input: CreatePostInput): Promise<PostResponse> 
       type: input.type,
       images: input.images || [],
       author: {
-        id: (session.user as any).id,
+        id: session.user.id,
         name: session.user.name || "익명",
         image: session.user.image || undefined,
       },
@@ -46,7 +47,7 @@ export async function createPost(input: CreatePostInput): Promise<PostResponse> 
       id: post._id.toString(),
     };
   } catch (error) {
-    console.error("Create post error:", error);
+    logger.error("Create post error:", error);
     return { success: false, error: "게시글 작성에 실패했습니다." };
   }
 }
@@ -55,7 +56,7 @@ export async function getPosts(page = 1, limit = 20, type?: string, search?: str
   try {
     const Post = await getPostModel();
     const Comment = await getCommentModel();
-    const query: any = {};
+    const query: Record<string, unknown> = {};
 
     if (type && type !== '전체') {
       query.type = type;
@@ -108,7 +109,7 @@ export async function getPosts(page = 1, limit = 20, type?: string, search?: str
 
     return { success: true, posts: serializedPosts };
   } catch (error) {
-    console.error("Get posts error:", error);
+    logger.error("Get posts error:", error);
     return { success: false, error: "게시글을 불러오는데 실패했습니다.", posts: [] };
   }
 }
@@ -133,7 +134,7 @@ export async function getPost(id: string) {
       }
     };
   } catch (error) {
-    console.error("Get post error:", error);
+    logger.error("Get post error:", error);
     return { success: false, error: "게시글을 불러오는데 실패했습니다." };
   }
 }
@@ -158,14 +159,14 @@ export async function incrementViewCount(id: string) {
       { new: true }
     );
 
-    console.log("View count updated:", id, "New count:", result?.viewCount);
+    logger.debug("View count updated:", id, "New count:", result?.viewCount);
 
     revalidatePath("/community");
     revalidatePath(`/community/${id}`);
 
     return { success: true };
   } catch (error) {
-    console.error("Increment view error:", error);
+    logger.error("Increment view error:", error);
     return { success: false };
   }
 }
@@ -185,7 +186,7 @@ export async function deletePost(id: string) {
       return { success: false, error: "게시글을 찾을 수 없습니다." };
     }
 
-    if (post.author.id !== (session.user as any).id) {
+    if (post.author.id !== session.user.id) {
       return { success: false, error: "삭제 권한이 없습니다." };
     }
 
@@ -198,7 +199,7 @@ export async function deletePost(id: string) {
 
     return { success: true };
   } catch (error) {
-    console.error("Delete post error:", error);
+    logger.error("Delete post error:", error);
     return { success: false, error: "게시글 삭제에 실패했습니다." };
   }
 }
@@ -210,7 +211,7 @@ export async function toggleLike(postId: string) {
       return { success: false, error: "로그인이 필요합니다." };
     }
 
-    const userId = (session.user as any).id;
+    const userId = session.user.id;
     const Post = await getPostModel();
     const post = await Post.findById(postId);
 
@@ -236,7 +237,7 @@ export async function toggleLike(postId: string) {
 
     return { success: true, liked: !isLiked };
   } catch (error) {
-    console.error("Toggle like error:", error);
+    logger.error("Toggle like error:", error);
     return { success: false, error: "좋아요 처리에 실패했습니다." };
   }
 }
@@ -354,7 +355,7 @@ export async function getTrendingPosts(period: TrendingPeriod = 'week', limit: n
 
     return { success: true, posts: serializedPosts };
   } catch (error) {
-    console.error("Get trending posts error:", error);
+    logger.error("Get trending posts error:", error);
     return { success: false, error: "인기글을 불러오는데 실패했습니다.", posts: [] };
   }
 }
@@ -373,7 +374,7 @@ export async function updatePost(id: string, content: string, images?: string[])
       return { success: false, error: "게시글을 찾을 수 없습니다." };
     }
 
-    if (post.author.id !== (session.user as any).id) {
+    if (post.author.id !== session.user.id) {
       return { success: false, error: "수정 권한이 없습니다." };
     }
 
@@ -387,7 +388,7 @@ export async function updatePost(id: string, content: string, images?: string[])
 
     return { success: true };
   } catch (error) {
-    console.error("Update post error:", error);
+    logger.error("Update post error:", error);
     return { success: false, error: "게시글 수정에 실패했습니다." };
   }
 }

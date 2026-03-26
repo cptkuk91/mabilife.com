@@ -1,7 +1,11 @@
-import PostDetailClient from "./PostDetailClient";
+import dynamic from "next/dynamic";
 import type { Metadata } from "next";
 import { getPost } from "@/actions/post";
 import { htmlToPlainText } from "@/lib/text";
+
+const PostDetailClient = dynamic(() => import("./PostDetailClient"), {
+  loading: () => <div className="min-h-screen bg-white" />,
+});
 
 const SITE_URL = "https://www.mabilife.com";
 

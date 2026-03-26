@@ -1,13 +1,14 @@
 "use server";
 
 import { connectToDatabase } from '@/lib/mongodb';
+import { logger } from '@/lib/logger';
 import Ranking from '@/models/Ranking';
-import { crawlRankingData } from '@/lib/crawler';
 import { revalidatePath } from 'next/cache';
 
 export async function refreshRankingData() {
   try {
     await connectToDatabase();
+    const { crawlRankingData } = await import('@/lib/crawler');
     
     // Crawl Data
     const data = await crawlRankingData();
@@ -34,7 +35,7 @@ export async function refreshRankingData() {
     return { success: true, count: data.length, message: `성공적으로 ${data.length}개의 데이터를 업데이트했습니다.` };
 
   } catch (error: unknown) {
-    console.error('Action Error:', error);
+    logger.error('Action Error:', error);
     return { success: false, message: error instanceof Error ? error.message : 'Unknown error' };
   }
 }

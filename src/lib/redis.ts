@@ -45,8 +45,14 @@ export async function delCache(key: string): Promise<void> {
 export async function invalidateCachePattern(pattern: string): Promise<void> {
   if (!redis) return;
   const searchPattern = getKey(pattern);
-  const keys = await redis.keys(searchPattern);
-  if (keys.length > 0) {
-    await redis.del(keys);
-  }
+  let cursor = '0';
+
+  do {
+    const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', searchPattern, 'COUNT', 100);
+    cursor = nextCursor;
+
+    if (keys.length > 0) {
+      await redis.del(...keys);
+    }
+  } while (cursor !== '0');
 }

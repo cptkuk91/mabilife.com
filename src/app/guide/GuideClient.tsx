@@ -1,21 +1,14 @@
 "use client";
 
-import Link from "next/link";
+import dynamic from "next/dynamic";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
-import { getGuides } from "@/actions/guide";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useSession } from "next-auth/react";
+import { getGuides } from "@/actions/guide";
 import { decodeHtmlEntities, extractPreviewText } from "@/lib/text";
-
-const categoryStyles: Record<string, { icon: string; bg: string; color: string }> = {
-  "초보 가이드": { icon: "fa-graduation-cap", bg: "#E8F0FE", color: "#2F80ED" },
-  "전투/던전": { icon: "fa-dungeon", bg: "#FDECEC", color: "#EB5757" },
-  "메인스트림": { icon: "fa-book-open", bg: "#F5ECFE", color: "#9B51E0" },
-  "생활/알바": { icon: "fa-hammer", bg: "#E6F8EC", color: "#27AE60" },
-  "패션/뷰티": { icon: "fa-shirt", bg: "#FDECF4", color: "#E84393" },
-  돈벌기: { icon: "fa-sack-dollar", bg: "#FEF4E6", color: "#F2994A" },
-};
+import type { GuideSummary } from "./GuideListView";
 
 const categoryColors: Record<string, string> = {
   "초보 가이드": "#2F80ED",
@@ -27,6 +20,7 @@ const categoryColors: Record<string, string> = {
 };
 
 const categories = ["전체", "초보 가이드", "전투/던전", "메인스트림", "생활/알바", "패션/뷰티", "돈벌기"];
+const LIMIT = 20;
 
 const placeholderImages = [
   "/assets/placeholder/mm1.webp",
@@ -34,65 +28,63 @@ const placeholderImages = [
   "/assets/placeholder/mm3.jpg",
 ];
 
-/* ─── Utils ──────────────────────────────────────────── */
+const GuideListView = dynamic(() => import("./GuideListView"), {
+  loading: () => <div className="py-8 text-center text-[13px] text-[#B4B4B0]">리스트 뷰를 불러오는 중…</div>,
+});
 
-const cn = (...c: Array<string | false | null | undefined>) => c.filter(Boolean).join(" ");
+const cn = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(" ");
 const fr = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30 focus-visible:ring-offset-2";
-
-const relTime = (d: string) => {
-  const diff = Date.now() - new Date(d).getTime();
-  const m = Math.floor(diff / 60000);
-  const h = Math.floor(diff / 3600000);
-  const dy = Math.floor(diff / 86400000);
-  if (m < 1) return "방금 전";
-  if (m < 60) return `${m}분 전`;
-  if (h < 24) return `${h}시간 전`;
-  if (dy < 7) return `${dy}일 전`;
-  return new Date(d).toLocaleDateString("ko-KR", { month: "short", day: "numeric" });
-};
 
 type ViewMode = "grid" | "list";
 
-/* ─── Component ──────────────────────────────────────── */
+const toGuideSummaries = (data: unknown): GuideSummary[] => (Array.isArray(data) ? (data as GuideSummary[]) : []);
+const avatarSrc = (guide: GuideSummary) =>
+  guide.author?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${guide.author?.id || guide._id}`;
 
 export default function GuideClient() {
   const router = useRouter();
   const { status } = useSession();
-  const [guides, setGuides] = useState<any[]>([]);
+  const [guides, setGuides] = useState<GuideSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("전체");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [hasMore, setHasMore] = useState(true);
-  const LIMIT = 20;
 
-  useEffect(() => {
-    setGuides([]);
-    setHasMore(true);
-    loadGuides(true);
-  }, [activeTab, searchQuery]);
-
-  const loadGuides = async (initial = false) => {
+  const loadGuides = useCallback(async (initial = false, skip = 0, nextTab = activeTab, nextSearch = searchQuery) => {
     setLoading(true);
-    const skip = initial ? 0 : guides.length;
+
     const result = await getGuides({
-      category: activeTab === "전체" ? undefined : activeTab,
-      search: searchQuery || undefined,
+      category: nextTab === "전체" ? undefined : nextTab,
+      search: nextSearch || undefined,
       limit: LIMIT,
       skip,
       sort: "latest",
     });
-    if (result.success && result.data) {
-      const ng = result.data as any[];
-      if (ng.length < LIMIT) setHasMore(false);
-      setGuides((prev) => (initial ? ng : [...prev, ...ng]));
-    }
-    setLoading(false);
-  };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
+    if (result.success && result.data) {
+      const nextGuides = toGuideSummaries(result.data);
+      setHasMore(nextGuides.length >= LIMIT);
+      setGuides((prev) => (initial ? nextGuides : [...prev, ...nextGuides]));
+    } else if (initial) {
+      setGuides([]);
+      setHasMore(false);
+    }
+
+    setLoading(false);
+  }, [activeTab, searchQuery]);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      void loadGuides(true, 0, activeTab, searchQuery);
+    }, 0);
+
+    return () => clearTimeout(timeoutId);
+  }, [activeTab, searchQuery, loadGuides]);
+
+  const handleSearch = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     setSearchQuery(searchInput.trim());
   };
 
@@ -112,37 +104,31 @@ export default function GuideClient() {
 
   return (
     <div className="mx-auto min-h-screen max-w-[1100px] bg-white px-5 pb-24 pt-16 sm:px-6 md:pb-16 md:pt-20 lg:px-8">
-
-      {/* ── Header ── */}
       <header className="pb-6">
         <div className="text-[11px] font-bold uppercase tracking-[0.08em] text-[#9B9A97]">Guides</div>
-        <h1 className="mt-1 text-[28px] font-bold tracking-[-0.03em] text-[#37352F] md:text-[32px]">
-          공략
-        </h1>
+        <h1 className="mt-1 text-[28px] font-bold tracking-[-0.03em] text-[#37352F] md:text-[32px]">공략</h1>
         <p className="mt-1 text-[14px] text-[#787774]">에린 생활에 필요한 모든 지식</p>
       </header>
 
-      {/* ── Category Tabs ── */}
       <div className="mb-5 flex gap-1.5 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {categories.map((cat) => (
+        {categories.map((category) => (
           <button
-            key={cat}
+            key={category}
             type="button"
             className={cn(
               "shrink-0 rounded-md px-3 py-1.5 text-[13px] font-medium transition",
-              activeTab === cat
+              activeTab === category
                 ? "bg-[#37352F] text-white"
                 : "text-[#787774] hover:bg-[#F7F6F3] hover:text-[#37352F]",
               fr,
             )}
-            onClick={() => setActiveTab(cat)}
+            onClick={() => setActiveTab(category)}
           >
-            {cat}
+            {category}
           </button>
         ))}
       </div>
 
-      {/* ── Search Bar ── */}
       <form
         onSubmit={handleSearch}
         className="mb-5 flex items-center gap-2.5 rounded-xl border border-[#E3E2DE] bg-white px-4 py-2.5 transition-shadow focus-within:border-[#2F80ED] focus-within:shadow-[0_0_0_3px_rgba(47,128,237,0.1)]"
@@ -152,7 +138,7 @@ export default function GuideClient() {
           type="text"
           placeholder="공략 검색..."
           value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
+          onChange={(event) => setSearchInput(event.target.value)}
           className="min-w-0 flex-1 border-none bg-transparent py-0.5 text-[14px] text-[#37352F] outline-none placeholder:text-[#C4C4C0]"
         />
         {searchInput && (
@@ -176,7 +162,6 @@ export default function GuideClient() {
         </button>
       </form>
 
-      {/* ── Search Info Bar ── */}
       {searchQuery && (
         <div className="mb-5 flex items-center justify-between rounded-lg border border-[#E8F0FE] bg-[#F0F6FF] px-4 py-2.5 text-[13px] text-[#2F80ED]">
           <span>&quot;{searchQuery}&quot; 검색 결과</span>
@@ -186,11 +171,8 @@ export default function GuideClient() {
         </div>
       )}
 
-      {/* ── View Toggle + Count ── */}
       <div className="mb-4 flex items-center justify-between">
-        <span className="text-[13px] text-[#9B9A97]">
-          {!loading && guides.length > 0 && `${guides.length}개의 공략`}
-        </span>
+        <span className="text-[13px] text-[#9B9A97]">{!loading && guides.length > 0 && `${guides.length}개의 공략`}</span>
         <div className="flex gap-1">
           <button
             type="button"
@@ -223,7 +205,6 @@ export default function GuideClient() {
         </div>
       </div>
 
-      {/* ── Guide Grid / List ── */}
       <div className={viewMode === "grid" ? "grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3" : "flex flex-col gap-2"}>
         {loading && guides.length === 0 ? (
           <div className="col-span-full flex flex-col items-center justify-center rounded-xl border border-[#E3E2DE] bg-[#FBFBFA] px-6 py-16 text-center">
@@ -249,28 +230,24 @@ export default function GuideClient() {
               공략 작성하기
             </button>
           </div>
+        ) : viewMode === "grid" ? (
+          guides.map((guide, index) => <GridCard key={guide._id} guide={guide} index={index} />)
         ) : (
-          <>
-            {viewMode === "grid"
-              ? guides.map((g, i) => <GridCard key={g._id} guide={g} index={i} />)
-              : guides.map((g) => <ListRow key={g._id} guide={g} />)}
-          </>
+          <GuideListView guides={guides} />
         )}
       </div>
 
-      {/* Loading indicator */}
       {loading && guides.length > 0 && (
         <div className="py-8 text-center text-[13px] text-[#B4B4B0]">
           <i className="fa-solid fa-spinner fa-spin" aria-hidden="true" /> 불러오는 중…
         </div>
       )}
 
-      {/* Load More */}
       {!loading && hasMore && guides.length > 0 && (
         <div className="mt-8 flex justify-center">
           <button
             type="button"
-            onClick={() => loadGuides(false)}
+            onClick={() => void loadGuides(false, guides.length)}
             className={cn(
               "inline-flex items-center gap-2 rounded-lg border border-[#E3E2DE] bg-white px-6 py-2.5 text-[14px] font-medium text-[#37352F] transition hover:bg-[#F7F6F3]",
               fr,
@@ -282,7 +259,6 @@ export default function GuideClient() {
         </div>
       )}
 
-      {/* Floating Write Button */}
       <button
         type="button"
         className={cn(
@@ -298,9 +274,7 @@ export default function GuideClient() {
   );
 }
 
-/* ─── Grid Card ──────────────────────────────────────── */
-
-function GridCard({ guide, index }: { guide: any; index: number }) {
+function GridCard({ guide, index }: { guide: GuideSummary; index: number }) {
   const color = categoryColors[guide.category] || "#2F80ED";
 
   return (
@@ -338,9 +312,11 @@ function GridCard({ guide, index }: { guide: any; index: number }) {
 
         <div className="mt-3 flex items-center justify-between border-t border-[#F1F1EF] pt-3">
           <div className="flex items-center gap-2 text-[12px] text-[#787774]">
-            <img
-              src={guide.author?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${guide.author?.id}`}
-              alt="Author"
+            <Image
+              src={avatarSrc(guide)}
+              alt={`${guide.author?.name || "익명"} 프로필`}
+              width={20}
+              height={20}
               className="size-5 rounded-full border border-[#E3E2DE] object-cover"
             />
             <span>{guide.author?.name || "익명"}</span>
@@ -353,71 +329,6 @@ function GridCard({ guide, index }: { guide: any; index: number }) {
             <span className="inline-flex items-center gap-1">
               <i className="fa-regular fa-heart" aria-hidden="true" />
               {guide.likes || 0}
-            </span>
-          </div>
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-/* ─── List Row ───────────────────────────────────────── */
-
-function ListRow({ guide }: { guide: any }) {
-  const style = categoryStyles[guide.category] || { icon: "fa-lightbulb", bg: "#E8F0FE", color: "#2F80ED" };
-
-  return (
-    <Link
-      href={`/guide/${guide.slug || guide._id}`}
-      className="group flex gap-4 rounded-xl border border-[#E3E2DE] bg-white p-4 transition-all duration-200 hover:border-[#D3D1CB] hover:bg-[#FBFBFA]"
-    >
-      <div
-        className="flex size-12 shrink-0 items-center justify-center rounded-xl text-[20px]"
-        style={{ background: style.bg, color: style.color }}
-      >
-        <i className={`fa-solid ${style.icon}`} aria-hidden="true" />
-      </div>
-
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center justify-between gap-3">
-          <span
-            className="text-[11px] font-semibold"
-            style={{ color: style.color }}
-          >
-            {guide.category}
-          </span>
-          <span className="text-[11px] text-[#B4B4B0]">{relTime(guide.createdAt)}</span>
-        </div>
-
-        <h3 className="mt-1 truncate text-[15px] font-semibold text-[#37352F] transition-colors group-hover:text-[#2F80ED]">
-          {decodeHtmlEntities(guide.title)}
-        </h3>
-
-        <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-[#787774]">
-          {extractPreviewText(guide.content, 100)}
-        </p>
-
-        <div className="mt-2.5 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-[12px] text-[#787774]">
-            <img
-              src={guide.author?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${guide.author?.id}`}
-              alt="Author"
-              className="size-5 rounded-full border border-[#E3E2DE] object-cover"
-            />
-            <span>{guide.author?.name || "익명"}</span>
-          </div>
-          <div className="flex items-center gap-2.5 text-[11px] tabular-nums text-[#B4B4B0]">
-            <span className="inline-flex items-center gap-1">
-              <i className="fa-regular fa-eye" aria-hidden="true" />
-              {guide.views || 0}
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <i className="fa-regular fa-heart" aria-hidden="true" />
-              {guide.likes || 0}
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <i className="fa-regular fa-comment" aria-hidden="true" />
-              {guide.commentCount || 0}
             </span>
           </div>
         </div>

@@ -1,5 +1,9 @@
-import GuideClient from "./GuideClient";
+import dynamic from "next/dynamic";
 import type { Metadata } from "next";
+
+const GuideClient = dynamic(() => import("./GuideClient"), {
+  loading: () => <div className="min-h-screen bg-white" />,
+});
 
 const SITE_URL = "https://www.mabilife.com";
 

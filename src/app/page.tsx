@@ -1,9 +1,13 @@
-import HomeClient from "./HomeClient";
+import dynamic from "next/dynamic";
 import type { Metadata } from "next";
 import { getGuides } from "@/actions/guide";
 import { getPosts } from "@/actions/post";
 import { getRankingStatistics } from "@/actions/ranking";
 import { fetchMabinogiMobileYouTubers } from "@/actions/youtube";
+
+const HomeClient = dynamic(() => import("./HomeClient"), {
+  loading: () => <div className="min-h-screen bg-white" />,
+});
 
 const SITE_URL = "https://www.mabilife.com";
 

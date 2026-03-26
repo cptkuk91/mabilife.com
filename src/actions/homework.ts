@@ -4,7 +4,8 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/mongodb";
-import { Homework } from "@/models/Homework";
+import { logger } from "@/lib/logger";
+import { Homework, type IHomeworkDocument } from "@/models/Homework";
 import { IHomeworkData } from "@/types/homework";
 
 // Helper to get the most recent reset time (Monday 6AM KST)
@@ -50,19 +51,19 @@ function getDailyResetTime() {
 }
 
 // Ensure reset logic is applied to a homework doc
-async function checkAndReset(homework: any) {
+async function checkAndReset(homework: IHomeworkDocument) {
     const currentWeeklyReset = getWeeklyResetTime();
     const currentDailyReset = getDailyResetTime();
     let needsSave = false;
     
-    console.log('[checkAndReset] Current Weekly Reset:', currentWeeklyReset);
-    console.log('[checkAndReset] Current Daily Reset:', currentDailyReset);
-    console.log('[checkAndReset] Homework weekStartDate:', homework.weekStartDate);
-    console.log('[checkAndReset] Homework lastDailyReset:', homework.lastDailyReset);
+    logger.debug('[checkAndReset] Current Weekly Reset:', currentWeeklyReset);
+    logger.debug('[checkAndReset] Current Daily Reset:', currentDailyReset);
+    logger.debug('[checkAndReset] Homework weekStartDate:', homework.weekStartDate);
+    logger.debug('[checkAndReset] Homework lastDailyReset:', homework.lastDailyReset);
     
     // Check Weekly Reset
     if (new Date(homework.weekStartDate).getTime() < currentWeeklyReset.getTime()) {
-      console.log('[checkAndReset] WEEKLY RESET TRIGGERED!');
+      logger.debug('[checkAndReset] WEEKLY RESET TRIGGERED!');
       homework.weekly = {
           barrier: false,
           blackHole: false,
@@ -87,7 +88,7 @@ async function checkAndReset(homework: any) {
     } 
     // Check Daily Reset
     else if (new Date(homework.lastDailyReset).getTime() < currentDailyReset.getTime()) {
-      console.log('[checkAndReset] DAILY RESET TRIGGERED!');
+      logger.debug('[checkAndReset] DAILY RESET TRIGGERED!');
       homework.daily = {
           dailyMission: false,
           dailyDungeon: false,
@@ -100,7 +101,7 @@ async function checkAndReset(homework: any) {
       homework.lastDailyReset = currentDailyReset;
       needsSave = true;
     } else {
-      console.log('[checkAndReset] No reset needed');
+      logger.debug('[checkAndReset] No reset needed');
     }
 
     if (needsSave) {
@@ -116,7 +117,7 @@ export async function getUserCharacters() {
   }
 
   await connectToDatabase();
-  const userId = (session.user as any).id;
+  const userId = session.user.id;
   
   // Find all characters for user
   let homeworks = await Homework.find({ userId }).sort({ createdAt: 1 });
@@ -149,7 +150,7 @@ export async function createCharacter(name: string) {
     if (!name || name.trim().length === 0) return { success: false, error: 'Name required' };
 
     await connectToDatabase();
-    const userId = (session.user as any).id;
+    const userId = session.user.id;
     
     // Check dupe name
     const existing = await Homework.findOne({ userId, characterName: name });
@@ -175,7 +176,7 @@ export async function deleteCharacter(homeworkId: string) {
     if (!session || !session.user) return { success: false, error: 'Unauthorized' };
 
     await connectToDatabase();
-    const userId = (session.user as any).id;
+    const userId = session.user.id;
     
     // Use deleteOne or findOneAndDelete
     await Homework.deleteOne({ _id: homeworkId, userId });
@@ -191,7 +192,7 @@ export async function updateHomework(homeworkId: string, updates: Partial<IHomew
   
   await connectToDatabase();
   
-  const homework = await Homework.findOne({ _id: homeworkId, userId: (session.user as any).id });
+  const homework = await Homework.findOne({ _id: homeworkId, userId: session.user.id });
   
   if (!homework) {
     return { success: false, error: 'Homework not found' };
@@ -212,20 +213,20 @@ export async function updateHomework(homeworkId: string, updates: Partial<IHomew
   return { success: true, homework: JSON.parse(JSON.stringify(homework)) };
 }
 
-export async function toggleTask(homeworkId: string, path: string, value: any) {
-    console.log('[toggleTask] Called with:', { homeworkId, path, value });
+export async function toggleTask(homeworkId: string, path: string, value: boolean) {
+    logger.debug('[toggleTask] Called with:', { homeworkId, path, value });
     
     const session = await getServerSession(authOptions);
     if (!session || !session.user) {
-        console.log('[toggleTask] Unauthorized');
+        logger.debug('[toggleTask] Unauthorized');
         return { success: false, error: 'Unauthorized' };
     }
 
     await connectToDatabase();
 
-    const userId = (session.user as any).id;
+    const userId = session.user.id;
     
-    console.log('[toggleTask] Updating...', { _id: homeworkId, userId });
+    logger.debug('[toggleTask] Updating...', { _id: homeworkId, userId });
     
     // Try with string ID first (for backwards compatibility)
     let result = await Homework.findOneAndUpdate(
@@ -246,11 +247,11 @@ export async function toggleTask(homeworkId: string, path: string, value: any) {
                 { new: true }
             );
         } catch {
-            console.log('[toggleTask] ObjectId conversion failed');
+            logger.debug('[toggleTask] ObjectId conversion failed');
         }
     }
 
-    console.log('[toggleTask] Result:', result ? JSON.stringify(result.weekly) : 'Not found');
+    logger.debug('[toggleTask] Result:', result ? JSON.stringify(result.weekly) : 'Not found');
 
     if (!result) return { success: false, error: 'Failed to update' };
 

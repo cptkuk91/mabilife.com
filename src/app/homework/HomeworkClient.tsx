@@ -1,6 +1,7 @@
 
 "use client";
 
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -30,6 +31,8 @@ type TaskCardProps = {
   icon: string;
   color?: string;
 };
+
+const ConfirmDialog = dynamic(() => import("@/components/ui/ConfirmDialog"));
 
 /* ─── Component ──────────────────────────────────────── */
 
@@ -183,34 +186,38 @@ export default function HomeworkClient() {
 
       {/* ── Delete Modal ── */}
       {deleteModal.isOpen && (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm" onClick={() => setDeleteModal({ ...deleteModal, isOpen: false })}>
-          <div className="w-full max-w-[380px] rounded-2xl border border-[#E3E2DE] bg-white p-6 shadow-[0_8px_30px_rgba(0,0,0,0.1)]" onClick={(e) => e.stopPropagation()}>
-            <h3 className="mb-2 text-[18px] font-bold text-[#37352F]">캐릭터 삭제</h3>
-            <p className="mb-5 text-[14px] leading-relaxed text-[#787774]">
-              정말로 <strong className="text-[#37352F]">{deleteModal.name}</strong> 캐릭터를 삭제하시겠습니까?<br />삭제된 데이터는 복구할 수 없습니다.
-            </p>
-            <div className="flex justify-end gap-2">
-              <button type="button" className={cn("rounded-lg bg-[#F7F6F3] px-4 py-2 text-[13px] font-medium text-[#37352F] transition hover:bg-[#F1F1EF]", fr)} onClick={() => setDeleteModal({ ...deleteModal, isOpen: false })}>취소</button>
-              <button type="button" className={cn("rounded-lg bg-[#EB5757] px-4 py-2 text-[13px] font-medium text-white transition hover:bg-[#E04040]", fr)} onClick={handleDelete}>삭제하기</button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDialog
+          title="캐릭터 삭제"
+          description={
+            <>
+              정말로 <strong className="text-[#37352F]">{deleteModal.name}</strong> 캐릭터를 삭제하시겠습니까?
+            </>
+          }
+          note="삭제된 데이터는 복구할 수 없습니다."
+          confirmLabel="삭제하기"
+          confirmTone="danger"
+          onCancel={() => setDeleteModal({ ...deleteModal, isOpen: false })}
+          onConfirm={() => {
+            void handleDelete();
+          }}
+        />
       )}
 
       {/* ── Login Alert Modal ── */}
       {showLoginAlert && (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm" onClick={() => setShowLoginAlert(false)}>
-          <div className="w-full max-w-[380px] rounded-2xl border border-[#E3E2DE] bg-white p-6 shadow-[0_8px_30px_rgba(0,0,0,0.1)]" onClick={(e) => e.stopPropagation()}>
-            <h3 className="mb-2 text-[18px] font-bold text-[#37352F]">로그인 필요</h3>
-            <p className="mb-5 text-[14px] leading-relaxed text-[#787774]">
-              숙제 트래커 기능을 이용하려면 로그인이 필요합니다.<br />로그인 페이지로 이동하시겠습니까?
-            </p>
-            <div className="flex justify-end gap-2">
-              <button type="button" className={cn("rounded-lg bg-[#F7F6F3] px-4 py-2 text-[13px] font-medium text-[#37352F] transition hover:bg-[#F1F1EF]", fr)} onClick={() => setShowLoginAlert(false)}>취소</button>
-              <button type="button" className={cn("rounded-lg bg-[#2F80ED] px-4 py-2 text-[13px] font-medium text-white transition hover:bg-[#1A66CC]", fr)} onClick={() => router.push("/login")}>로그인하기</button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDialog
+          title="로그인 필요"
+          description="숙제 트래커 기능을 이용하려면 로그인이 필요합니다."
+          note="로그인 페이지로 이동하시겠습니까?"
+          confirmLabel="로그인하기"
+          confirmTone="accent"
+          noteClassName="mt-1 text-[14px] leading-relaxed text-[#787774]"
+          onCancel={() => setShowLoginAlert(false)}
+          onConfirm={() => {
+            setShowLoginAlert(false);
+            router.push("/login");
+          }}
+        />
       )}
 
       {/* ── Header ── */}
