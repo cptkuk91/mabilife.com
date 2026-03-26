@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
   if (!result.success || !result.post) {
     return {
-      title: "게시글을 찾을 수 없습니다 - Mabi Life",
+      title: "게시글을 찾을 수 없습니다",
     };
   }
 
@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     title: `${title} - ${postType}`,
     description,
     openGraph: {
-      title: `${title} | Mabi Life 커뮤니티`,
+      title: `${title} | Mabi Life`,
       description,
       url: `${SITE_URL}/community/${id}`,
       type: "article",
@@ -41,7 +41,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     },
     twitter: {
       card: "summary_large_image",
-      title: `${title} | Mabi Life 커뮤니티`,
+      title: `${title} | Mabi Life`,
       description,
       images: post.images && post.images.length > 0 ? [post.images[0]] : ["/assets/og-image.png"],
     },

@@ -14,7 +14,7 @@ const SITE_URL = "https://www.mabilife.com";
 
 export const metadata: Metadata = {
   title: "마이페이지",
-  description: "내 공략, 커뮤니티 활동, 저장한 공략, 숙제 캐릭터를 한 곳에서 관리하세요.",
+  description: "마비노기 모바일 내 공략, 커뮤니티 활동, 저장한 공략, 숙제 캐릭터를 한 곳에서 관리하세요.",
   robots: {
     index: false,
     follow: false,

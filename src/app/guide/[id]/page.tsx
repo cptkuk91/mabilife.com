@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
   if (!result.success || !result.data || Array.isArray(result.data)) {
     return {
-      title: "공략을 찾을 수 없습니다 - Mabi Life",
+      title: "공략을 찾을 수 없습니다",
     };
   }
 

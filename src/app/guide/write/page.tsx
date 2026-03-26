@@ -8,7 +8,7 @@ const GuideWriteClient = dynamic(() => import("./GuideWriteClient"), {
 const SITE_URL = "https://www.mabilife.com";
 
 export const metadata: Metadata = {
-  title: "공략 작성 - Mabi Life",
+  title: "마비노기 모바일 공략 작성",
   description: "나만의 마비노기 모바일 공략을 작성하고 공유해보세요.",
   alternates: {
     canonical: `${SITE_URL}/guide/write`,

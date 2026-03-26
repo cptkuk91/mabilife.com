@@ -62,12 +62,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly",
       priority: 0.6,
     },
-    {
-      url: `${SITE_URL}/search`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.5,
-    },
   ];
 
   // 동적 페이지 - 공략 (slug 기반 URL 사용)

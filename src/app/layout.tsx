@@ -21,26 +21,31 @@ const songMyung = Song_Myung({
 
 const SITE_URL = "https://www.mabilife.com";
 const SITE_NAME = "Mabi Life";
-const SITE_DESCRIPTION = "마비노기 모바일 공략, 팁, 커뮤니티. 에린의 모든 모험가들과 함께 정보를 공유하세요.";
+const SITE_TITLE = "마비노기 모바일 공략 커뮤니티";
+const SITE_DESCRIPTION = "마비노기 모바일 공략, 랭킹, 통계, 룬 추천, 숙제 트래커까지. 마비노기 모바일의 모든 정보를 한곳에서 확인하세요.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${SITE_NAME} - 마비노기 모바일 공략 커뮤니티`,
+    default: `${SITE_TITLE} - ${SITE_NAME}`,
     template: `%s | ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
   keywords: [
     "마비노기 모바일",
+    "마비노기 모바일 공략",
+    "마비노기 모바일 공략 사이트",
     "마비노기",
     "마비모바일",
+    "마비노기모바일",
     "공략",
     "가이드",
-    "팁",
+    "랭킹",
+    "룬 추천",
+    "숙제 트래커",
     "커뮤니티",
-    "게임",
-    "MMORPG",
     "넥슨",
+    "MMORPG",
   ],
   authors: [{ name: SITE_NAME }],
   creator: SITE_NAME,
@@ -55,20 +60,20 @@ export const metadata: Metadata = {
     locale: "ko_KR",
     url: SITE_URL,
     siteName: SITE_NAME,
-    title: `${SITE_NAME} - 마비노기 모바일 공략 커뮤니티`,
+    title: `${SITE_TITLE} - ${SITE_NAME}`,
     description: SITE_DESCRIPTION,
     images: [
       {
         url: "/assets/og-image.png",
         width: 1200,
         height: 630,
-        alt: `${SITE_NAME} - 마비노기 모바일 공략 커뮤니티`,
+        alt: `${SITE_TITLE} - ${SITE_NAME}`,
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: `${SITE_NAME} - 마비노기 모바일 공략 커뮤니티`,
+    title: `${SITE_TITLE} - ${SITE_NAME}`,
     description: SITE_DESCRIPTION,
     images: ["/assets/og-image.png"],
   },
@@ -92,10 +97,7 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "./",
   },
-  verification: {
-    // google: "구글 서치 콘솔 인증 코드",
-    // naver: "네이버 서치어드바이저 인증 코드",
-  },
+  verification: {},
 };
 
 // JSON-LD 구조화 데이터

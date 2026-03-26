@@ -11,6 +11,7 @@ export default function robots(): MetadataRoute.Robots {
         disallow: [
           "/api/",
           "/profile",
+          "/login",
           "/guide/write",
           "/_next/",
           "/private/",
@@ -19,12 +20,12 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "Googlebot",
         allow: "/",
-        disallow: ["/api/", "/profile", "/guide/write"],
+        disallow: ["/api/", "/profile", "/login", "/guide/write"],
       },
       {
         userAgent: "Yeti", // Naver
         allow: "/",
-        disallow: ["/api/", "/profile", "/guide/write"],
+        disallow: ["/api/", "/profile", "/login", "/guide/write"],
       },
     ],
     sitemap: `${SITE_URL}/sitemap.xml`,
