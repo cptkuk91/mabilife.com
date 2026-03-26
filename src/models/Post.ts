@@ -51,6 +51,7 @@ const PostSchema: Schema = new Schema({
 PostSchema.index({ createdAt: -1 });
 PostSchema.index({ type: 1 });
 PostSchema.index({ 'author.id': 1 });
+PostSchema.index({ content: 'text' });
 
 let Post: Model<IPost>;
 
