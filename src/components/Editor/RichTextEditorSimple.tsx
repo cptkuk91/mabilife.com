@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useEffect, useState, memo, useId, useImperativeHandle, forwardRef } from 'react';
-import { loadTinyMCE } from '@/lib/tinymce-loader'
+import { loadTinyMCE, type TinyMCEBlobInfo, type TinyMCEEditor } from '@/lib/tinymce-loader';
 import { getPresignedUrlAction } from '@/actions/upload';
 
 export interface RichTextEditorHandle {
@@ -28,9 +28,10 @@ const RichTextEditorSimple = forwardRef<RichTextEditorHandle, RichTextEditorSimp
   const editorId = `tinymce-${uniqueId.replace(/:/g, '-')}`;
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const tinymceRef = useRef<any>(null);
+  const tinymceRef = useRef<TinyMCEEditor | null>(null);
   const mountedRef = useRef(true);
   const onChangeRef = useRef(onChange);
+  const valueRef = useRef(value);
 
   // Expose getContent method via ref
   useImperativeHandle(ref, () => ({
@@ -46,6 +47,10 @@ const RichTextEditorSimple = forwardRef<RichTextEditorHandle, RichTextEditorSimp
   useEffect(() => {
     onChangeRef.current = onChange;
   }, [onChange]);
+
+  useEffect(() => {
+    valueRef.current = value;
+  }, [value]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -102,7 +107,7 @@ const RichTextEditorSimple = forwardRef<RichTextEditorHandle, RichTextEditorSimp
           link_default_protocol: 'https',
           
           // Image Upload Handler
-          images_upload_handler: async (blobInfo: any) => {
+          images_upload_handler: async (blobInfo: TinyMCEBlobInfo) => {
             const file = blobInfo.blob();
             const fileName = blobInfo.filename();
             const contentType = file.type;
@@ -142,14 +147,14 @@ const RichTextEditorSimple = forwardRef<RichTextEditorHandle, RichTextEditorSimp
           },
           extended_valid_elements: 'span[style],img[src|alt|width|height|style]',
           invalid_elements: 'script,iframe,object,embed,form,input,button',
-          init_instance_callback: (editor: any) => {
+          init_instance_callback: (editor: TinyMCEEditor) => {
             if (!mountedRef.current) return;
             
             tinymceRef.current = editor;
             
             // Set initial content
-            if (value) {
-              editor.setContent(value);
+            if (valueRef.current) {
+              editor.setContent(valueRef.current);
             }
             
             // Mark as initialized

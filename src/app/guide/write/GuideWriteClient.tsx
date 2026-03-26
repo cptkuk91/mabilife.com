@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, Suspense, useRef } from "react";
+import Image from "next/image";
+import { useState, useEffect, useEffectEvent, Suspense, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import RichTextEditorWrapper, { RichTextEditorHandle } from "@/components/Editor/RichTextEditorWrapper";
@@ -23,6 +24,13 @@ const titleInputClass =
 const actionButtonClass =
   "rounded-[12px] px-5 py-3 text-sm font-semibold transition md:text-base";
 
+type EditableGuide = {
+  title?: string;
+  category?: string;
+  content?: string;
+  thumbnail?: string | null;
+};
+
 function GuideWriteContent() {
   const router = useRouter();
   const { status } = useSession();
@@ -41,6 +49,22 @@ function GuideWriteContent() {
   const [isLoading, setIsLoading] = useState(false);
 
   const categories = ["초보 가이드", "전투/던전", "메인스트림", "생활/알바", "패션/뷰티", "돈벌기"];
+  const loadGuideData = useEffectEvent(async (guideId: string) => {
+    setIsLoading(true);
+    const result = await getGuideById(guideId);
+
+    if (result.success && result.data) {
+      const guide = result.data as EditableGuide;
+      setTitle(guide.title || "");
+      setCategory(guide.category || "초보 가이드");
+      setContent(guide.content || "");
+      setThumbnail(guide.thumbnail || null);
+    } else {
+      alert("가이드를 불러오는데 실패했습니다.");
+      router.push("/guide");
+    }
+    setIsLoading(false);
+  });
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -51,26 +75,9 @@ function GuideWriteContent() {
   // 수정 모드일 때 기존 데이터 불러오기
   useEffect(() => {
     if (editId) {
-      loadGuideData(editId);
+      void loadGuideData(editId);
     }
   }, [editId]);
-
-  const loadGuideData = async (id: string) => {
-    setIsLoading(true);
-    const result = await getGuideById(id);
-
-    if (result.success && result.data) {
-      const guide = result.data as any;
-      setTitle(guide.title || "");
-      setCategory(guide.category || "초보 가이드");
-      setContent(guide.content || "");
-      setThumbnail(guide.thumbnail || null);
-    } else {
-      alert("가이드를 불러오는데 실패했습니다.");
-      router.push("/guide");
-    }
-    setIsLoading(false);
-  };
 
   const uploadThumbnail = async (file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -226,8 +233,14 @@ function GuideWriteContent() {
         <div className={sectionCardClass}>
           <label className={sectionLabelClass}>썸네일 이미지 (선택)</label>
           {thumbnail ? (
-            <div className="relative max-w-[420px] overflow-hidden rounded-[16px]">
-              <img src={thumbnail} alt="썸네일 미리보기" className="block w-full rounded-[16px]" />
+            <div className="relative aspect-[1200/630] max-w-[420px] overflow-hidden rounded-[16px]">
+              <Image
+                src={thumbnail}
+                alt="썸네일 미리보기"
+                fill
+                sizes="(max-width: 768px) 100vw, 420px"
+                className="object-cover"
+              />
               <button
                 type="button"
                 onClick={handleRemoveThumbnail}

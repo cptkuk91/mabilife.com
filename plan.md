@@ -22,16 +22,16 @@
 
 목표: 사용되지 않는 컴포넌트, 레거시 fallback, 불필요 선언을 제거한다.
 
-- `src/components/EventList.tsx`
+- [완료] `src/components/EventList.tsx`
   - 현재 사용처가 보이지 않는다. 제거 후보 1순위
-- `src/actions/nexon.ts`
+- [완료] `src/actions/nexon.ts`
   - `EventList`와 함께만 연결된 것으로 보여 제거 후보
-- `src/components/YouTuberSection.tsx`
+- [완료] `src/components/YouTuberSection.tsx`
   - 홈 화면이 별도 인라인 구현을 사용하고 있어 미사용 후보
-- `src/data/runes.ts`
+- [완료] `src/data/runes.ts`
   - 파일 주석상 deprecated이며 `RUNE_DATABASE = {}` 상태
   - `src/app/runes/RunesClient.tsx` fallback 경로까지 같이 정리 필요
-- `src/app/guide/GuideClient.tsx`
+- [완료] `src/app/guide/GuideClient.tsx`
   - 미사용 상수 `C` 제거
 
 정리 원칙:
@@ -44,10 +44,10 @@
 
 목표: 실제 유지보수 비용을 올리는 경고를 줄이고, 죽은 코드를 더 잘 드러나게 만든다.
 
-- `src/app/search/SearchClient.tsx`
+- [완료] `src/app/search/SearchClient.tsx`
   - 선언 순서, hook dependency, `any` 정리 우선
   - 현재 lint 기준 가장 위험 신호가 강한 파일 중 하나
-- `any` 사용 축소
+- [완료] `any` 사용 축소
   - 우선 대상:
     - `src/app/guide/[id]/TipDetailClient.tsx`
     - `src/app/guide/write/GuideWriteClient.tsx`
@@ -57,13 +57,15 @@
     - `src/lib/auth.ts`
     - `src/lib/mongodb.ts`
     - `src/lib/redis.ts`
-- hook dependency 경고 정리
+- [완료] hook dependency 경고 정리
   - 대상:
     - `src/app/guide/write/GuideWriteClient.tsx`
     - `src/app/homework/HomeworkClient.tsx`
     - `src/app/search/SearchClient.tsx`
     - `src/components/Editor/RichTextEditorSimple.tsx`
-- `<img>` 경고를 `next/image` 전환 가능 여부 기준으로 정리
+- [완료] `<img>` 경고를 `next/image` 전환 가능 여부 기준으로 정리
+  - `GuideWriteClient`, `TipDetailClient` 전환 완료
+  - 전체 `npm run lint` 잔여 이슈는 우선순위 2 범위 밖 항목과 `public/tinymce/**` vendor 파일 중심
 
 ## 우선순위 3: 성능 및 속도 개선
 

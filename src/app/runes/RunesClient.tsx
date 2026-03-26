@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useMemo, useDeferredValue } from "react";
-import { RUNE_DATABASE, Rune } from "@/data/runes";
 
 /* ─── Types ──────────────────────────────────────────── */
 
+type RuneGrade = "mythic" | "legendary" | "epic" | "normal";
+type RuneSlot = "무기" | "방어구" | "장신구" | "엠블럼" | "보석";
+type Rune = { id: string; name: string; slot: RuneSlot; effect: string; grade: RuneGrade };
 type SubJob = { id: string; name: string; runeIds: string[] };
 type JobCategory = { id: string; name: string; icon: string; description: string; subJobs: SubJob[] };
 
@@ -91,12 +93,10 @@ const rankStyles: Record<number, string> = {
 interface RunesClientProps { initialRunes?: Rune[] }
 
 export default function RunesClient({ initialRunes = [] }: RunesClientProps) {
-  const runesMap = useMemo(() => {
-    if (initialRunes && initialRunes.length > 0) {
-      return initialRunes.reduce((acc, rune) => { acc[rune.id] = rune; return acc; }, {} as Record<string, Rune>);
-    }
-    return RUNE_DATABASE;
-  }, [initialRunes]);
+  const runesMap = useMemo(
+    () => initialRunes.reduce((acc, rune) => { acc[rune.id] = rune; return acc; }, {} as Record<string, Rune>),
+    [initialRunes],
+  );
 
   const [activeJobId, setActiveJobId] = useState(JOB_DATA[0].id);
   const isDictionary = activeJobId === "rune-dictionary";

@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useEffect, useEffectEvent, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Suspense } from "react";
 import { getGuides } from "@/actions/guide";
 import { getPosts } from "@/actions/post";
 import { decodeHtmlEntities, extractPreviewText } from "@/lib/text";
@@ -43,6 +42,24 @@ const formatRelativeTime = (dateString: string) => {
 };
 
 type SearchTab = '통합' | '공략' | '커뮤니티';
+type SearchGuide = {
+  _id: string;
+  title: string;
+  content: string;
+  category: string;
+  createdAt: string;
+  views: number;
+  likes: number;
+};
+type SearchPost = {
+  _id: string;
+  content: string;
+  type: string;
+  createdAt: string;
+  viewCount: number;
+  likes: number;
+  commentCount: number;
+};
 
 const pageClass = "mx-auto min-h-screen max-w-[980px] px-4 pb-20 pt-24 md:px-5 md:pt-28";
 const searchHeroClass = "mb-12 text-center";
@@ -88,19 +105,14 @@ function SearchContent() {
   const [query, setQuery] = useState(initialQuery);
   const [searchInput, setSearchInput] = useState(initialQuery);
   const [activeTab, setActiveTab] = useState<SearchTab>('통합');
-  const [guides, setGuides] = useState<any[]>([]);
-  const [posts, setPosts] = useState<any[]>([]);
+  const [guides, setGuides] = useState<SearchGuide[]>([]);
+  const [posts, setPosts] = useState<SearchPost[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
 
-  useEffect(() => {
-    if (query.trim()) {
-      performSearch();
-    }
-  }, [query, activeTab]);
-
-  const performSearch = async () => {
-    if (!query.trim()) return;
+  const performSearch = useEffectEvent(async () => {
+    const trimmedQuery = query.trim();
+    if (!trimmedQuery) return;
 
     setLoading(true);
     setHasSearched(true);
@@ -108,24 +120,29 @@ function SearchContent() {
     const shouldLoadGuides = activeTab === "통합" || activeTab === "공략";
     const shouldLoadPosts = activeTab === "통합" || activeTab === "커뮤니티";
     const [guideResult, postResult] = await Promise.all([
-      shouldLoadGuides ? getGuides({ search: query, limit: 10 }) : Promise.resolve(null),
-      shouldLoadPosts ? getPosts(1, 10, undefined, query) : Promise.resolve(null),
+      shouldLoadGuides ? getGuides({ search: trimmedQuery, limit: 10 }) : Promise.resolve(null),
+      shouldLoadPosts ? getPosts(1, 10, undefined, trimmedQuery) : Promise.resolve(null),
     ]);
 
-    if (guideResult && guideResult.success && guideResult.data) {
-      setGuides(guideResult.data as any[]);
-    } else {
-      setGuides([]);
-    }
+    const nextGuides =
+      guideResult && guideResult.success && Array.isArray(guideResult.data)
+        ? (guideResult.data as unknown as SearchGuide[])
+        : [];
+    const nextPosts =
+      postResult && postResult.success && Array.isArray(postResult.posts)
+        ? (postResult.posts as unknown as SearchPost[])
+        : [];
 
-    if (postResult && postResult.success) {
-      setPosts(postResult.posts);
-    } else {
-      setPosts([]);
-    }
-
+    setGuides(nextGuides);
+    setPosts(nextPosts);
     setLoading(false);
-  };
+  });
+
+  useEffect(() => {
+    if (query.trim()) {
+      void performSearch();
+    }
+  }, [query, activeTab]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -184,7 +201,7 @@ function SearchContent() {
 
       {/* Search Info */}
       {(!hasSearched || !query) && <h1 className="sr-only">통합 검색</h1>}
-      
+
       {hasSearched && query && (
         <h1 className={searchInfoClass}>
           &quot;{query}&quot; 검색 결과 {totalResults}건

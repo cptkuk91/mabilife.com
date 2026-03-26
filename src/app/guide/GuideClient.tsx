@@ -8,20 +8,6 @@ import { getGuides } from "@/actions/guide";
 import { useSession } from "next-auth/react";
 import { decodeHtmlEntities, extractPreviewText } from "@/lib/text";
 
-/* ─── Notion palette ─────────────────────────────────── */
-const C = {
-  text: "#37352F",
-  sub: "#787774",
-  muted: "#9B9A97",
-  faint: "#B4B4B0",
-  border: "#E3E2DE",
-  bgSoft: "#F7F6F3",
-  bgCard: "#FBFBFA",
-  divider: "#F1F1EF",
-  blue: "#2F80ED",
-  blueHover: "#1A66CC",
-} as const;
-
 const categoryStyles: Record<string, { icon: string; bg: string; color: string }> = {
   "초보 가이드": { icon: "fa-graduation-cap", bg: "#E8F0FE", color: "#2F80ED" },
   "전투/던전": { icon: "fa-dungeon", bg: "#FDECEC", color: "#EB5757" },

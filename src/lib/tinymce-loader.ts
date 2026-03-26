@@ -1,8 +1,51 @@
 'use client';
 
+export interface TinyMCEBlobInfo {
+  blob: () => Blob;
+  filename: () => string;
+}
+
+export interface TinyMCEEditor {
+  getContent: () => string;
+  setContent: (content: string) => void;
+  destroy: () => void;
+  on: (event: 'change' | 'keyup', handler: () => void) => void;
+}
+
+export interface TinyMCEInitOptions {
+  target: HTMLTextAreaElement;
+  base_url: string;
+  height: number;
+  menubar: boolean;
+  plugins: string;
+  toolbar: string | false;
+  content_style: string;
+  placeholder: string;
+  branding: boolean;
+  promotion: boolean;
+  statusbar: boolean;
+  resize: boolean;
+  readonly: boolean;
+  paste_as_text: boolean;
+  paste_data_images: boolean;
+  link_default_target: string;
+  link_default_protocol: string;
+  images_upload_handler: (blobInfo: TinyMCEBlobInfo) => Promise<string>;
+  valid_elements: string;
+  valid_styles: Record<string, string>;
+  extended_valid_elements: string;
+  invalid_elements: string;
+  init_instance_callback: (editor: TinyMCEEditor) => void;
+}
+
+export interface TinyMCENamespace {
+  get: (id: string) => TinyMCEEditor | null;
+  init: (options: TinyMCEInitOptions) => Promise<TinyMCEEditor[]>;
+}
+
 declare global {
   interface Window {
-    tinymce: any;
+    tinymce?: TinyMCENamespace;
     tinymceLoading?: Promise<void>;
     tinymceLoaded?: boolean;
   }

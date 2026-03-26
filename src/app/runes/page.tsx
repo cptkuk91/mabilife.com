@@ -1,7 +1,14 @@
 import { Metadata } from 'next';
 import RunesClient from './RunesClient';
-import getRuneModel from '@/models/Rune';
+import getRuneModel, { IRune } from '@/models/Rune';
 import { connectToDatabase } from '@/lib/mongodb';
+
+type SerializedRune = Pick<
+  IRune,
+  'id' | 'name' | 'slot' | 'grade' | 'effect' | 'description' | 'imageUrl' | 'tags' | 'isSaleable' | 'createdAt' | 'updatedAt'
+> & {
+  _id: { toString: () => string };
+};
 
 const SITE_URL = "https://www.mabilife.com";
 
@@ -30,10 +37,10 @@ export const metadata: Metadata = {
 async function getRunes() {
   await connectToDatabase();
   const Rune = await getRuneModel();
-  const runes = await Rune.find({}).lean();
+  const runes = await Rune.find({}).lean<SerializedRune[]>();
   
   // Serialize ObjectId and Date to be passed to client component
-  return runes.map((rune: any) => ({
+  return runes.map((rune) => ({
     ...rune,
     _id: rune._id.toString(),
     createdAt: rune.createdAt?.toISOString(),

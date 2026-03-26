@@ -79,9 +79,10 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (session.user) {
-        (session.user as any).id = token.userId as string;
-        // session.user.level = token.level as number; // Need to extend session type for level if used
-        (session.user as any).level = token.level;
+        if (token.userId) {
+          session.user.id = token.userId;
+        }
+        session.user.level = token.level;
       }
       return session;
     },

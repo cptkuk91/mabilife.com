@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { getUserCharacters, toggleTask, createCharacter, deleteCharacter } from "@/actions/homework";
@@ -11,6 +11,25 @@ import { IHomeworkData } from "@/types/homework";
 
 const cn = (...c: Array<string | false | null | undefined>) => c.filter(Boolean).join(" ");
 const fr = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30 focus-visible:ring-offset-2";
+const DEMO_DATA: IHomeworkData = {
+  _id: "demo", userId: "demo", characterName: "체험용 캐릭터",
+  weekStartDate: new Date(), lastDailyReset: new Date(),
+  daily: { dailyMission: false, dailyDungeon: false, silverCoin: false, deepDungeon: false, partTimeJob: false, dailyGift: false, gemBox: false },
+  weekly: { barrier: false, blackHole: false, fieldBoss: false, abyss: false, raid: false },
+  memo: "",
+};
+
+type HomeworkTab = "daily" | "weekly";
+type DailyTaskKey = keyof IHomeworkData["daily"];
+type WeeklyTaskKey = keyof IHomeworkData["weekly"];
+type TaskPath = `daily.${DailyTaskKey}` | `weekly.${WeeklyTaskKey}`;
+type TaskCardProps = {
+  title: string;
+  path: TaskPath;
+  value: boolean;
+  icon: string;
+  color?: string;
+};
 
 /* ─── Component ──────────────────────────────────────── */
 
@@ -24,7 +43,7 @@ export default function HomeworkClient() {
   const [isAdding, setIsAdding] = useState(false);
   const [newCharName, setNewCharName] = useState("");
   const [timeLeft, setTimeLeft] = useState("");
-  const [activeTab, setActiveTab] = useState("daily");
+  const [activeTab, setActiveTab] = useState<HomeworkTab>("daily");
 
   const activeHomework = characters[activeCharIndex];
 
@@ -32,19 +51,21 @@ export default function HomeworkClient() {
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; index: number; id: string; name: string }>({
     isOpen: false, index: -1, id: "", name: "",
   });
-
-  const demoData: IHomeworkData = {
-    _id: "demo", userId: "demo", characterName: "체험용 캐릭터",
-    weekStartDate: new Date(), lastDailyReset: new Date(),
-    daily: { dailyMission: false, dailyDungeon: false, silverCoin: false, deepDungeon: false, partTimeJob: false, dailyGift: false, gemBox: false },
-    weekly: { barrier: false, blackHole: false, fieldBoss: false, abyss: false, raid: false },
-    memo: "",
-  };
+  const fetchData = useCallback(async () => {
+    try {
+      const result = await getUserCharacters();
+      if (result.success && result.characters) {
+        setCharacters(result.characters);
+        if (activeCharIndex >= result.characters.length) setActiveCharIndex(0);
+      }
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
+  }, [activeCharIndex]);
 
   useEffect(() => {
-    if (status === "unauthenticated") { setCharacters([demoData]); setLoading(false); }
-    else if (status === "authenticated") fetchData();
-  }, [status]);
+    if (status === "unauthenticated") { setCharacters([DEMO_DATA]); setLoading(false); }
+    else if (status === "authenticated") void fetchData();
+  }, [status, fetchData]);
 
   useEffect(() => {
     const timer = setInterval(calcTime, 1000);
@@ -68,17 +89,6 @@ export default function HomeworkClient() {
     setTimeLeft(`${d}일 ${h}시간 ${m}분 ${s}초`);
   };
 
-  const fetchData = async () => {
-    try {
-      const result = await getUserCharacters();
-      if (result.success && result.characters) {
-        setCharacters(result.characters);
-        if (activeCharIndex >= result.characters.length) setActiveCharIndex(0);
-      }
-    } catch (e) { console.error(e); }
-    finally { setLoading(false); }
-  };
-
   const requireAuth = () => { if (status !== "authenticated") { setShowLoginAlert(true); return false; } return true; };
 
   const handleAddCharacter = async () => {
@@ -91,7 +101,7 @@ export default function HomeworkClient() {
     } else { alert(result.error); }
   };
 
-  const confirmDelete = (e: any, i: number, id: string, name: string) => {
+  const confirmDelete = (e: React.MouseEvent<HTMLButtonElement>, i: number, id: string, name: string) => {
     e.stopPropagation();
     setDeleteModal({ isOpen: true, index: i, id, name });
   };
@@ -103,34 +113,38 @@ export default function HomeworkClient() {
       const nc = characters.filter((_, i) => i !== index);
       setCharacters(nc);
       if (activeCharIndex >= index && activeCharIndex > 0) setActiveCharIndex(activeCharIndex - 1);
-      else if (nc.length === 0) fetchData();
+      else if (nc.length === 0) void fetchData();
     }
     setDeleteModal({ isOpen: false, index: -1, id: "", name: "" });
   };
 
-  const calcProgress = (type: "daily" | "weekly") => {
+  const calcProgress = (type: HomeworkTab) => {
     if (!activeHomework) return 0;
-    let total = 0, done = 0;
-    const tasks = activeHomework[type];
-    for (const k in tasks) { if (typeof (tasks as any)[k] === "boolean") { total++; if ((tasks as any)[k]) done++; } }
-    return total === 0 ? 0 : Math.round((done / total) * 100);
+    const values = Object.values(activeHomework[type]);
+    const done = values.filter(Boolean).length;
+    return values.length === 0 ? 0 : Math.round((done / values.length) * 100);
   };
 
-  const handleToggle = async (path: string, currentVal: any) => {
+  const handleToggle = async (path: TaskPath, currentVal: boolean) => {
     if (!requireAuth() || !activeHomework) return;
-    const newChars = JSON.parse(JSON.stringify(characters));
-    const keys = path.split(".");
-    let ref = newChars[activeCharIndex];
-    for (let i = 0; i < keys.length - 1; i++) ref = ref[keys[i]];
-    const last = keys[keys.length - 1];
-    const newVal = typeof currentVal === "boolean" ? !currentVal : typeof currentVal === "number" ? (currentVal + 1) % 11 : !ref[last];
-    ref[last] = newVal;
-    setCharacters(newChars);
-    await toggleTask(activeHomework._id, path, newVal);
+    const [group, taskKey] = path.split(".") as [HomeworkTab, DailyTaskKey | WeeklyTaskKey];
+    const nextValue = !currentVal;
+    setCharacters((prev) =>
+      prev.map((character, index) => {
+        if (index !== activeCharIndex) return character;
+        if (group === "daily") {
+          const dailyKey = taskKey as DailyTaskKey;
+          return { ...character, daily: { ...character.daily, [dailyKey]: nextValue } };
+        }
+        const weeklyKey = taskKey as WeeklyTaskKey;
+        return { ...character, weekly: { ...character.weekly, [weeklyKey]: nextValue } };
+      }),
+    );
+    await toggleTask(activeHomework._id, path, nextValue);
   };
 
   /* ─── Task Card ── */
-  const TaskCard = ({ title, path, value, icon, color = "#37352F" }: any) => (
+  const TaskCard = ({ title, path, value, icon, color = "#37352F" }: TaskCardProps) => (
     <button
       type="button"
       className={cn(

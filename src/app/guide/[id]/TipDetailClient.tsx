@@ -1,7 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useEffectEvent, useState } from "react";
 import { useSession } from "next-auth/react";
 import { getGuideById, toggleGuideLike, toggleGuideBookmark, deleteGuide } from "@/actions/guide";
 import {
@@ -40,19 +41,54 @@ const modalDangerButtonClass =
 const primaryButtonClass =
   "rounded-[12px] bg-app-accent px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0062CC] disabled:cursor-not-allowed disabled:opacity-60";
 
+type GuideAuthor = {
+  id: string;
+  name: string;
+  image?: string | null;
+};
+
+type GuideDetail = {
+  _id: string;
+  slug?: string;
+  title: string;
+  content: string;
+  category: string;
+  author?: GuideAuthor;
+  views: number;
+  likes: number;
+  likedBy?: string[];
+  bookmarkedBy?: string[];
+  thumbnail?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type GuideCommentItem = {
+  _id: string;
+  guideId: string;
+  content: string;
+  author: GuideAuthor;
+  parentId?: string | null;
+  likes: number;
+  likedBy?: string[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+const avatarSrc = (author?: GuideAuthor) =>
+  author?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${author?.id || "anonymous"}`;
+
 export default function TipDetailClient({ id }: { id: string }) {
   const router = useRouter();
   const { data: session } = useSession();
+  const userId = session?.user?.id;
 
-  const [guide, setGuide] = useState<any>(null);
+  const [guide, setGuide] = useState<GuideDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isLiked, setIsLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(0);
-  const [isBookmarked, setIsBookmarked] = useState(false);
   const [showGuideDropdown, setShowGuideDropdown] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [comments, setComments] = useState<any[]>([]);
+  const [comments, setComments] = useState<GuideCommentItem[]>([]);
   const [newComment, setNewComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
@@ -63,28 +99,44 @@ export default function TipDetailClient({ id }: { id: string }) {
   const [showCommentDeleteModal, setShowCommentDeleteModal] = useState(false);
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
   const [isDeletingComment, setIsDeletingComment] = useState(false);
+  const fetchComments = useCallback(async (guideId: string): Promise<GuideCommentItem[]> => {
+    const result = await getGuideComments(guideId);
+    return result.success && Array.isArray(result.data)
+      ? (result.data as GuideCommentItem[])
+      : [];
+  }, []);
+  const loadGuide = useEffectEvent(async () => {
+    const result = await getGuideById(id);
+
+    if (result.success && result.data && !Array.isArray(result.data)) {
+      const guideData = result.data as unknown as GuideDetail;
+      setGuide(guideData);
+    }
+
+    setLoading(false);
+  });
+  const loadCommentsEffect = useEffectEvent(async (guideId: string) => {
+    setComments(await fetchComments(guideId));
+  });
+  const refreshComments = useCallback(async (guideId: string) => {
+    setComments(await fetchComments(guideId));
+  }, [fetchComments]);
 
   useEffect(() => {
-    loadGuide();
+    void loadGuide();
   }, [id]);
 
   useEffect(() => {
     if (guide?._id) {
-      loadComments();
+      void loadCommentsEffect(guide._id);
     }
-  }, [guide]);
+  }, [guide?._id]);
 
   useEffect(() => {
-    if (guide && session?.user) {
-      const userId = (session.user as any).id;
-      setIsLiked(guide.likedBy?.includes(userId) || false);
-      setIsBookmarked(guide.bookmarkedBy?.includes(userId) || false);
-    }
-
     if (guide?.slug && id !== guide.slug) {
       window.history.replaceState(null, "", `/guide/${guide.slug}`);
     }
-  }, [session, guide, id]);
+  }, [guide?.slug, id]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -99,39 +151,26 @@ export default function TipDetailClient({ id }: { id: string }) {
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
-  const loadGuide = async () => {
-    setLoading(true);
-    const result = await getGuideById(id);
-
-    if (result.success && result.data) {
-      const guideData = result.data as any;
-      setGuide(guideData);
-      setLikeCount(guideData.likes || 0);
-    }
-
-    setLoading(false);
-  };
-
-  const loadComments = async () => {
-    if (!guide?._id) return;
-    const result = await getGuideComments(guide._id);
-    if (result.success && result.data) {
-      setComments(result.data);
-    }
-  };
-
   const toggleLike = async () => {
     if (!session?.user) {
       router.push("/login");
       return;
     }
 
-    if (!guide?._id) return;
+    if (!guide?._id || !userId) return;
 
     const result = await toggleGuideLike(guide._id);
     if (result.success) {
-      setLikeCount((prev) => prev + (isLiked ? -1 : 1));
-      setIsLiked(!isLiked);
+      setGuide((prev) => {
+        if (!prev) return prev;
+        const likedBy = prev.likedBy || [];
+        const nextLikedBy = isLiked ? likedBy.filter((likedUserId) => likedUserId !== userId) : [...likedBy, userId];
+        return {
+          ...prev,
+          likes: prev.likes + (isLiked ? -1 : 1),
+          likedBy: nextLikedBy,
+        };
+      });
     }
   };
 
@@ -141,11 +180,21 @@ export default function TipDetailClient({ id }: { id: string }) {
       return;
     }
 
-    if (!guide?._id) return;
+    if (!guide?._id || !userId) return;
 
     const result = await toggleGuideBookmark(guide._id);
     if (result.success) {
-      setIsBookmarked(!isBookmarked);
+      setGuide((prev) => {
+        if (!prev) return prev;
+        const bookmarkedBy = prev.bookmarkedBy || [];
+        const nextBookmarkedBy = isBookmarked
+          ? bookmarkedBy.filter((bookmarkedUserId) => bookmarkedUserId !== userId)
+          : [...bookmarkedBy, userId];
+        return {
+          ...prev,
+          bookmarkedBy: nextBookmarkedBy,
+        };
+      });
     }
   };
 
@@ -180,7 +229,7 @@ export default function TipDetailClient({ id }: { id: string }) {
     const result = await createGuideComment(guide._id, newComment.trim());
     if (result.success) {
       setNewComment("");
-      loadComments();
+      void refreshComments(guide._id);
     }
     setIsSubmitting(false);
   };
@@ -198,12 +247,12 @@ export default function TipDetailClient({ id }: { id: string }) {
     if (result.success) {
       setReplyContent("");
       setReplyingTo(null);
-      loadComments();
+      void refreshComments(guide._id);
     }
     setIsSubmitting(false);
   };
 
-  const handleStartEditComment = (comment: any) => {
+  const handleStartEditComment = (comment: GuideCommentItem) => {
     setEditingCommentId(comment._id);
     setEditCommentContent(comment.content);
     setActiveCommentDropdown(null);
@@ -221,7 +270,7 @@ export default function TipDetailClient({ id }: { id: string }) {
     if (result.success) {
       setEditingCommentId(null);
       setEditCommentContent("");
-      loadComments();
+      void refreshComments(guide._id);
     } else {
       alert(result.error || "수정에 실패했습니다.");
     }
@@ -239,7 +288,7 @@ export default function TipDetailClient({ id }: { id: string }) {
     setIsDeletingComment(true);
     const result = await deleteGuideComment(deletingCommentId, guide._id);
     if (result.success) {
-      loadComments();
+      void refreshComments(guide._id);
     } else {
       alert(result.error || "삭제에 실패했습니다.");
     }
@@ -258,13 +307,16 @@ export default function TipDetailClient({ id }: { id: string }) {
 
     const result = await toggleGuideCommentLike(commentId, guide._id);
     if (result.success) {
-      loadComments();
+      void refreshComments(guide._id);
     }
   };
 
   const parentComments = comments.filter((comment) => !comment.parentId);
   const getReplies = (parentId: string) => comments.filter((comment) => comment.parentId === parentId);
-  const isAuthor = session?.user && guide?.author?.id === (session.user as any).id;
+  const isAuthor = Boolean(userId && guide?.author?.id === userId);
+  const isLiked = Boolean(userId && guide?.likedBy?.includes(userId));
+  const isBookmarked = Boolean(userId && guide?.bookmarkedBy?.includes(userId));
+  const likeCount = guide?.likes || 0;
 
   if (loading) {
     return (
@@ -329,9 +381,11 @@ export default function TipDetailClient({ id }: { id: string }) {
 
         <div className="mt-5 flex flex-col gap-4 border-b border-black/8 pb-5 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">
-            <img
-              src={guide.author?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${guide.author?.id}`}
-              alt="Author"
+            <Image
+              src={avatarSrc(guide.author)}
+              alt={`${guide.author?.name || "익명"} 프로필`}
+              width={40}
+              height={40}
               className="h-10 w-10 rounded-full bg-black/5 object-cover"
             />
             <div className="flex flex-col">
@@ -376,7 +430,7 @@ export default function TipDetailClient({ id }: { id: string }) {
 
       {guide.thumbnail && (
         <div className="mb-8 overflow-hidden rounded-[20px]">
-          <img src={guide.thumbnail} alt="썸네일" className="h-auto max-h-[400px] w-full object-cover" />
+          <Image src={guide.thumbnail} alt="썸네일" width={1200} height={630} className="h-auto max-h-[400px] w-full object-cover" />
         </div>
       )}
 
@@ -416,15 +470,17 @@ export default function TipDetailClient({ id }: { id: string }) {
           ) : (
             parentComments.map((comment) => {
               const replies = getReplies(comment._id);
-              const isCommentAuthor = session?.user && comment.author.id === (session.user as any).id;
-              const hasLiked = session?.user && comment.likedBy?.includes((session.user as any).id);
+              const isCommentAuthor = Boolean(userId && comment.author.id === userId);
+              const hasLiked = Boolean(userId && comment.likedBy?.includes(userId));
 
               return (
                 <div key={comment._id} className="pb-1">
                   <div className="flex gap-3">
-                    <img
-                      src={comment.author.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.author.id}`}
-                      alt=""
+                    <Image
+                      src={avatarSrc(comment.author)}
+                      alt={`${comment.author.name} 프로필`}
+                      width={36}
+                      height={36}
                       className="h-9 w-9 shrink-0 rounded-full bg-black/5 object-cover"
                     />
                     <div className={cn(commentCardClass, "flex-1")}>
@@ -555,14 +611,16 @@ export default function TipDetailClient({ id }: { id: string }) {
                   {replies.length > 0 && (
                     <div className="ml-12 mt-3 flex flex-col gap-3 max-sm:ml-6">
                       {replies.map((reply) => {
-                        const isReplyAuthor = session?.user && reply.author.id === (session.user as any).id;
-                        const hasLikedReply = session?.user && reply.likedBy?.includes((session.user as any).id);
+                        const isReplyAuthor = Boolean(userId && reply.author.id === userId);
+                        const hasLikedReply = Boolean(userId && reply.likedBy?.includes(userId));
 
                         return (
                           <div key={reply._id} className="flex gap-3">
-                            <img
-                              src={reply.author.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${reply.author.id}`}
-                              alt=""
+                            <Image
+                              src={avatarSrc(reply.author)}
+                              alt={`${reply.author.name} 프로필`}
+                              width={36}
+                              height={36}
                               className="h-9 w-9 shrink-0 rounded-full bg-black/5 object-cover"
                             />
                             <div className={cn(commentCardClass, "flex-1")}>

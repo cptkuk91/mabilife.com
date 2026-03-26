@@ -1,4 +1,3 @@
-
 import Redis from 'ioredis';
 
 const USE_REDIS = process.env.USE_REDIS === 'true';
@@ -28,7 +27,7 @@ export async function getCache<T>(key: string): Promise<T | null> {
   return data ? JSON.parse(data) : null;
 }
 
-export async function setCache(key: string, data: any, ttl?: number): Promise<void> {
+export async function setCache<T>(key: string, data: T, ttl?: number): Promise<void> {
   if (!redis) return;
   const prefixedKey = getKey(key);
   if (ttl) {
