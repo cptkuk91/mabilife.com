@@ -6,7 +6,7 @@ import getCommentModel, { type IComment } from "@/models/Comment";
 import getPostModel from "@/models/Post";
 import { revalidatePath } from "next/cache";
 
-type SerializedComment = {
+export type SerializedComment = {
   _id: string;
   postId: string;
   content: string;
@@ -19,6 +19,13 @@ type SerializedComment = {
   createdAt: string;
   updatedAt: string;
   replies: SerializedComment[];
+};
+
+export type WeeklyTopAnswerer = {
+  userId: string;
+  name: string;
+  image?: string | null;
+  acceptCount: number;
 };
 
 export async function createComment(postId: string, content: string, parentId?: string) {

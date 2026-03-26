@@ -5,8 +5,19 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { getPresignedUrlAction } from "@/actions/upload";
-import { createPost, getPosts, deletePost, updatePost, getTrendingPosts, TrendingPeriod, toggleLike } from "@/actions/post";
-import { getWeeklyTopAnswerers } from "@/actions/comment";
+import {
+  createPost,
+  getPosts,
+  deletePost,
+  updatePost,
+  getTrendingPosts,
+  type PostType,
+  type SerializedPost,
+  type TrendingPeriod,
+  type TrendingPost,
+  toggleLike,
+} from "@/actions/post";
+import { getWeeklyTopAnswerers, type WeeklyTopAnswerer } from "@/actions/comment";
 
 /* ─── Helpers ────────────────────────────────────────── */
 
@@ -30,13 +41,14 @@ const badgeText = (type: string, solved?: boolean) =>
 export default function CommunityClient() {
   const router = useRouter();
   const { data: session } = useSession();
+  const currentUserId = session?.user?.id;
   const [content, setContent] = useState("");
-  const [postType, setPostType] = useState("잡담");
+  const [postType, setPostType] = useState<PostType>("잡담");
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
-  const [posts, setPosts] = useState<any[]>([]);
+  const [posts, setPosts] = useState<SerializedPost[]>([]);
   const [activeTab, setActiveTab] = useState("전체");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
@@ -49,9 +61,9 @@ export default function CommunityClient() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [trendingPosts, setTrendingPosts] = useState<any[]>([]);
+  const [trendingPosts, setTrendingPosts] = useState<TrendingPost[]>([]);
   const [trendingPeriod, setTrendingPeriod] = useState<TrendingPeriod>("week");
-  const [topAnswerers, setTopAnswerers] = useState<any[]>([]);
+  const [topAnswerers, setTopAnswerers] = useState<WeeklyTopAnswerer[]>([]);
   const MAX_IMAGES = 5;
 
   useEffect(() => { loadPosts(); loadTopAnswerers(); const h = () => setActiveDropdown(null); document.addEventListener("click", h); return () => document.removeEventListener("click", h); }, [activeTab]);
@@ -90,7 +102,7 @@ export default function CommunityClient() {
     if (!content.trim()) { alert("내용을 입력해주세요."); return; }
     if (isSubmitting) return;
     setIsSubmitting(true);
-    try { const r = await createPost({ content, type: postType as "잡담" | "질문" | "정보", images: uploadedImages }); if (r.success) { setContent(""); setUploadedImages([]); setPostType("잡담"); loadPosts(); } else { alert(r.error || "게시글 등록에 실패했습니다."); } }
+    try { const r = await createPost({ content, type: postType, images: uploadedImages }); if (r.success) { setContent(""); setUploadedImages([]); setPostType("잡담"); loadPosts(); } else { alert(r.error || "게시글 등록에 실패했습니다."); } }
     catch { alert("오류가 발생했습니다."); }
     finally { setIsSubmitting(false); }
   };
@@ -101,17 +113,29 @@ export default function CommunityClient() {
 
   const handleLike = async (e: React.MouseEvent, postId: string) => {
     e.stopPropagation();
-    if (!session?.user) { alert("로그인이 필요합니다."); return; }
+    if (!session?.user || !currentUserId) { alert("로그인이 필요합니다."); return; }
     const r = await toggleLike(postId);
     if (r.success) {
-      setPosts(posts.map(p => {
-        if (p._id === postId) { const uid = (session.user as any).id; const liked = p.likedBy?.includes(uid); return { ...p, likes: liked ? p.likes - 1 : p.likes + 1, likedBy: liked ? p.likedBy.filter((id: string) => id !== uid) : [...(p.likedBy || []), uid] }; }
-        return p;
-      }));
+      setPosts((previousPosts) =>
+        previousPosts.map((post) => {
+          if (post._id !== postId) {
+            return post;
+          }
+
+          const isLiked = post.likedBy.includes(currentUserId);
+          return {
+            ...post,
+            likes: isLiked ? post.likes - 1 : post.likes + 1,
+            likedBy: isLiked
+              ? post.likedBy.filter((likedUserId) => likedUserId !== currentUserId)
+              : [...post.likedBy, currentUserId],
+          };
+        }),
+      );
     } else alert(r.error || "좋아요 처리에 실패했습니다.");
   };
 
-  const handleStartEdit = (e: React.MouseEvent, post: any) => { e.stopPropagation(); setEditingPostId(post._id); setEditContent(post.content); setEditImages(post.images || []); setActiveDropdown(null); };
+  const handleStartEdit = (e: React.MouseEvent, post: SerializedPost) => { e.stopPropagation(); setEditingPostId(post._id); setEditContent(post.content); setEditImages(post.images || []); setActiveDropdown(null); };
   const handleCancelEdit = (e: React.MouseEvent) => { e.stopPropagation(); setEditingPostId(null); setEditContent(""); setEditImages([]); };
   const handleEditImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => { if (!e.target.files) return; const imgs = Array.from(e.target.files).filter(f => f.type.startsWith("image/")); const u = await uploadFiles(imgs, "edit"); if (u.length) setEditImages(p => [...p, ...u]); e.target.value = ""; };
   const handleEditDragOver = (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); setIsEditDragging(true); };
@@ -138,8 +162,6 @@ export default function CommunityClient() {
       </div>
     ));
 
-  const currentUserId = (session?.user as any)?.id;
-
   return (
     <>
       <div className="mx-auto grid max-w-[1100px] grid-cols-1 gap-6 bg-white px-5 pb-24 pt-16 sm:px-6 md:pb-16 md:pt-20 lg:px-8 xl:grid-cols-[minmax(0,1fr)_300px]">
@@ -162,7 +184,7 @@ export default function CommunityClient() {
               className={cn("relative flex gap-3 rounded-lg p-1 transition", !session && "pointer-events-none select-none blur-[4px]", isDragging && "bg-[#2F80ED]/5 outline outline-2 outline-dashed outline-[#2F80ED]")}
               onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}
             >
-              <Image src={session?.user?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${(session?.user as any)?.id || "anonymous"}`} className="size-9 rounded-full border border-[#E3E2DE] object-cover" alt="Avatar" width={36} height={36} />
+              <Image src={session?.user?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUserId || "anonymous"}`} className="size-9 rounded-full border border-[#E3E2DE] object-cover" alt="Avatar" width={36} height={36} />
               <div className="relative mt-1 min-h-[120px] flex-1">
                 <div className="pointer-events-none absolute inset-0 z-[1] whitespace-pre-wrap break-words px-0.5 py-0.5 text-[14px] leading-6 text-[#37352F]">{renderHashtags(content)}</div>
                 <textarea
@@ -177,7 +199,7 @@ export default function CommunityClient() {
               <div className={cn("mt-3 flex gap-2 overflow-x-auto pb-1", !session && "pointer-events-none select-none blur-[4px]")}>
                 {uploadedImages.map((url, i) => (
                   <div key={i} className="relative size-16 shrink-0">
-                    <img src={url} alt={`Uploaded ${i}`} className="size-full rounded-lg border border-[#E3E2DE] object-cover" />
+                    <Image src={url} alt={`Uploaded ${i}`} className="size-full rounded-lg border border-[#E3E2DE] object-cover" width={64} height={64} />
                     <button type="button" className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-[#EB5757] text-[9px] text-white shadow" onClick={() => setUploadedImages(p => p.filter((_, j) => j !== i))}>
                       <i className="fa-solid fa-xmark" aria-hidden="true" />
                     </button>
@@ -188,7 +210,7 @@ export default function CommunityClient() {
 
             <div className={cn("mt-3 flex flex-col gap-3 border-t border-[#F1F1EF] pt-3 sm:flex-row sm:items-center sm:justify-between", !session && "pointer-events-none select-none blur-[4px]")}>
               <div className="flex gap-1.5">
-                {["잡담", "질문", "정보"].map(t => (
+                {(["잡담", "질문", "정보"] as PostType[]).map(t => (
                   <button key={t} type="button" disabled={!session}
                     className={cn("rounded-md px-3 py-1.5 text-[12px] font-medium transition", postType === t ? "bg-[#37352F] text-white" : "text-[#787774] hover:bg-[#F7F6F3] hover:text-[#37352F]", fr)}
                     onClick={() => setPostType(t)}
@@ -271,7 +293,7 @@ export default function CommunityClient() {
                   <textarea className={cn("mb-2 min-h-[160px] w-full rounded-lg border border-[#E3E2DE] bg-white px-3 py-3 text-[14px] leading-6 text-[#37352F] outline-none transition focus:border-[#2F80ED]", fr)} value={editContent} onChange={e => setEditContent(e.target.value)} placeholder="내용을 입력하세요" autoFocus />
                   {editImages.length > 0 && (
                     <div className="mb-2 flex gap-2 overflow-x-auto pb-1">
-                      {editImages.map((url, i) => (<div key={i} className="relative size-16 shrink-0"><img src={url} alt={`Image ${i}`} className="size-full rounded-lg border border-[#E3E2DE] object-cover" /><button type="button" className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-[#EB5757] text-[9px] text-white shadow" onClick={e => { e.stopPropagation(); setEditImages(p => p.filter((_, j) => j !== i)); }}><i className="fa-solid fa-xmark" aria-hidden="true" /></button></div>))}
+                      {editImages.map((url, i) => (<div key={i} className="relative size-16 shrink-0"><Image src={url} alt={`Image ${i}`} className="size-full rounded-lg border border-[#E3E2DE] object-cover" width={64} height={64} /><button type="button" className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-[#EB5757] text-[9px] text-white shadow" onClick={e => { e.stopPropagation(); setEditImages(p => p.filter((_, j) => j !== i)); }}><i className="fa-solid fa-xmark" aria-hidden="true" /></button></div>))}
                     </div>
                   )}
                   {isEditUploading && <div className="mb-2 flex items-center gap-1.5 text-[12px] text-[#2F80ED]"><i className="fa-solid fa-spinner fa-spin" aria-hidden="true" /> 업로드 중...</div>}
@@ -312,8 +334,8 @@ export default function CommunityClient() {
               {/* Actions */}
               <div className="flex flex-wrap gap-3 text-[12px] text-[#9B9A97]">
                 <span className="inline-flex items-center gap-1"><i className="fa-regular fa-comment" aria-hidden="true" /> {post.commentCount || 0}</span>
-                <button type="button" className={cn("inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 transition hover:bg-[#FEF0F0] hover:text-[#EB5757]", post.likedBy?.includes(currentUserId) && "text-[#EB5757]")} onClick={e => handleLike(e, post._id)}>
-                  <i className={post.likedBy?.includes(currentUserId) ? "fa-solid fa-heart" : "fa-regular fa-heart"} aria-hidden="true" /> {post.likes || 0}
+                <button type="button" className={cn("inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 transition hover:bg-[#FEF0F0] hover:text-[#EB5757]", post.likedBy?.includes(currentUserId ?? "") && "text-[#EB5757]")} onClick={e => handleLike(e, post._id)}>
+                  <i className={post.likedBy?.includes(currentUserId ?? "") ? "fa-solid fa-heart" : "fa-regular fa-heart"} aria-hidden="true" /> {post.likes || 0}
                 </button>
                 <span className="inline-flex items-center gap-1"><i className="fa-regular fa-eye" aria-hidden="true" /> {post.viewCount || 0}</span>
               </div>
@@ -350,11 +372,11 @@ export default function CommunityClient() {
             <h3 className="mb-3 text-[14px] font-bold text-[#37352F]">이번 주 답변왕 🏆</h3>
             <div className="flex flex-col">
               {topAnswerers.map((user, i) => (
-                <div key={user._id} className={cn("flex items-center gap-2.5 py-2", i !== topAnswerers.length - 1 && "border-b border-[#F1F1EF]")}>
+                <div key={user.userId} className={cn("flex items-center gap-2.5 py-2", i !== topAnswerers.length - 1 && "border-b border-[#F1F1EF]")}>
                   <div className="w-4 shrink-0 text-center text-[12px] font-bold text-[#37352F]">{i + 1}</div>
-                  <img src={user.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user._id}`} className="size-7 shrink-0 rounded-full border border-[#E3E2DE] object-cover" alt="User" />
+                  <Image src={user.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.userId}`} className="size-7 shrink-0 rounded-full border border-[#E3E2DE] object-cover" alt="User" width={28} height={28} />
                   <div className="flex-1 truncate text-[13px] font-medium text-[#37352F]">{user.name}</div>
-                  <div className="rounded-md bg-[#27AE60]/10 px-1.5 py-0.5 text-[10px] font-semibold text-[#27AE60]">채택 {user.acceptedCount}개</div>
+                  <div className="rounded-md bg-[#27AE60]/10 px-1.5 py-0.5 text-[10px] font-semibold text-[#27AE60]">채택 {user.acceptCount}개</div>
                 </div>
               ))}
               {topAnswerers.length === 0 && <div className="py-5 text-center text-[12px] text-[#B4B4B0]">아직 이번 주 답변왕이 없습니다.</div>}

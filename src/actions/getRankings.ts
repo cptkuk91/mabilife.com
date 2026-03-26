@@ -39,7 +39,7 @@ export async function getRankings({
     const latestDate = latestEntry.crawledAt;
 
     // Build Query
-    const query: any = { 
+    const query: Record<string, unknown> = { 
         crawledAt: latestDate,
         ...typeQuery 
     };

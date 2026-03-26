@@ -50,6 +50,19 @@ export type SerializedPost = {
   acceptedComment: AcceptedCommentPreview | null;
 };
 
+export type TrendingPost = {
+  _id: string;
+  content: string;
+  type: PostType;
+  author: PostAuthor;
+  viewCount: number;
+  recentViewCount: number;
+  commentCount: number;
+  likes: number;
+  createdAt: string;
+  finalScore: number;
+};
+
 type GetPostsResponse = {
   success: boolean;
   posts: SerializedPost[];
@@ -546,7 +559,7 @@ export async function getTrendingPosts(period: TrendingPeriod = "week", limit = 
         ...post,
         _id: post._id.toString(),
         createdAt: post.createdAt.toISOString(),
-      })),
+      })) satisfies TrendingPost[],
     };
   } catch (error) {
     logger.error("Get trending posts error:", error);

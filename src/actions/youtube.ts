@@ -1,5 +1,7 @@
 "use server";
 
+import { logger } from "@/lib/logger";
+
 export type YouTubeChannel = {
   id: string;
   title: string;
@@ -8,6 +10,27 @@ export type YouTubeChannel = {
   subscriberCount: string;
   videoCount: string;
   channelUrl: string;
+};
+
+type YouTubeApiChannelItem = {
+  id: string;
+  snippet: {
+    title: string;
+    description: string;
+    thumbnails: {
+      medium: {
+        url: string;
+      };
+    };
+  };
+  statistics: {
+    subscriberCount?: string;
+    videoCount?: string;
+  };
+};
+
+type YouTubeChannelsResponse = {
+  items?: YouTubeApiChannelItem[];
 };
 
 // Curated list of popular Mabinogi Mobile YouTubers (Channel IDs)
@@ -26,7 +49,7 @@ export const fetchMabinogiMobileYouTubers = async (): Promise<YouTubeChannel[] |
   try {
     const apiKey = process.env.YOUTUBE_API_KEY;
     if (!apiKey) {
-      console.warn("YouTube API key not configured");
+      logger.warn("YouTube API key not configured");
       return null;
     }
 
@@ -43,18 +66,17 @@ export const fetchMabinogiMobileYouTubers = async (): Promise<YouTubeChannel[] |
     );
 
     if (!response.ok) {
-      console.warn(`YouTube API error: ${response.status}`);
+      logger.warn(`YouTube API error: ${response.status}`);
       return null;
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as YouTubeChannelsResponse;
     if (!data.items || data.items.length === 0) {
-      console.warn("No channels found");
+      logger.warn("No channels found");
       return null;
     }
 
-    // Map to YouTubeChannel type
-    const channels: YouTubeChannel[] = data.items.map((item: any) => ({
+    const channels: YouTubeChannel[] = data.items.map((item) => ({
       id: item.id,
       title: item.snippet.title,
       description: item.snippet.description.slice(0, 100),
@@ -64,14 +86,13 @@ export const fetchMabinogiMobileYouTubers = async (): Promise<YouTubeChannel[] |
       channelUrl: `https://www.youtube.com/channel/${item.id}`,
     }));
 
-    // Sort by subscriber count (descending)
     channels.sort((a, b) =>
       parseInt(b.subscriberCount) - parseInt(a.subscriberCount)
     );
 
     return channels;
   } catch (error) {
-    console.error("Fetching YouTubers failed", error);
+    logger.error("Fetching YouTubers failed", error);
     return null;
   }
 };

@@ -1,9 +1,21 @@
 import { MetadataRoute } from "next";
+import { logger } from "@/lib/logger";
 import { connectToDatabase } from "@/lib/mongodb";
 import getGuideModel from "@/models/Guide";
 import getPostModel from "@/models/Post";
 
 const SITE_URL = "https://www.mabilife.com";
+
+type SitemapGuide = {
+  _id: { toString(): string };
+  slug?: string;
+  updatedAt: Date;
+};
+
+type SitemapPost = {
+  _id: { toString(): string };
+  updatedAt: Date;
+};
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // 정적 페이지
@@ -67,16 +79,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .select("_id slug updatedAt")
       .sort({ updatedAt: -1 })
       .limit(1000)
-      .lean();
+      .lean<SitemapGuide[]>();
 
-    guidePages = guides.map((guide: any) => ({
+    guidePages = guides.map((guide) => ({
       url: `${SITE_URL}/guide/${encodeURIComponent(guide.slug || guide._id.toString())}`,
       lastModified: new Date(guide.updatedAt),
       changeFrequency: "weekly" as const,
       priority: 0.7,
     }));
   } catch (error) {
-    console.error("Sitemap: Failed to fetch guides", error);
+    logger.error("Sitemap: Failed to fetch guides", error);
   }
 
   // 동적 페이지 - 커뮤니티 게시글
@@ -88,18 +100,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .select("_id updatedAt")
       .sort({ updatedAt: -1 })
       .limit(1000)
-      .lean();
+      .lean<SitemapPost[]>();
 
-    postPages = posts.map((post: any) => ({
+    postPages = posts.map((post) => ({
       url: `${SITE_URL}/community/${post._id.toString()}`,
       lastModified: new Date(post.updatedAt),
       changeFrequency: "weekly" as const,
       priority: 0.6,
     }));
   } catch (error) {
-    console.error("Sitemap: Failed to fetch posts", error);
+    logger.error("Sitemap: Failed to fetch posts", error);
   }
 
   return [...staticPages, ...guidePages, ...postPages];
 }
-
