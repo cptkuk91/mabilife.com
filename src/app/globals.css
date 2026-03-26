@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+@theme static {
+  --font-app: var(--font-noto), -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-display: var(--font-song), "Song Myung", "Noto Serif KR", serif;
+
+  --color-app-bg: #F5F5F7;
+  --color-app-surface: #FFFFFF;
+  --color-app-title: #1D1D1F;
+  --color-app-body: #86868B;
+  --color-app-accent: #0071E3;
+  --color-app-accent-hover: #0077ED;
+  --color-app-glass: rgba(255, 255, 255, 0.8);
+  --color-app-main: #0F1419;
+  --color-app-sub: #536471;
+  --color-app-success: #00BA7C;
+  --color-app-warning: #FF9500;
+  --color-app-free-tag: #71767B;
+  --color-app-border: #EFF3F4;
+
+  --shadow-elev-card: 0 4px 24px rgba(0, 0, 0, 0.06);
+  --shadow-elev-hover: 0 8px 32px rgba(0, 0, 0, 0.12);
+  --shadow-elev-soft: 0 4px 20px rgba(0, 0, 0, 0.06);
+
+  --radius-surface-lg: 28px;
+  --radius-surface-md: 18px;
+  --radius-surface-xl: 24px;
+  --radius-panel: 20px;
+
+  --container-content: 980px;
+}
+
+/* --- Legacy Tokens kept during migration --- */
+:root {
+  --bg-color: var(--color-app-bg); /* Apple Off-White */
+  --card-bg: var(--color-app-surface);
+  --text-title: var(--color-app-title); /* Almost Black */
+  --text-body: var(--color-app-body); /* Grey Text */
+  --accent: var(--color-app-accent); /* Apple Blue */
+  --accent-hover: var(--color-app-accent-hover);
+  --glass: var(--color-app-glass);
+  --shadow-card: var(--shadow-elev-card);
+  --shadow-hover: var(--shadow-elev-hover);
+  --radius-lg: var(--radius-surface-lg);
+  --radius-md: var(--radius-surface-md);
+  --radius-xl: var(--radius-surface-xl);
+  --max-width: var(--container-content); /* Apple Standard Content Width */
+  --shadow: var(--shadow-elev-soft);
+  
+  /* Q&A / Community Specific Variables */
+  --text-main: var(--color-app-main);
+  --text-sub: var(--color-app-sub);
+  --success: var(--color-app-success);
+  --warning: var(--color-app-warning); /* Orange */
+  --free-tag: var(--color-app-free-tag); /* Grey for free talk */
+  --border: var(--color-app-border);
+  --radius: var(--radius-panel);
+}

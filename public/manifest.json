@@ -1,0 +1,27 @@
+{
+  "name": "Mabi Life - 마비노기 모바일 공략 커뮤니티",
+  "short_name": "Mabi Life",
+  "description": "마비노기 모바일 공략, 팁, 커뮤니티. 에린의 모든 모험가들과 함께 정보를 공유하세요.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F5F5F7",
+  "theme_color": "#0071E3",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/assets/logo/kakao-logo.webp",
+      "sizes": "192x192",
+      "type": "image/webp",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/logo/kakao-logo.webp",
+      "sizes": "512x512",
+      "type": "image/webp",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["games", "entertainment", "social"],
+  "lang": "ko",
+  "dir": "ltr"
+}
