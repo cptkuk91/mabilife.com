@@ -61,7 +61,7 @@ export default function HomeworkClient() {
         setCharacters(result.characters);
         if (activeCharIndex >= result.characters.length) setActiveCharIndex(0);
       }
-    } catch (e) { console.error(e); }
+    } catch { /* silently fail */ }
     finally { setLoading(false); }
   }, [activeCharIndex]);
 

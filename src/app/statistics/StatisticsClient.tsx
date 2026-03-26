@@ -52,8 +52,8 @@ export default function StatisticsClient({ initialData }: { initialData: Statist
                 if (res.success && res.data) {
                     setData(normalizeStatisticsData(res.data as StatisticsPayload));
                 }
-            } catch(e) {
-                console.error(e);
+            } catch {
+                // silently fail
             } finally {
                 setLoading(false);
             }

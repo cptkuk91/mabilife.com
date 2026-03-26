@@ -92,8 +92,8 @@ export default function RankingClient() {
         setData(res.data);
         setTotal(res.total);
         setLastUpdated(res.lastUpdated ? new Date(res.lastUpdated).toISOString() : null);
-      } catch (e) {
-        console.error(e);
+      } catch {
+        // silently fail
       } finally {
         setLoading(false);
       }
