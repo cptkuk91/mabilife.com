@@ -1,5 +1,9 @@
 import type { NextConfig } from "next";
 
+const rankingCrawlerTraceIncludes = [
+  "./node_modules/@sparticuz/chromium/bin/**/*",
+];
+
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
@@ -32,6 +36,11 @@ const nextConfig: NextConfig = {
         hostname: "k.kakaocdn.net",
       },
     ],
+  },
+  // Vercel's traced function bundle can omit the Chromium brotli assets unless
+  // they are explicitly included for the ranking crawl route.
+  outputFileTracingIncludes: {
+    "/api/cron/crawl-ranking": rankingCrawlerTraceIncludes,
   },
 };
 

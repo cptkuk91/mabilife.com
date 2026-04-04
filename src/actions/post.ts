@@ -369,7 +369,7 @@ export async function incrementViewCount(id: string) {
         $inc: { viewCount: 1 },
         $push: { viewHistory: { viewedAt: new Date() } },
       },
-      { new: true },
+      { returnDocument: "after" },
     );
 
     logger.debug("View count updated:", id, "New count:", result?.viewCount);

@@ -395,7 +395,7 @@ export async function getGuideById(idOrSlug: string): Promise<GuideResponse> {
       guide = await Guide.findByIdAndUpdate(
         idOrSlug,
         { $inc: { views: 1 } },
-        { new: true, timestamps: false },
+        { returnDocument: "after", timestamps: false },
       );
 
       if (guide && !guide.slug) {
@@ -418,7 +418,7 @@ export async function getGuideById(idOrSlug: string): Promise<GuideResponse> {
       guide = await Guide.findOneAndUpdate(
         { slug: decodedSlug },
         { $inc: { views: 1 } },
-        { new: true, timestamps: false },
+        { returnDocument: "after", timestamps: false },
       );
     }
 
@@ -458,7 +458,7 @@ export async function updateGuide(
       return { success: false, error: "수정 권한이 없습니다." };
     }
 
-    const updated = await Guide.findByIdAndUpdate(id, { $set: input }, { new: true }).lean<GuideRaw | null>();
+    const updated = await Guide.findByIdAndUpdate(id, { $set: input }, { returnDocument: "after" }).lean<GuideRaw | null>();
 
     if (!updated) {
       return { success: false, error: "가이드를 찾을 수 없습니다." };
@@ -538,13 +538,13 @@ export async function toggleGuideLike(id: string): Promise<GuideResponse> {
       await Guide.findByIdAndUpdate(
         id,
         { $pull: { likedBy: userId }, $inc: { likes: -1 } },
-        { timestamps: false, new: true },
+        { timestamps: false, returnDocument: "after" },
       );
     } else {
       await Guide.findByIdAndUpdate(
         id,
         { $push: { likedBy: userId }, $inc: { likes: 1 } },
-        { timestamps: false, new: true },
+        { timestamps: false, returnDocument: "after" },
       );
     }
 

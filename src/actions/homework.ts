@@ -232,7 +232,7 @@ export async function toggleTask(homeworkId: string, path: string, value: boolea
     let result = await Homework.findOneAndUpdate(
         { _id: homeworkId, userId: userId },
         { $set: { [path]: value } },
-        { new: true }
+        { returnDocument: "after" }
     );
     
     // If not found, try with ObjectId
@@ -244,7 +244,7 @@ export async function toggleTask(homeworkId: string, path: string, value: boolea
             result = await Homework.findOneAndUpdate(
                 { _id: objectId, userId: userObjectId },
                 { $set: { [path]: value } },
-                { new: true }
+                { returnDocument: "after" }
             );
         } catch {
             logger.debug('[toggleTask] ObjectId conversion failed');

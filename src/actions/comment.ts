@@ -343,7 +343,7 @@ export async function acceptComment(commentId: string, postId: string) {
     const updatedComment = await Comment.findByIdAndUpdate(
       commentId,
       { $set: { isAccepted: true, acceptedAt: new Date() } },
-      { new: true }
+      { returnDocument: "after" }
     );
 
     logger.debug("Comment accepted:", updatedComment?._id, "isAccepted:", updatedComment?.isAccepted);
@@ -352,7 +352,7 @@ export async function acceptComment(commentId: string, postId: string) {
     const updatedPost = await Post.findByIdAndUpdate(
       postId,
       { $set: { isSolved: true, acceptedCommentId: commentId } },
-      { new: true }
+      { returnDocument: "after" }
     );
 
     logger.debug("Post updated:", updatedPost?._id, "isSolved:", updatedPost?.isSolved, "acceptedCommentId:", updatedPost?.acceptedCommentId);
