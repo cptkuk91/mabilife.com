@@ -6,6 +6,7 @@ import Link from "next/link";
 import { getGuides } from "@/actions/guide";
 import { getPosts } from "@/actions/post";
 import type { YouTubeChannel } from "@/actions/youtube";
+import type { OfficialNewsCollection, OfficialNewsItem } from "@/lib/officialNews";
 import { decodeHtmlEntities, extractPreviewText } from "@/lib/text";
 
 /* ─── Types ──────────────────────────────────────────── */
@@ -56,6 +57,7 @@ type InitialHomeData = {
   guides?: RawGuide[] | null;
   posts?: RawPost[] | null;
   youtubers?: YouTubeChannel[] | null;
+  officialNews?: OfficialNewsCollection | null;
 };
 
 type Props = {
@@ -121,6 +123,19 @@ const postColors: Record<string, string> = {
   잡담: "#828282",
 };
 
+const officialBadgeColors: Record<string, string> = {
+  공지사항: "#B7791F",
+  업데이트: "#2F80ED",
+  이벤트: "#EB5757",
+  안내: "#2F80ED",
+  점검: "#EB5757",
+  완료: "#27AE60",
+  주요상품: "#B7791F",
+  진행중: "#EB5757",
+  지난이벤트: "#828282",
+  결과안내: "#9B51E0",
+};
+
 const searchTags = [
   { href: "/search?q=초보가이드", label: "초보가이드" },
   { href: "/search?q=전투던전", label: "전투던전" },
@@ -178,6 +193,18 @@ const initials = (s: string) =>
 const avatarOf = (a?: RawAuthor, seed = "") =>
   a?.image || `https://api.dicebear.com/7.x/thumbs/svg?seed=${encodeURIComponent(seed)}`;
 
+const officialBadgeColor = (label: string, fallback: string) => officialBadgeColors[label] || fallback;
+const officialDateValue = (label: string) => {
+  const match = label.match(/(\d{4})\.(\d{1,2})\.(\d{1,2})/);
+
+  if (!match) {
+    return 0;
+  }
+
+  const [, year, month, day] = match;
+  return new Date(Number(year), Number(month) - 1, Number(day)).getTime();
+};
+
 const guideMeta = (g: RawGuide, i: number): GuideMeta => ({
   id: g._id || `g-${i}`,
   href: g._id ? `/guide/${g._id}` : "/guide",
@@ -229,11 +256,13 @@ function SectionHeader({
   title,
   href,
   linkText,
+  external = false,
 }: {
   label: string;
   title: string;
   href?: string;
   linkText?: string;
+  external?: boolean;
 }) {
   return (
     <div className="flex flex-col gap-1 pb-5 sm:flex-row sm:items-end sm:justify-between">
@@ -243,7 +272,7 @@ function SectionHeader({
           {title}
         </h2>
       </div>
-      {href && (
+      {href && !external && (
         <Link
           href={href}
           className={cn(
@@ -254,6 +283,20 @@ function SectionHeader({
           {linkText || "전체 보기"}
           <i className="fa-solid fa-arrow-right text-[10px]" aria-hidden="true" />
         </Link>
+      )}
+      {href && external && (
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={cn(
+            "inline-flex items-center gap-1.5 text-[13px] font-medium text-[#2F80ED] transition-colors hover:text-[#1A66CC]",
+            focusRing,
+          )}
+        >
+          {linkText || "전체 보기"}
+          <i className="fa-solid fa-arrow-up-right-from-square text-[10px]" aria-hidden="true" />
+        </a>
       )}
     </div>
   );
@@ -459,6 +502,141 @@ function CreatorRow({ channel, index }: { channel: YouTubeChannel; index: number
       </div>
       <i className="fa-solid fa-arrow-up-right-from-square text-[11px] text-[#D3D1CB] transition-colors group-hover:text-[#787774]" aria-hidden="true" />
     </a>
+  );
+}
+
+function OfficialFeedRow({
+  item,
+  fallbackBadge,
+  accent,
+}: {
+  item: OfficialNewsItem;
+  fallbackBadge: string;
+  accent: string;
+}) {
+  const badge = item.badge || fallbackBadge;
+
+  return (
+    <a
+      href={item.href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={cn(
+        "group flex items-start justify-between gap-4 rounded-lg px-3 py-3 transition-colors hover:bg-[#F7F6F3]",
+        focusRing,
+      )}
+    >
+      <div className="min-w-0">
+        <div className="flex items-center gap-2">
+          <Pill color={officialBadgeColor(badge, accent)}>{badge}</Pill>
+        </div>
+        <h3 className="mt-1 text-[14px] font-medium leading-snug text-[#37352F] transition-colors group-hover:text-[#2F80ED]">
+          {item.title}
+        </h3>
+        <div className="mt-1.5 text-[11px] text-[#B4B4B0]">{item.dateLabel}</div>
+      </div>
+      <i className="fa-solid fa-arrow-up-right-from-square shrink-0 pt-1 text-[11px] text-[#D3D1CB] transition-colors group-hover:text-[#787774]" aria-hidden="true" />
+    </a>
+  );
+}
+
+function OfficialEventCard({ item }: { item: OfficialNewsItem }) {
+  return (
+    <a
+      href={item.href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={cn(
+        "group overflow-hidden rounded-xl border border-[#E3E2DE] bg-white transition-all duration-200 hover:border-[#D3D1CB] hover:shadow-[0_2px_12px_rgba(0,0,0,0.06)]",
+        focusRing,
+      )}
+    >
+      <div className="relative aspect-[16/9] overflow-hidden bg-[#F7F6F3]">
+        {item.imageUrl ? (
+          <Image
+            src={item.imageUrl}
+            alt={item.title}
+            fill
+            sizes="(max-width:1024px) 100vw, 320px"
+            className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+          />
+        ) : null}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/35 to-transparent" />
+        <div className="absolute left-3 top-3">
+          <span className="rounded-md bg-white/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-[#37352F] backdrop-blur-sm">
+            {item.badge || "이벤트"}
+          </span>
+        </div>
+      </div>
+      <div className="p-4">
+        <div className="text-[11px] font-medium text-[#9B9A97]">{item.dateLabel}</div>
+        <h3 className="mt-1.5 line-clamp-2 text-[15px] font-semibold leading-snug text-[#37352F] transition-colors group-hover:text-[#2F80ED]">
+          {item.title}
+        </h3>
+        <div className="mt-3 text-[11px] text-[#B4B4B0]">자세히 보기</div>
+      </div>
+    </a>
+  );
+}
+
+function OfficialNewsBoard({ news }: { news: OfficialNewsCollection }) {
+  const notices = Array.isArray(news.notices) ? news.notices : [];
+  const updates = Array.isArray(news.updates) ? news.updates : [];
+  const events = Array.isArray(news.events) ? news.events : [];
+  const bulletinItems = [...notices, ...updates]
+    .sort((a, b) => officialDateValue(b.dateLabel) - officialDateValue(a.dateLabel))
+    .slice(0, 6);
+  const hasBulletins = bulletinItems.length > 0;
+  const hasEvents = events.length > 0;
+
+  if (!hasBulletins && !hasEvents) {
+    return null;
+  }
+
+  return (
+    <>
+      {hasBulletins && (
+        <section className={`${shell} mt-8`}>
+          <div className="rounded-2xl border border-[#E3E2DE] bg-[#FBFBFA] p-6 md:p-8">
+            <SectionHeader
+              label="Official Board"
+              title="공지사항과 업데이트"
+              href="https://mabinogimobile.nexon.com/News/Notice"
+              linkText="공식 게시판 열기"
+              external
+            />
+            <p className="mb-4 text-[12px] text-[#B4B4B0]">공지사항과 업데이트를 한 번에 확인하고 배지로 구분합니다.</p>
+            <div className="-mx-1 divide-y divide-[#F1F1EF]">
+              {bulletinItems.map((item) => (
+                <OfficialFeedRow
+                  key={`${item.kind}-${item.id}`}
+                  item={item}
+                  fallbackBadge={item.kind === "update" ? "업데이트" : "공지사항"}
+                  accent={item.kind === "update" ? "#2F80ED" : "#B7791F"}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {hasEvents && (
+        <section className={`${shell} mt-8`}>
+          <div className="rounded-2xl border border-[#E3E2DE] bg-[#FBFBFA] p-6 md:p-8">
+            <SectionHeader
+              label="Official Events"
+              title="진행 중 이벤트"
+              href="https://mabinogimobile.nexon.com/News/Events?headlineId=2501"
+              linkText="이벤트 열기"
+              external
+            />
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {events.map((item) => <OfficialEventCard key={item.id} item={item} />)}
+            </div>
+          </div>
+        </section>
+      )}
+    </>
   );
 }
 
@@ -670,6 +848,11 @@ export default function HomeClient({ initialStats, initialHomeData }: Props) {
   const guides = toGuides(initialHomeData?.guides).map(guideMeta);
   const posts = toPosts(initialHomeData?.posts).map(postMeta);
   const youtubers: YouTubeChannel[] = Array.isArray(initialHomeData?.youtubers) ? initialHomeData.youtubers : [];
+  const officialNews: OfficialNewsCollection = initialHomeData?.officialNews ?? {
+    notices: [],
+    updates: [],
+    events: [],
+  };
   const topJobs = initialStats?.jobStats?.slice(0, 4) || [];
   const topRankers = initialStats?.topRankers?.slice(0, 5) || [];
   const total = initialStats?.totalAnalyzed || topJobs.reduce((s, j) => s + j.count, 0);
@@ -795,6 +978,18 @@ export default function HomeClient({ initialStats, initialHomeData }: Props) {
         <HomeSearchResults displayQuery={displayQ} guideItems={sGuideItems} postItems={sPostItems} loading={loading} />
       ) : (
         <>
+          {/* ═══════════ GUIDES ═══════════ */}
+          <section className={`${shell} mt-8`}>
+            <div className="rounded-2xl border border-[#E3E2DE] bg-[#FBFBFA] p-6 md:p-8">
+              <SectionHeader label="Latest Guides" title="지금 읽을 공략" href="/guide" linkText="전체 공략 보기" />
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {guideDeck.length > 0
+                  ? guideDeck.map((it) => <GuideCard key={it.id} item={it} />)
+                  : <p className="py-8 text-center text-[13px] text-[#B4B4B0] md:col-span-3">공략이 아직 없습니다.</p>}
+              </div>
+            </div>
+          </section>
+
           {/* ═══════════ SNAPSHOT + RANKING ═══════════ */}
           <section className={`${shell} mt-8`}>
             <div className="grid gap-5 xl:grid-cols-12">
@@ -835,17 +1030,7 @@ export default function HomeClient({ initialStats, initialHomeData }: Props) {
             </div>
           </section>
 
-          {/* ═══════════ GUIDES ═══════════ */}
-          <section className={`${shell} mt-8`}>
-            <div className="rounded-2xl border border-[#E3E2DE] bg-[#FBFBFA] p-6 md:p-8">
-              <SectionHeader label="Latest Guides" title="지금 읽을 공략" href="/guide" linkText="전체 공략 보기" />
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {guideDeck.length > 0
-                  ? guideDeck.map((it) => <GuideCard key={it.id} item={it} />)
-                  : <p className="py-8 text-center text-[13px] text-[#B4B4B0] md:col-span-3">공략이 아직 없습니다.</p>}
-              </div>
-            </div>
-          </section>
+          <OfficialNewsBoard news={officialNews} />
 
           {/* ═══════════ COMMUNITY + CREATORS ═══════════ */}
           <section className={`${shell} mt-8`}>

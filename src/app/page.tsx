@@ -6,6 +6,7 @@ import { getPosts } from "@/actions/post";
 import { getRankingStatistics } from "@/actions/ranking";
 import { fetchMabinogiMobileYouTubers, type YouTubeChannel } from "@/actions/youtube";
 import { logger } from "@/lib/logger";
+import { getOfficialNewsCollection, type OfficialNewsCollection } from "@/lib/officialNews";
 
 const HomeClient = dynamic(() => import("./HomeClient"), {
   loading: () => <div className="min-h-screen bg-white" />,
@@ -60,6 +61,7 @@ type HomeInitialData = {
   guides?: HomeGuide[] | null;
   posts?: HomePost[] | null;
   youtubers?: YouTubeChannel[] | null;
+  officialNews?: OfficialNewsCollection | null;
 };
 
 function toPlainJson<T>(value: T): T {
@@ -92,15 +94,17 @@ const getCachedHomeStats = unstable_cache(
 );
 
 async function loadHomeInitialData(): Promise<HomeInitialData> {
-  const [guideResult, postResult, youtuberResult] = await Promise.allSettled([
+  const [guideResult, postResult, youtuberResult, officialNewsResult] = await Promise.allSettled([
     getGuides({ limit: 6, sort: "latest" }),
     getPosts(1, 4),
     fetchMabinogiMobileYouTubers(),
+    getOfficialNewsCollection(),
   ]);
 
   logSettledError("guides", guideResult);
   logSettledError("posts", postResult);
   logSettledError("youtubers", youtuberResult);
+  logSettledError("official news", officialNewsResult);
 
   return {
     guides:
@@ -133,6 +137,10 @@ async function loadHomeInitialData(): Promise<HomeInitialData> {
     youtubers:
       youtuberResult.status === "fulfilled" && youtuberResult.value
         ? toPlainJson(youtuberResult.value)
+        : null,
+    officialNews:
+      officialNewsResult.status === "fulfilled"
+        ? officialNewsResult.value
         : null,
   };
 }
