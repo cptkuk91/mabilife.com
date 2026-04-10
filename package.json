@@ -14,12 +14,12 @@
     "@sparticuz/chromium": "^143.0.4",
     "ioredis": "^5.8.2",
     "mongoose": "^9.0.0",
-    "next": "16.0.7",
+    "next": "16.2.3",
     "next-auth": "^4.24.13",
-    "puppeteer": "^24.32.1",
-    "puppeteer-core": "^24.36.0",
-    "react": "19.2.1",
-    "react-dom": "19.2.1",
+    "puppeteer": "^24.40.0",
+    "puppeteer-core": "^24.40.0",
+    "react": "19.2.5",
+    "react-dom": "19.2.5",
     "sanitize-html": "^2.17.2"
   },
   "devDependencies": {
