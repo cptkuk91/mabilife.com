@@ -1,4 +1,10 @@
 {
+  "functions": {
+    "src/app/api/cron/crawl-ranking/route.ts": {
+      "memory": 3008,
+      "maxDuration": 300
+    }
+  },
   "crons": [
     {
       "path": "/api/cron/crawl-ranking",
