@@ -255,6 +255,6 @@ export async function crawlRankingData(): Promise<RankingData[]> {
     return allResults;
   } catch (error) {
     logger.error('Crawling failed:', error);
-    return [];
+    throw error;
   }
 }
