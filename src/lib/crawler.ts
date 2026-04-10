@@ -53,8 +53,9 @@ async function launchBrowser(): Promise<Browser> {
       throw new Error(`[crawler] chromium binary not found at ${executablePath}. node=${process.version}`);
     }
 
+    let browser: Browser;
     try {
-      return await puppeteerCore.launch({
+      browser = await puppeteerCore.launch({
         args: chromium.args,
         executablePath,
         headless: 'shell',
@@ -63,6 +64,16 @@ async function launchBrowser(): Promise<Browser> {
       const msg = e instanceof Error ? e.message : String(e);
       throw new Error(`[crawler] puppeteer.launch failed. path=${executablePath} node=${process.version} err=${msg}`);
     }
+
+    try {
+      const version = await browser.version();
+      logger.debug(`[crawler] browser smoke test ok: ${version} node=${process.version}`);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      throw new Error(`[crawler] browser died after launch (smoke test failed). path=${executablePath} node=${process.version} args=${JSON.stringify(chromium.args)} err=${msg}`);
+    }
+
+    return browser;
   }
 
   const { default: puppeteer } = await import('puppeteer');
