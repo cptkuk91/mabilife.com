@@ -4,24 +4,33 @@
 
 마비노기 모바일의 공략, 랭킹, 통계, 커뮤니티를 한곳에서 제공하는 웹 서비스입니다.
 
-Next.js 16 App Router 기반으로 구축되었으며, MongoDB + Redis 캐싱, AWS S3 이미지 업로드, Puppeteer 기반 랭킹 자동 크롤링을 포함합니다.
+Mabi Life는 공략 탐색, 커뮤니티 소통, 전투력 랭킹 확인, 통계 조회, 룬 추천, 숙제 관리까지 한 흐름으로 연결하는 것을 목표로 합니다.
+
+Next.js 16 App Router 기반으로 구축되었으며, MongoDB, Redis, AWS S3, Puppeteer 기반 랭킹 자동 수집 구조를 포함합니다.
 
 ## 주요 기능
 
 ### 공략
-카테고리별(초보 가이드, 전투/던전, 메인스트림, 생활/알바, 돈벌기) 공략을 작성하고 검색할 수 있습니다. TinyMCE 에디터를 통한 리치 텍스트 작성과 S3 이미지 업로드를 지원합니다. 슬러그 기반 URL로 SEO에 최적화되어 있습니다.
+카테고리별(초보 가이드, 전투/던전, 메인스트림, 생활/알바, 돈벌기) 공략을 작성하고 검색할 수 있습니다. TinyMCE 기반 리치 텍스트 작성, 이미지 업로드, 슬러그 기반 URL을 지원합니다.
 
 ### 커뮤니티
 질문, 정보, 잡담 게시판을 제공합니다. 댓글/답글, 좋아요, 질문글 답변 채택 기능을 포함합니다.
 
 ### 랭킹 / 통계
-Puppeteer로 마비노기 모바일 공식 랭킹 페이지를 매일 자동 크롤링하여 서버별/직업별 전투력 랭킹을 수집합니다. 수집된 데이터를 기반으로 직업 분포, 서버 통계를 시각화합니다.
+Puppeteer로 마비노기 모바일 공식 랭킹 페이지를 자동 수집하여 서버별/직업별 전투력 랭킹을 제공합니다. 수집된 데이터를 바탕으로 직업 분포와 서버 통계도 함께 확인할 수 있습니다.
 
 ### 룬 추천
 직업별 최적의 룬 조합 정보를 제공합니다.
 
 ### 숙제 트래커
 캐릭터별로 일일/주간 숙제를 체크리스트로 관리할 수 있습니다. 로그인하지 않아도 데모 모드로 체험할 수 있습니다.
+
+## 서비스 특징
+
+- 공략 HTML은 서버에서 정제되어 렌더링 안전성을 강화했습니다.
+- 이미지 업로드는 로그인 사용자만 가능하며, 파일 형식/용량/요청 횟수 제한이 적용됩니다.
+- 공략과 커뮤니티 조회수는 중복 집계를 줄이도록 정리되어 있습니다.
+- 커뮤니티 인기글은 일별 통계 기반으로 계산되어 장기 확장에 유리합니다.
 
 ## 기술 스택
 
@@ -31,7 +40,7 @@ Puppeteer로 마비노기 모바일 공식 랭킹 페이지를 매일 자동 크
 - **Database**: MongoDB Atlas (Mongoose ODM)
 - **Auth**: NextAuth.js v4 (Google OAuth)
 - **Storage**: AWS S3 + CloudFront CDN
-- **Cache**: Redis (ioredis, 선택 사항)
+- **Cache**: Redis (ioredis, 로컬에서는 선택 사항 / 운영에서는 권장)
 - **Crawling**: Puppeteer + @sparticuz/chromium (서버리스 환경 지원)
 - **Deploy**: Vercel (Cron Job으로 랭킹 자동 크롤링)
 
@@ -79,7 +88,7 @@ cp .env.example .env
 | `NEXT_PUBLIC_CLOUDFRONT_URL` | CDN URL | S3 직접 URL 사용 |
 | `YOUTUBE_API_KEY` | 유튜버 채널 정보 | 홈 크리에이터 섹션 미표시 |
 | `NEXT_PUBLIC_GA_ID` | Google Analytics | 트래킹 비활성화 |
-| `USE_REDIS` / `REDIS_URL` | Redis 캐싱 | 캐싱 없이 동작 (기본값: `false`) |
+| `USE_REDIS` / `REDIS_URL` | Redis 캐싱, 업로드 제어, 조회수 dedupe | 로컬 fallback으로 동작하지만 운영에서는 Redis 권장 |
 
 ### 실행
 
@@ -106,13 +115,7 @@ vercel deploy
 
 ```
 src/
-├── actions/           # Server Actions (DB 조회/변경 로직)
-│   ├── guide.ts       # 공략 CRUD
-│   ├── post.ts        # 커뮤니티 게시글 CRUD
-│   ├── comment.ts     # 댓글/답글
-│   ├── ranking.ts     # 랭킹 데이터 저장
-│   ├── homework.ts    # 숙제 트래커
-│   └── upload.ts      # S3 Presigned URL 발급
+├── actions/           # Server Actions (공략, 커뮤니티, 랭킹, 업로드 등)
 ├── app/               # Next.js App Router
 │   ├── api/
 │   │   ├── auth/      # NextAuth API Route
@@ -124,14 +127,10 @@ src/
 │   ├── runes/         # 룬 추천
 │   ├── homework/      # 숙제 트래커
 │   └── search/        # 통합 검색
-├── components/        # 공통 컴포넌트 (Navbar, Footer, Editor)
-├── lib/               # 인프라 유틸리티
-│   ├── auth.ts        # NextAuth 설정
-│   ├── mongodb.ts     # MongoDB 연결
-│   ├── s3.ts          # S3 업로드
-│   ├── redis.ts       # Redis 캐싱
-│   └── crawler.ts     # Puppeteer 크롤러
+├── components/        # 공통 UI 컴포넌트
+├── lib/               # 인증, DB, 업로드, 캐시, 크롤러 유틸리티
 ├── models/            # Mongoose 스키마
+├── scripts/           # 데이터 백필/운영 스크립트
 └── types/             # TypeScript 타입 정의
 ```
 
