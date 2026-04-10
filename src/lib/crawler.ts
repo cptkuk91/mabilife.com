@@ -7,10 +7,11 @@ const LOCAL_CHROME_PATH = '/Applications/Google Chrome.app/Contents/MacOS/Google
 const PAGE_SIZE = 20;
 const MAX_RANK_PER_SERVER = 200;
 const MAX_PAGES_PER_SERVER = Math.ceil(MAX_RANK_PER_SERVER / PAGE_SIZE);
-const PAGES_PER_SESSION = 30;
+const PAGE_DELAY_MS = 2000;
+const TYPE_DELAY_MS = 5000;
 const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
 
-const SERVERS = [
+export const SERVERS = [
   { id: '1', name: '데이안' },
   { id: '2', name: '아이라' },
   { id: '3', name: '던컨' },
@@ -18,7 +19,9 @@ const SERVERS = [
   { id: '5', name: '메이븐' },
   { id: '6', name: '라사' },
   { id: '7', name: '칼릭스' },
-];
+] as const;
+
+export type ServerInfo = (typeof SERVERS)[number];
 
 const RANKING_TYPES = [
   { name: 'total', code: '4' },
@@ -26,6 +29,10 @@ const RANKING_TYPES = [
   { name: 'charm', code: '2' },
   { name: 'life', code: '3' },
 ];
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export interface RankingData {
   rank: number;
@@ -123,9 +130,10 @@ async function fetchRankingChunk(
   rankingType: { name: string; code: string },
   server: { id: string; name: string },
   pageStart: number,
-  pageEnd: number
+  pageEnd: number,
+  pageDelayMs: number
 ): Promise<{ items: RankingData[]; totalPages: number }> {
-  return page.evaluate(async function ({ rankingType, server, pageStart, pageEnd, pageSize }) {
+  return page.evaluate(async function ({ rankingType, server, pageStart, pageEnd, pageSize, pageDelayMs }) {
     function parseNumber(value: string | null | undefined) {
       return Number((value ?? '').replace(/[^\d]/g, ''));
     }
@@ -214,6 +222,9 @@ async function fetchRankingChunk(
     let totalPages = pageEnd;
 
     for (let pageNo = pageStart; pageNo <= pageEnd; pageNo += 1) {
+      if (pageNo > pageStart && pageDelayMs > 0) {
+        await new Promise((resolve) => setTimeout(resolve, pageDelayMs));
+      }
       const html = await fetchPageHtml(pageNo);
       const parsed = parseHtml(html);
 
@@ -240,45 +251,48 @@ async function fetchRankingChunk(
       items,
       totalPages,
     };
-  }, { rankingType, server, pageStart, pageEnd, pageSize: PAGE_SIZE });
+  }, { rankingType, server, pageStart, pageEnd, pageSize: PAGE_SIZE, pageDelayMs });
 }
 
-export async function crawlRankingData(): Promise<RankingData[]> {
+export async function crawlRankingData(serverId: string): Promise<RankingData[]> {
+  const server = SERVERS.find((s) => s.id === serverId);
+  if (!server) {
+    throw new Error(`[crawler] Unknown serverId: ${serverId}`);
+  }
+
   try {
     const allResults: RankingData[] = [];
+    const browser = await launchBrowser();
 
-    for (const rankingType of RANKING_TYPES) {
-      logger.debug(`Starting crawl for Ranking Type: ${rankingType.name} (code: ${rankingType.code})`);
-      const browser = await launchBrowser();
+    try {
+      for (let typeIndex = 0; typeIndex < RANKING_TYPES.length; typeIndex += 1) {
+        const rankingType = RANKING_TYPES[typeIndex];
 
-      try {
-        for (const server of SERVERS) {
-          logger.debug(`Processing server: ${server.name} for ${rankingType.name}`);
-
-          let currentPage = 1;
-          let totalPages = MAX_PAGES_PER_SERVER;
-
-          while (currentPage <= totalPages) {
-            const chunkEnd = Number.isFinite(totalPages)
-              ? Math.min(currentPage + PAGES_PER_SESSION - 1, totalPages)
-              : currentPage + PAGES_PER_SESSION - 1;
-
-            const page = await createRankingPage(browser, rankingType.code);
-
-            try {
-              const result = await fetchRankingChunk(page, rankingType, server, currentPage, chunkEnd);
-              totalPages = Math.min(result.totalPages, MAX_PAGES_PER_SERVER);
-              allResults.push(...result.items);
-              logger.debug(`  - Pages ${currentPage}-${Math.min(chunkEnd, totalPages)} fetched for ${server.name} (${rankingType.name})`);
-              currentPage = chunkEnd + 1;
-            } finally {
-              await page.close();
-            }
-          }
+        if (typeIndex > 0) {
+          logger.debug(`Cooling down ${TYPE_DELAY_MS}ms before next ranking type...`);
+          await sleep(TYPE_DELAY_MS);
         }
-      } finally {
-        await browser.close();
+
+        logger.debug(`Crawling ${server.name} / ${rankingType.name} (code: ${rankingType.code})`);
+
+        const page = await createRankingPage(browser, rankingType.code);
+        try {
+          const result = await fetchRankingChunk(
+            page,
+            rankingType,
+            server,
+            1,
+            MAX_PAGES_PER_SERVER,
+            PAGE_DELAY_MS
+          );
+          allResults.push(...result.items);
+          logger.debug(`  - ${result.items.length} items fetched for ${server.name} (${rankingType.name})`);
+        } finally {
+          await page.close();
+        }
       }
+    } finally {
+      await browser.close();
     }
 
     return allResults;

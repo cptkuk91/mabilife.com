@@ -5,14 +5,13 @@ import { logger } from '@/lib/logger';
 import Ranking from '@/models/Ranking';
 import { revalidatePath } from 'next/cache';
 
-export async function refreshRankingData() {
+export async function refreshRankingData(serverId: string) {
   try {
     await connectToDatabase();
     const { crawlRankingData } = await import('@/lib/crawler');
-    
-    // Crawl Data
-    const data = await crawlRankingData();
-    
+
+    const data = await crawlRankingData(serverId);
+
     if (data.length === 0) {
         return { success: false, message: '데이터를 가져오지 못했습니다. 잠시 후 다시 시도해주세요.' };
     }
@@ -40,24 +39,31 @@ export async function getRankingStatistics(type: string = 'total') {
     await connectToDatabase();
 
     // Construct query to support legacy data (where rankingType might be missing) for 'total'
-    const query: Record<string, unknown> = {};
-    if (type === 'total') {
-        query.$or = [{ rankingType: 'total' }, { rankingType: { $exists: false } }];
-    } else {
-        query.rankingType = type;
-    }
+    const typeQuery: Record<string, unknown> = type === 'total'
+        ? { $or: [{ rankingType: 'total' }, { rankingType: { $exists: false } }] }
+        : { rankingType: type };
 
-    // Find the latest batch date for this specific type
-    const latestEntry = await Ranking.findOne(query)
-        .sort({ crawledAt: -1 })
-        .select('crawledAt');
-        
-    if (!latestEntry) return null;
+    // Each server is crawled independently, so collect the latest crawledAt per server.
+    const latestPerServer: Array<{ _id: string; latestDate: Date }> = await Ranking.aggregate([
+        { $match: typeQuery },
+        { $sort: { crawledAt: -1 } },
+        { $group: { _id: '$server', latestDate: { $first: '$crawledAt' } } },
+    ]);
 
-    const latestDate = latestEntry.crawledAt;
-    
-    // Add date to query
-    const dataQuery = { ...query, crawledAt: latestDate };
+    if (latestPerServer.length === 0) return null;
+
+    const serverBatchClauses = latestPerServer.map((entry) => ({
+        server: entry._id,
+        crawledAt: entry.latestDate,
+    }));
+
+    const latestDate = serverBatchClauses.reduce<Date>((latest, clause) => {
+        return clause.crawledAt > latest ? clause.crawledAt : latest;
+    }, new Date(0));
+
+    const dataQuery = {
+        $and: [typeQuery, { $or: serverBatchClauses }],
+    };
 
     // Fetch ALL records for this batch and type
     const allRankings = await Ranking.find(dataQuery).lean();

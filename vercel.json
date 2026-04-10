@@ -8,7 +8,7 @@
   "crons": [
     {
       "path": "/api/cron/crawl-ranking",
-      "schedule": "0 0 * * *"
+      "schedule": "0 * * * *"
     }
   ]
 }
