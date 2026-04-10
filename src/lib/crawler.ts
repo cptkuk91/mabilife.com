@@ -45,11 +45,24 @@ async function launchBrowser(): Promise<Browser> {
       import('puppeteer-core'),
     ]);
 
-    return puppeteerCore.launch({
-      args: chromium.args,
-      executablePath: await chromium.executablePath(),
-      headless: 'shell',
-    });
+    const executablePath = await chromium.executablePath();
+    if (!executablePath) {
+      throw new Error(`[crawler] chromium.executablePath() returned empty. node=${process.version}`);
+    }
+    if (!existsSync(executablePath)) {
+      throw new Error(`[crawler] chromium binary not found at ${executablePath}. node=${process.version}`);
+    }
+
+    try {
+      return await puppeteerCore.launch({
+        args: chromium.args,
+        executablePath,
+        headless: 'shell',
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      throw new Error(`[crawler] puppeteer.launch failed. path=${executablePath} node=${process.version} err=${msg}`);
+    }
   }
 
   const { default: puppeteer } = await import('puppeteer');
