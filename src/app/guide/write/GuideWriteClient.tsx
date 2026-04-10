@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import RichTextEditorWrapper, { RichTextEditorHandle } from "@/components/Editor/RichTextEditorWrapper";
 import { createGuide, getGuideById, updateGuide } from "@/actions/guide";
 import { getPresignedUrlAction } from "@/actions/upload";
+import { uploadFileWithPresignedUrl } from "@/lib/upload-client";
 
 const cn = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(" ");
 const pageClass = "mx-auto max-w-[800px] px-4 pb-20 pt-24 md:px-5 md:pt-28";
@@ -88,27 +89,20 @@ function GuideWriteContent() {
     setIsUploading(true);
 
     try {
-      const { success, signedUrl, publicUrl, error } = await getPresignedUrlAction(file.name, file.type);
+      const { success, signedUrl, publicUrl, error } = await getPresignedUrlAction(
+        file.name,
+        file.type,
+        file.size,
+        "guide-thumbnail",
+      );
 
       if (!success || !signedUrl || !publicUrl) {
         console.error("Failed to get presigned URL:", error);
-        alert("업로드에 실패했습니다.");
+        alert(error || "업로드에 실패했습니다.");
         return;
       }
 
-      const uploadResponse = await fetch(signedUrl, {
-        method: 'PUT',
-        body: file,
-        headers: {
-          'Content-Type': file.type,
-        },
-      });
-
-      if (!uploadResponse.ok) {
-        console.error("Failed to upload to S3");
-        alert("업로드에 실패했습니다.");
-        return;
-      }
+      await uploadFileWithPresignedUrl(signedUrl, file);
 
       setThumbnail(publicUrl);
     } catch (error) {

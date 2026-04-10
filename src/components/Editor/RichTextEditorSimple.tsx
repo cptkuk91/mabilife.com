@@ -3,6 +3,7 @@
 import { useRef, useEffect, useState, memo, useId, useImperativeHandle, forwardRef } from 'react';
 import { loadTinyMCE, type TinyMCEBlobInfo, type TinyMCEEditor } from '@/lib/tinymce-loader';
 import { getPresignedUrlAction } from '@/actions/upload';
+import { uploadFileWithPresignedUrl } from '@/lib/upload-client';
 
 export interface RichTextEditorHandle {
   getContent: () => string;
@@ -114,24 +115,19 @@ const RichTextEditorSimple = forwardRef<RichTextEditorHandle, RichTextEditorSimp
 
             try {
               // 1. Get Presigned URL from Server Action
-              const { success, signedUrl, publicUrl, error } = await getPresignedUrlAction(fileName, contentType);
+              const { success, signedUrl, publicUrl, error } = await getPresignedUrlAction(
+                fileName,
+                contentType,
+                file.size,
+                "guide-content",
+              );
               
               if (!success || !signedUrl || !publicUrl) {
                 throw new Error(error || 'Failed to get upload URL');
               }
 
               // 2. Upload directly to S3 using Presigned URL
-              const uploadResponse = await fetch(signedUrl, {
-                method: 'PUT',
-                body: file,
-                headers: {
-                  'Content-Type': contentType,
-                },
-              });
-
-              if (!uploadResponse.ok) {
-                throw new Error('Failed to upload image to S3');
-              }
+              await uploadFileWithPresignedUrl(signedUrl, file);
 
               // 3. Return the public URL to TinyMCE
               return publicUrl;

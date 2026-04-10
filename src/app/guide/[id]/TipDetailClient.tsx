@@ -3,9 +3,9 @@
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useEffectEvent, useState } from "react";
+import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
-import { getGuideById, toggleGuideLike, toggleGuideBookmark, deleteGuide } from "@/actions/guide";
+import { deleteGuide, getGuideById, incrementGuideView, toggleGuideBookmark, toggleGuideLike } from "@/actions/guide";
 import {
   getGuideComments,
   createGuideComment,
@@ -81,13 +81,20 @@ type GuideCommentItem = {
 const avatarSrc = (author?: GuideAuthor) =>
   author?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${author?.id || "anonymous"}`;
 
-export default function TipDetailClient({ id }: { id: string }) {
+export default function TipDetailClient({
+  id,
+  initialGuide,
+}: {
+  id: string;
+  initialGuide: GuideDetail | null;
+}) {
   const router = useRouter();
   const { data: session } = useSession();
   const userId = session?.user?.id;
+  const viewedGuideIdRef = useRef<string | null>(null);
 
-  const [guide, setGuide] = useState<GuideDetail | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [guide, setGuide] = useState<GuideDetail | null>(initialGuide);
+  const [loading, setLoading] = useState(!initialGuide);
   const [showGuideDropdown, setShowGuideDropdown] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -108,15 +115,25 @@ export default function TipDetailClient({ id }: { id: string }) {
       ? (result.data as GuideCommentItem[])
       : [];
   }, []);
-  const loadGuide = useEffectEvent(async () => {
-    const result = await getGuideById(id);
+  const loadGuide = useEffectEvent(async (guideIdOrSlug: string) => {
+    const result = await getGuideById(guideIdOrSlug);
 
     if (result.success && result.data && !Array.isArray(result.data)) {
       const guideData = result.data as unknown as GuideDetail;
       setGuide(guideData);
+    } else {
+      setGuide(null);
     }
 
     setLoading(false);
+  });
+  const incrementGuideViewEffect = useEffectEvent(async (guideId: string) => {
+    const result = await incrementGuideView(guideId);
+
+    if (result.success && typeof result.views === "number") {
+      const nextViews: number = result.views;
+      setGuide((prev) => (prev && prev._id === guideId ? { ...prev, views: nextViews } : prev));
+    }
   });
   const loadCommentsEffect = useEffectEvent(async (guideId: string) => {
     setComments(await fetchComments(guideId));
@@ -126,8 +143,19 @@ export default function TipDetailClient({ id }: { id: string }) {
   }, [fetchComments]);
 
   useEffect(() => {
-    void loadGuide();
-  }, [id]);
+    if (!initialGuide) {
+      void loadGuide(id);
+    }
+  }, [id, initialGuide]);
+
+  useEffect(() => {
+    if (!guide?._id || viewedGuideIdRef.current === guide._id) {
+      return;
+    }
+
+    viewedGuideIdRef.current = guide._id;
+    void incrementGuideViewEffect(guide._id);
+  }, [guide?._id]);
 
   useEffect(() => {
     if (guide?._id) {

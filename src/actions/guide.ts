@@ -1,10 +1,18 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import type { Model } from "mongoose";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { auth } from "@/lib/auth";
+import {
+  GUIDE_CONTENT_SANITIZER_VERSION,
+  hasRenderableGuideContent,
+  sanitizeGuideHtml,
+  sanitizeGuideTitle,
+} from "@/lib/guide-html";
 import { logger } from "@/lib/logger";
-import { delCache, getCache, invalidateCachePattern, setCache } from "@/lib/redis";
+import { delCache, getCache, invalidateCachePattern, redis, setCache } from "@/lib/redis";
 import getGuideModel, { IGuide } from "@/models/Guide";
 import getGuideCommentModel from "@/models/GuideComment";
 
@@ -58,6 +66,13 @@ export interface GuideResponse {
   id?: string;
 }
 
+export interface GuideViewResponse {
+  success: boolean;
+  alreadyCounted?: boolean;
+  error?: string;
+  views?: number;
+}
+
 type GuideRaw = {
   _id: { toString(): string };
   title: string;
@@ -74,6 +89,8 @@ type GuideRaw = {
   isPublished: boolean;
   createdAt: Date;
   updatedAt: Date;
+  contentSanitizedVersion?: number;
+  contentSanitizedAt?: Date | null;
   slug?: string;
 };
 
@@ -86,6 +103,9 @@ type GuideQuery = Record<string, unknown>;
 const GUIDE_DEFAULT_LIMIT = 20;
 const GUIDE_LIST_CACHE_TTL = 60;
 const GUIDE_DETAIL_CACHE_TTL = 300;
+const GUIDE_VIEW_DEDUPE_TTL = 24 * 60 * 60;
+const GUIDE_VIEWER_COOKIE_MAX_AGE = 365 * 24 * 60 * 60;
+const GUIDE_VIEWER_COOKIE_NAME = "mabilife_guide_viewer";
 const objectIdPattern = /^[0-9a-fA-F]{24}$/;
 const GUIDE_CATEGORY_ALIASES = new Map<string, string>([
   ["초보가이드", "초보 가이드"],
@@ -95,6 +115,15 @@ const GUIDE_CATEGORY_ALIASES = new Map<string, string>([
   ["패션뷰티", "패션/뷰티"],
   ["돈벌기", "돈벌기"],
 ]);
+
+type LocalGuideViewStore = Map<string, number>;
+
+declare global {
+  var guideViewDedupeStore: LocalGuideViewStore | undefined;
+}
+
+const localGuideViewStore =
+  globalThis.guideViewDedupeStore ?? (globalThis.guideViewDedupeStore = new Map<string, number>());
 
 function generateSlug(title: string): string {
   return title
@@ -158,10 +187,13 @@ function buildGuideRegexQuery(search: string): GuideQuery {
 }
 
 function serializeGuide(guide: GuideRaw): SerializedGuide {
+  const sanitizedTitle = sanitizeGuideTitle(guide.title);
+  const sanitizedContent = sanitizeGuideHtml(guide.content);
+
   return {
     _id: guide._id.toString(),
-    title: guide.title,
-    content: guide.content,
+    title: sanitizedTitle,
+    content: sanitizedContent,
     category: guide.category,
     author: {
       id: guide.author.id,
@@ -186,6 +218,92 @@ function serializeGuides(guides: GuideRaw[]): SerializedGuide[] {
   return guides.map(serializeGuide);
 }
 
+function buildRedisKey(key: string) {
+  const prefix = process.env.REDIS_PREFIX || "";
+
+  if (!prefix) return key;
+
+  return prefix.endsWith(":") ? prefix + key : `${prefix}:${key}`;
+}
+
+function buildGuideSanitizationPatch(guide: Pick<GuideRaw, "title" | "content">) {
+  return {
+    content: sanitizeGuideHtml(guide.content),
+    contentSanitizedAt: new Date(),
+    contentSanitizedVersion: GUIDE_CONTENT_SANITIZER_VERSION,
+    title: sanitizeGuideTitle(guide.title),
+  };
+}
+
+function needsGuideSanitizationSync(
+  guide: Pick<GuideRaw, "title" | "content" | "contentSanitizedVersion">,
+  patch: ReturnType<typeof buildGuideSanitizationPatch>,
+) {
+  return (
+    guide.title !== patch.title ||
+    guide.content !== patch.content ||
+    (guide.contentSanitizedVersion ?? 0) < GUIDE_CONTENT_SANITIZER_VERSION
+  );
+}
+
+async function syncGuideSanitizationIfNeeded(Guide: Model<IGuide>, guide: IGuide): Promise<GuideRaw> {
+  const rawGuide = toGuideRaw(guide);
+  const patch = buildGuideSanitizationPatch(rawGuide);
+
+  if (!needsGuideSanitizationSync(rawGuide, patch)) {
+    return rawGuide;
+  }
+
+  await Guide.findByIdAndUpdate(
+    guide._id,
+    { $set: patch },
+    { timestamps: false },
+  );
+
+  return {
+    ...rawGuide,
+    ...patch,
+  };
+}
+
+async function sanitizeCachedGuideIfNeeded(
+  Guide: Model<IGuide>,
+  cachedGuide: SerializedGuide,
+  requestedIdOrSlug: string,
+): Promise<SerializedGuide> {
+  const nextTitle = sanitizeGuideTitle(cachedGuide.title);
+  const nextContent = sanitizeGuideHtml(cachedGuide.content);
+
+  if (nextTitle === cachedGuide.title && nextContent === cachedGuide.content) {
+    return cachedGuide;
+  }
+
+  const nextGuide = {
+    ...cachedGuide,
+    content: nextContent,
+    title: nextTitle,
+  };
+
+  await setGuideDetailCacheEntries(nextGuide, requestedIdOrSlug);
+
+  void Guide.findByIdAndUpdate(
+    cachedGuide._id,
+    {
+      $set: {
+        content: nextContent,
+        contentSanitizedAt: new Date(),
+        contentSanitizedVersion: GUIDE_CONTENT_SANITIZER_VERSION,
+        title: nextTitle,
+      },
+    },
+    { timestamps: false },
+  ).catch((error) => {
+    logger.error("Guide cached sanitization sync error:", error);
+  });
+
+  return nextGuide;
+}
+
 function getGuideDetailPath(idOrSlug: string): string {
   return `/guide/${encodeURIComponent(idOrSlug)}`;
 }
@@ -200,6 +318,24 @@ async function invalidateGuideDetailCache(id: string, slug?: string) {
   if (slug) {
     await delCache(`guide:detail:${slug}`);
   }
+}
+
+async function setGuideDetailCacheEntries(guide: SerializedGuide, requestedIdOrSlug?: string) {
+  const cacheKeys = new Set<string>();
+
+  if (requestedIdOrSlug) {
+    cacheKeys.add(`guide:detail:${requestedIdOrSlug}`);
+  }
+
+  cacheKeys.add(`guide:detail:${guide._id}`);
+
+  if (guide.slug) {
+    cacheKeys.add(`guide:detail:${guide.slug}`);
+  }
+
+  await Promise.all(
+    Array.from(cacheKeys).map((cacheKey) => setCache(cacheKey, guide, GUIDE_DETAIL_CACHE_TTL)),
+  );
 }
 
 async function findGuidesByTextSearch(
@@ -276,6 +412,102 @@ function toGuideRaw(guide: IGuide): GuideRaw {
   return guide.toObject() as GuideRaw;
 }
 
+async function ensureGuideSlug(Guide: Model<IGuide>, guide: IGuide): Promise<IGuide> {
+  if (guide.slug) {
+    return guide;
+  }
+
+  let slug = generateSlug(sanitizeGuideTitle(guide.title)) || "guide";
+  let counter = 1;
+  const originalSlug = slug;
+
+  while (await Guide.findOne({ slug, _id: { $ne: guide._id } })) {
+    slug = `${originalSlug}-${counter}`;
+    counter += 1;
+  }
+
+  guide.slug = slug;
+  await guide.save();
+
+  return guide;
+}
+
+async function findGuideByIdOrSlug(Guide: Model<IGuide>, idOrSlug: string): Promise<IGuide | null> {
+  const decodedSlug = decodeURIComponent(idOrSlug);
+  let guide: IGuide | null = null;
+
+  if (objectIdPattern.test(idOrSlug)) {
+    guide = await Guide.findById(idOrSlug);
+  }
+
+  if (!guide) {
+    guide = await Guide.findOne({ slug: decodedSlug });
+  }
+
+  if (!guide) {
+    return null;
+  }
+
+  return ensureGuideSlug(Guide, guide);
+}
+
+async function getGuideViewerKey() {
+  const session = await auth();
+
+  if (session?.user?.id) {
+    return `user:${session.user.id}`;
+  }
+
+  const cookieStore = await cookies();
+  let viewerId = cookieStore.get(GUIDE_VIEWER_COOKIE_NAME)?.value;
+
+  if (!viewerId) {
+    viewerId = randomUUID();
+    cookieStore.set(GUIDE_VIEWER_COOKIE_NAME, viewerId, {
+      httpOnly: true,
+      maxAge: GUIDE_VIEWER_COOKIE_MAX_AGE,
+      path: "/",
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    });
+  }
+
+  return `anon:${viewerId}`;
+}
+
+function markLocalGuideViewDeduped(guideId: string, viewerKey: string) {
+  const key = `${guideId}:${viewerKey}`;
+  const now = Date.now();
+  const currentExpiry = localGuideViewStore.get(key);
+
+  if (currentExpiry && currentExpiry > now) {
+    return true;
+  }
+
+  localGuideViewStore.set(key, now + GUIDE_VIEW_DEDUPE_TTL * 1000);
+
+  if (Math.random() < 0.1) {
+    for (const [existingKey, expiry] of localGuideViewStore.entries()) {
+      if (expiry <= now) {
+        localGuideViewStore.delete(existingKey);
+      }
+    }
+  }
+
+  return false;
+}
+
+async function hasRecentGuideView(guideId: string, viewerKey: string) {
+  if (!redis) {
+    return markLocalGuideViewDeduped(guideId, viewerKey);
+  }
+
+  const dedupeKey = buildRedisKey(`guide:view:${guideId}:${viewerKey}`);
+  const result = await redis.set(dedupeKey, "1", "EX", GUIDE_VIEW_DEDUPE_TTL, "NX");
+
+  return result !== "OK";
+}
+
 export async function createGuide(input: CreateGuideInput): Promise<GuideResponse> {
   try {
     const session = await auth();
@@ -285,8 +517,18 @@ export async function createGuide(input: CreateGuideInput): Promise<GuideRespons
     }
 
     const Guide = await getGuideModel();
+    const sanitizedTitle = sanitizeGuideTitle(input.title);
+    const sanitizedContent = sanitizeGuideHtml(input.content);
 
-    let slug = generateSlug(input.title);
+    if (!sanitizedTitle) {
+      return { success: false, error: "제목을 입력해주세요." };
+    }
+
+    if (!hasRenderableGuideContent(sanitizedContent)) {
+      return { success: false, error: "내용을 입력해주세요." };
+    }
+
+    let slug = generateSlug(sanitizedTitle) || "guide";
     let counter = 1;
     const originalSlug = slug;
 
@@ -296,8 +538,10 @@ export async function createGuide(input: CreateGuideInput): Promise<GuideRespons
     }
 
     const guide = await Guide.create({
-      title: input.title,
-      content: input.content,
+      title: sanitizedTitle,
+      content: sanitizedContent,
+      contentSanitizedVersion: GUIDE_CONTENT_SANITIZER_VERSION,
+      contentSanitizedAt: new Date(),
       category: input.category,
       tags: input.tags ?? [],
       thumbnail: input.thumbnail,
@@ -370,69 +614,78 @@ export async function getGuides(options: GetGuidesOptions = {}): Promise<GuideRe
 export async function getGuideById(idOrSlug: string): Promise<GuideResponse> {
   try {
     const Guide = await getGuideModel();
-    const cacheKey = `guide:detail:${idOrSlug}`;
-    const cached = await getCache<SerializedGuide>(cacheKey);
+    const cached = await getCache<SerializedGuide>(`guide:detail:${idOrSlug}`);
 
     if (cached) {
-      try {
-        if (objectIdPattern.test(idOrSlug)) {
-          void Guide.findByIdAndUpdate(idOrSlug, { $inc: { views: 1 } }, { timestamps: false }).exec();
-        } else {
-          const decodedSlug = decodeURIComponent(idOrSlug);
-          void Guide.findOneAndUpdate({ slug: decodedSlug }, { $inc: { views: 1 } }, { timestamps: false }).exec();
-        }
-      } catch (error) {
-        logger.error("Guide view increment error:", error);
-      }
+      const sanitizedCachedGuide = await sanitizeCachedGuideIfNeeded(Guide, cached, idOrSlug);
 
-      return { success: true, data: cached };
+      return { success: true, data: sanitizedCachedGuide };
     }
 
-    const isValidObjectId = objectIdPattern.test(idOrSlug);
-    let guide: IGuide | null = null;
-
-    if (isValidObjectId) {
-      guide = await Guide.findByIdAndUpdate(
-        idOrSlug,
-        { $inc: { views: 1 } },
-        { returnDocument: "after", timestamps: false },
-      );
-
-      if (guide && !guide.slug) {
-        let slug = generateSlug(guide.title);
-        let counter = 1;
-        const originalSlug = slug;
-
-        while (await Guide.findOne({ slug, _id: { $ne: guide._id } })) {
-          slug = `${originalSlug}-${counter}`;
-          counter += 1;
-        }
-
-        guide.slug = slug;
-        await guide.save();
-      }
-    }
-
-    if (!guide) {
-      const decodedSlug = decodeURIComponent(idOrSlug);
-      guide = await Guide.findOneAndUpdate(
-        { slug: decodedSlug },
-        { $inc: { views: 1 } },
-        { returnDocument: "after", timestamps: false },
-      );
-    }
+    const guide = await findGuideByIdOrSlug(Guide, idOrSlug);
 
     if (!guide) {
       return { success: false, error: "가이드를 찾을 수 없습니다." };
     }
 
-    const serializedGuide = serializeGuide(toGuideRaw(guide));
-    await setCache(cacheKey, serializedGuide, GUIDE_DETAIL_CACHE_TTL);
+    const sanitizedGuide = await syncGuideSanitizationIfNeeded(Guide, guide);
+    const serializedGuide = serializeGuide(sanitizedGuide);
+    await setGuideDetailCacheEntries(serializedGuide, idOrSlug);
 
     return { success: true, data: serializedGuide };
   } catch (error) {
     logger.error("Get guide error:", error);
     return { success: false, error: "가이드를 불러오는데 실패했습니다." };
+  }
+}
+
+export async function incrementGuideView(idOrSlug: string): Promise<GuideViewResponse> {
+  try {
+    const Guide = await getGuideModel();
+    const guide = await findGuideByIdOrSlug(Guide, idOrSlug);
+
+    if (!guide) {
+      return { success: false, error: "가이드를 찾을 수 없습니다." };
+    }
+
+    const guideId = guide._id.toString();
+    const viewerKey = await getGuideViewerKey();
+    const alreadyCounted = await hasRecentGuideView(guideId, viewerKey);
+
+    if (alreadyCounted) {
+      const sanitizedGuide = await syncGuideSanitizationIfNeeded(Guide, guide);
+      const serializedGuide = serializeGuide(sanitizedGuide);
+      await setGuideDetailCacheEntries(serializedGuide, idOrSlug);
+
+      return {
+        success: true,
+        alreadyCounted: true,
+        views: serializedGuide.views,
+      };
+    }
+
+    const updatedGuide = await Guide.findByIdAndUpdate(
+      guideId,
+      { $inc: { views: 1 } },
+      { returnDocument: "after", timestamps: false },
+    );
+
+    if (!updatedGuide) {
+      return { success: false, error: "가이드를 찾을 수 없습니다." };
+    }
+
+    const sanitizedGuide = await syncGuideSanitizationIfNeeded(Guide, updatedGuide);
+    const serializedGuide = serializeGuide(sanitizedGuide);
+    await setGuideDetailCacheEntries(serializedGuide, idOrSlug);
+
+    return {
+      success: true,
+      alreadyCounted: false,
+      views: serializedGuide.views,
+    };
+  } catch (error) {
+    logger.error("Increment guide view error:", error);
+    return { success: false, error: "조회수 반영에 실패했습니다." };
   }
 }
 
@@ -458,7 +711,52 @@ export async function updateGuide(
       return { success: false, error: "수정 권한이 없습니다." };
     }
 
-    const updated = await Guide.findByIdAndUpdate(id, { $set: input }, { returnDocument: "after" }).lean<GuideRaw | null>();
+    const updateData: Partial<CreateGuideInput> & {
+      contentSanitizedAt?: Date;
+      contentSanitizedVersion?: number;
+      title?: string;
+      content?: string;
+    } = {};
+
+    if (input.title !== undefined) {
+      const sanitizedTitle = sanitizeGuideTitle(input.title);
+
+      if (!sanitizedTitle) {
+        return { success: false, error: "제목을 입력해주세요." };
+      }
+
+      updateData.title = sanitizedTitle;
+    }
+
+    if (input.content !== undefined) {
+      const sanitizedContent = sanitizeGuideHtml(input.content);
+
+      if (!hasRenderableGuideContent(sanitizedContent)) {
+        return { success: false, error: "내용을 입력해주세요." };
+      }
+
+      updateData.content = sanitizedContent;
+      updateData.contentSanitizedVersion = GUIDE_CONTENT_SANITIZER_VERSION;
+      updateData.contentSanitizedAt = new Date();
+    }
+
+    if (input.category !== undefined) {
+      updateData.category = input.category;
+    }
+
+    if (input.tags !== undefined) {
+      updateData.tags = input.tags;
+    }
+
+    if (input.thumbnail !== undefined) {
+      updateData.thumbnail = input.thumbnail;
+    }
+
+    const updated = await Guide.findByIdAndUpdate(
+      id,
+      { $set: updateData },
+      { returnDocument: "after" },
+    ).lean<GuideRaw | null>();
 
     if (!updated) {
       return { success: false, error: "가이드를 찾을 수 없습니다." };

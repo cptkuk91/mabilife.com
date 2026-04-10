@@ -4,6 +4,8 @@ import { connectToDatabase } from '@/lib/mongodb';
 export interface IGuide extends Document {
   title: string;
   content: string;
+  contentSanitizedVersion?: number;
+  contentSanitizedAt?: Date | null;
   category: string;
   author: {
     id: string;
@@ -26,6 +28,8 @@ export interface IGuide extends Document {
 const GuideSchema: Schema = new Schema({
   title: { type: String, required: true },
   content: { type: String, required: true },
+  contentSanitizedVersion: { type: Number, default: 0 },
+  contentSanitizedAt: { type: Date, default: null },
   category: { type: String, required: true },
   author: {
     id: { type: String, required: true },

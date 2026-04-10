@@ -1,11 +1,15 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import type { Model } from "mongoose";
 import { revalidatePath } from "next/cache";
+import { cookies, headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { logger } from "@/lib/logger";
+import { redis } from "@/lib/redis";
 import getCommentModel, { IComment } from "@/models/Comment";
 import getPostModel, { IPost } from "@/models/Post";
+import getPostDailyStatModel from "@/models/PostDailyStat";
 
 export type PostType = "잡담" | "질문" | "정보";
 
@@ -19,6 +23,13 @@ export type PostResponse = {
   success: boolean;
   id?: string;
   error?: string;
+};
+
+export type PostViewResponse = {
+  success: boolean;
+  alreadyCounted?: boolean;
+  error?: string;
+  viewCount?: number;
 };
 
 type PostAuthor = {
@@ -112,6 +123,20 @@ type TrendingPostRow = {
 type PostQuery = Record<string, unknown>;
 
 const POST_TYPES: PostType[] = ["잡담", "질문", "정보"];
+const POST_VIEW_DEDUPE_TTL = 24 * 60 * 60;
+const POST_VIEWER_COOKIE_NAME = "mabilife_post_viewer";
+const POST_VIEWER_COOKIE_MAX_AGE = 365 * 24 * 60 * 60;
+const BOT_USER_AGENT_PATTERN =
+  /bot|crawler|spider|slurp|bingpreview|facebookexternalhit|discordbot|whatsapp|kakaotalk|telegrambot|preview/i;
+
+type LocalPostViewStore = Map<string, number>;
+
+declare global {
+  var postViewDedupeStore: LocalPostViewStore | undefined;
+}
+
+const localPostViewStore =
+  globalThis.postViewDedupeStore ?? (globalThis.postViewDedupeStore = new Map<string, number>());
 
 function normalizeSearchTerm(search?: string): string | null {
   const trimmed = search?.trim();
@@ -149,6 +174,100 @@ function buildPostRegexQuery(search: string): PostQuery {
   return {
     $or: [{ content: regex }, { type: regex }],
   };
+}
+
+function buildRedisKey(key: string) {
+  const prefix = process.env.REDIS_PREFIX || "";
+
+  if (!prefix) return key;
+
+  return prefix.endsWith(":") ? prefix + key : `${prefix}:${key}`;
+}
+
+function getDayBucket(date = new Date()) {
+  const day = new Date(date);
+  day.setHours(0, 0, 0, 0);
+  return day;
+}
+
+export type TrendingPeriod = "week" | "month";
+
+function getTrendingPeriodStart(period: TrendingPeriod, now = new Date()) {
+  const periodStart = new Date(now);
+
+  if (period === "week") {
+    periodStart.setDate(periodStart.getDate() - 7);
+  } else {
+    periodStart.setMonth(periodStart.getMonth() - 1);
+  }
+
+  periodStart.setHours(0, 0, 0, 0);
+
+  return periodStart;
+}
+
+async function getPostViewerKey() {
+  const session = await auth();
+
+  if (session?.user?.id) {
+    return `user:${session.user.id}`;
+  }
+
+  const cookieStore = await cookies();
+  let viewerId = cookieStore.get(POST_VIEWER_COOKIE_NAME)?.value;
+
+  if (!viewerId) {
+    viewerId = randomUUID();
+    cookieStore.set(POST_VIEWER_COOKIE_NAME, viewerId, {
+      httpOnly: true,
+      maxAge: POST_VIEWER_COOKIE_MAX_AGE,
+      path: "/",
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    });
+  }
+
+  return `anon:${viewerId}`;
+}
+
+function markLocalPostViewDeduped(postId: string, viewerKey: string) {
+  const key = `${postId}:${viewerKey}`;
+  const now = Date.now();
+  const expiry = localPostViewStore.get(key);
+
+  if (expiry && expiry > now) {
+    return true;
+  }
+
+  localPostViewStore.set(key, now + POST_VIEW_DEDUPE_TTL * 1000);
+
+  if (Math.random() < 0.1) {
+    for (const [existingKey, existingExpiry] of localPostViewStore.entries()) {
+      if (existingExpiry <= now) {
+        localPostViewStore.delete(existingKey);
+      }
+    }
+  }
+
+  return false;
+}
+
+async function hasRecentPostView(postId: string, viewerKey: string) {
+  if (!redis) {
+    return markLocalPostViewDeduped(postId, viewerKey);
+  }
+
+  const dedupeKey = buildRedisKey(`post:view:${postId}:${viewerKey}`);
+  const result = await redis.set(dedupeKey, "1", "EX", POST_VIEW_DEDUPE_TTL, "NX");
+
+  return result !== "OK";
+}
+
+async function shouldSkipPostViewCount() {
+  const headerStore = await headers();
+  const userAgent = headerStore.get("user-agent") || "";
+
+  return BOT_USER_AGENT_PATTERN.test(userAgent);
 }
 
 async function findPostsByTextSearch(
@@ -354,33 +473,71 @@ export async function getPost(id: string) {
   }
 }
 
-export async function incrementViewCount(id: string) {
+export async function incrementViewCount(id: string): Promise<PostViewResponse> {
   try {
     const Post = await getPostModel();
+    const PostDailyStat = await getPostDailyStatModel();
+    const post = await Post.findById(id).select("viewCount");
 
-    await Post.updateOne(
-      { _id: id, viewCount: { $exists: false } },
-      { $set: { viewCount: 0, viewHistory: [] } },
-    );
+    if (!post) {
+      return { success: false, error: "게시글을 찾을 수 없습니다." };
+    }
 
-    const result = await Post.findByIdAndUpdate(
+    if (await shouldSkipPostViewCount()) {
+      return {
+        success: true,
+        alreadyCounted: true,
+        viewCount: post.viewCount ?? 0,
+      };
+    }
+
+    const viewerKey = await getPostViewerKey();
+    const alreadyCounted = await hasRecentPostView(id, viewerKey);
+
+    if (alreadyCounted) {
+      return {
+        success: true,
+        alreadyCounted: true,
+        viewCount: post.viewCount ?? 0,
+      };
+    }
+
+    const dayBucket = getDayBucket();
+    const updatedPost = await Post.findByIdAndUpdate(
       id,
+      { $inc: { viewCount: 1 } },
+      { returnDocument: "after", timestamps: false },
+    ).select("viewCount");
+
+    if (!updatedPost) {
+      return { success: false, error: "게시글을 찾을 수 없습니다." };
+    }
+
+    await PostDailyStat.updateOne(
+      { postId: post._id, day: dayBucket },
       {
-        $inc: { viewCount: 1 },
-        $push: { viewHistory: { viewedAt: new Date() } },
+        $inc: {
+          uniqueViewCount: 1,
+          viewCount: 1,
+        },
+        $setOnInsert: {
+          day: dayBucket,
+          postId: post._id,
+        },
       },
-      { returnDocument: "after" },
+      { upsert: true },
     );
 
-    logger.debug("View count updated:", id, "New count:", result?.viewCount);
+    logger.debug("Post view count updated:", id, "New count:", updatedPost.viewCount);
 
-    revalidatePath("/community");
-    revalidatePath(`/community/${id}`);
-
-    return { success: true };
+    return {
+      success: true,
+      alreadyCounted: false,
+      viewCount: updatedPost.viewCount ?? 0,
+    };
   } catch (error) {
     logger.error("Increment view error:", error);
-    return { success: false };
+    return { success: false, error: "조회수 반영에 실패했습니다." };
   }
 }
 
@@ -393,6 +550,7 @@ export async function deletePost(id: string) {
     }
 
     const Post = await getPostModel();
+    const PostDailyStat = await getPostDailyStatModel();
     const Comment = await getCommentModel();
     const post = await Post.findById(id);
 
@@ -405,6 +563,7 @@ export async function deletePost(id: string) {
     }
 
     await Comment.deleteMany({ postId: id });
+    await PostDailyStat.deleteMany({ postId: id });
     await Post.findByIdAndDelete(id);
 
     revalidatePath("/");
@@ -454,81 +613,73 @@ export async function toggleLike(postId: string) {
   }
 }
 
-export type TrendingPeriod = "week" | "month";
-
 export async function getTrendingPosts(period: TrendingPeriod = "week", limit = 5) {
   try {
     const Post = await getPostModel();
+    const PostDailyStat = await getPostDailyStatModel();
 
     const now = new Date();
-    const periodStart = new Date();
+    const periodStart = getTrendingPeriodStart(period, now);
+    const windowMs = Math.max(now.getTime() - periodStart.getTime(), 1);
 
-    if (period === "week") {
-      periodStart.setDate(now.getDate() - 7);
-    } else {
-      periodStart.setMonth(now.getMonth() - 1);
-    }
-
-    const posts = await Post.aggregate<TrendingPostRow>([
+    const posts = await PostDailyStat.aggregate<TrendingPostRow>([
       {
-        $addFields: {
-          recentViews: {
-            $filter: {
-              input: { $ifNull: ["$viewHistory", []] },
-              as: "view",
-              cond: { $gte: ["$$view.viewedAt", periodStart] },
-            },
-          },
-          trendingScore: {
-            $reduce: {
-              input: { $ifNull: ["$viewHistory", []] },
-              initialValue: 0,
-              in: {
-                $add: [
-                  "$$value",
-                  {
-                    $cond: [
-                      { $gte: ["$$this.viewedAt", periodStart] },
-                      {
-                        $add: [
-                          0.1,
-                          {
-                            $multiply: [
-                              0.9,
-                              {
-                                $divide: [
-                                  { $subtract: ["$$this.viewedAt", periodStart] },
-                                  { $subtract: [now, periodStart] },
-                                ],
-                              },
-                            ],
-                          },
-                        ],
-                      },
-                      0,
-                    ],
-                  },
-                ],
-              },
-            },
-          },
+        $match: {
+          day: { $gte: periodStart },
         },
       },
       {
         $addFields: {
-          recentViewCount: { $size: "$recentViews" },
-          finalScore: {
-            $add: [
-              "$trendingScore",
-              { $multiply: [{ $ifNull: ["$commentCount", 0] }, 2] },
-              { $ifNull: ["$likes", 0] },
+          trendingScore: {
+            $multiply: [
+              "$uniqueViewCount",
+              {
+                $add: [
+                  0.1,
+                  {
+                    $multiply: [
+                      0.9,
+                      {
+                        $divide: [
+                          { $subtract: ["$day", periodStart] },
+                          windowMs,
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
             ],
           },
         },
       },
       {
-        $match: {
-          recentViewCount: { $gt: 0 },
+        $group: {
+          _id: "$postId",
+          recentViewCount: { $sum: "$uniqueViewCount" },
+          trendingScore: { $sum: "$trendingScore" },
+        },
+      },
+      {
+        $lookup: {
+          from: Post.collection.name,
+          localField: "_id",
+          foreignField: "_id",
+          as: "post",
+        },
+      },
+      {
+        $unwind: "$post",
+      },
+      {
+        $addFields: {
+          finalScore: {
+            $add: [
+              "$trendingScore",
+              { $multiply: [{ $ifNull: ["$post.commentCount", 0] }, 2] },
+              { $ifNull: ["$post.likes", 0] },
+            ],
+          },
         },
       },
       {
@@ -539,15 +690,15 @@ export async function getTrendingPosts(period: TrendingPeriod = "week", limit = 
       },
       {
         $project: {
-          _id: 1,
-          content: 1,
-          type: 1,
-          author: 1,
-          viewCount: 1,
+          _id: "$post._id",
+          content: "$post.content",
+          type: "$post.type",
+          author: "$post.author",
+          viewCount: "$post.viewCount",
           recentViewCount: 1,
-          commentCount: 1,
-          likes: 1,
-          createdAt: 1,
+          commentCount: "$post.commentCount",
+          likes: "$post.likes",
+          createdAt: "$post.createdAt",
           finalScore: 1,
         },
       },

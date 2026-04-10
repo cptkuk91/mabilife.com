@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { getPresignedUrlAction } from "@/actions/upload";
+import { uploadFileWithPresignedUrl } from "@/lib/upload-client";
 import {
   createPost,
   getPosts,
@@ -82,13 +83,18 @@ export default function CommunityClient() {
     target === "create" ? setIsUploading(true) : setIsEditUploading(true);
     try {
       const results = await Promise.all(files.map(async (f) => {
-        const { success, signedUrl, publicUrl } = await getPresignedUrlAction(f.name, f.type);
-        if (!success || !signedUrl || !publicUrl) return null;
-        const r = await fetch(signedUrl, { method: "PUT", body: f, headers: { "Content-Type": f.type } });
-        return r.ok ? publicUrl : null;
+        const { success, signedUrl, publicUrl, error } = await getPresignedUrlAction(f.name, f.type, f.size, "community");
+        if (!success || !signedUrl || !publicUrl) {
+          throw new Error(error || "업로드 URL 생성에 실패했습니다.");
+        }
+        await uploadFileWithPresignedUrl(signedUrl, f);
+        return publicUrl;
       }));
-      return results.filter((u): u is string => u !== null);
-    } catch { alert("이미지 업로드 중 오류가 발생했습니다."); return []; }
+      return results;
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "이미지 업로드 중 오류가 발생했습니다.");
+      return [];
+    }
     finally { target === "create" ? setIsUploading(false) : setIsEditUploading(false); }
   };
 

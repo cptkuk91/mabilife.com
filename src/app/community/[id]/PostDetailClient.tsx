@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useEffectEvent, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
@@ -61,17 +61,24 @@ function updateCommentTree(
   });
 }
 
-export default function PostDetailClient({ id }: { id: string }) {
+export default function PostDetailClient({
+  id,
+  initialPost,
+}: {
+  id: string;
+  initialPost: SerializedPost | null;
+}) {
   const router = useRouter();
   const { data: session } = useSession();
   const currentUserId = session?.user?.id;
+  const viewedPostIdRef = useRef<string | null>(null);
 
-  const [post, setPost] = useState<SerializedPost | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [post, setPost] = useState<SerializedPost | null>(initialPost);
+  const [loading, setLoading] = useState(!initialPost);
   const [showDropdown, setShowDropdown] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editContent, setEditContent] = useState("");
+  const [editContent, setEditContent] = useState(initialPost?.content ?? "");
   const [isSaving, setIsSaving] = useState(false);
   const [trendingPosts, setTrendingPosts] = useState<TrendingPost[]>([]);
   const [trendingPeriod, setTrendingPeriod] = useState<TrendingPeriod>("week");
@@ -92,9 +99,9 @@ export default function PostDetailClient({ id }: { id: string }) {
   const [editCommentContent, setEditCommentContent] = useState("");
   const [isSavingComment, setIsSavingComment] = useState(false);
 
-  const loadPost = useEffectEvent(async () => {
+  const loadPost = useEffectEvent(async (postId: string) => {
     setLoading(true);
-    const result = await getPost(id);
+    const result = await getPost(postId);
 
     if (result.success && result.post) {
       setPost(result.post);
@@ -105,6 +112,18 @@ export default function PostDetailClient({ id }: { id: string }) {
     }
 
     setLoading(false);
+  });
+  const incrementPostViewEffect = useEffectEvent(async (postId: string) => {
+    const result = await incrementViewCount(postId);
+
+    if (result.success && typeof result.viewCount === "number") {
+      const nextViewCount: number = result.viewCount;
+      setPost((previousPost) =>
+        previousPost && previousPost._id === postId
+          ? { ...previousPost, viewCount: nextViewCount }
+          : previousPost,
+      );
+    }
   });
 
   const refreshComments = async () => {
@@ -126,14 +145,6 @@ export default function PostDetailClient({ id }: { id: string }) {
   });
 
   useEffect(() => {
-    const init = async () => {
-      await incrementViewCount(id);
-      await loadPost();
-      await loadComments();
-    };
-
-    void init();
-
     const handleDocumentClick = () => {
       setShowDropdown(false);
       setActiveCommentDropdown(null);
@@ -141,6 +152,25 @@ export default function PostDetailClient({ id }: { id: string }) {
 
     document.addEventListener("click", handleDocumentClick);
     return () => document.removeEventListener("click", handleDocumentClick);
+  }, [id]);
+
+  useEffect(() => {
+    if (!initialPost) {
+      void loadPost(id);
+    }
+  }, [id, initialPost]);
+
+  useEffect(() => {
+    if (!post?._id || viewedPostIdRef.current === post._id) {
+      return;
+    }
+
+    viewedPostIdRef.current = post._id;
+    void incrementPostViewEffect(post._id);
+  }, [post?._id]);
+
+  useEffect(() => {
+    void loadComments();
   }, [id]);
 
   useEffect(() => {

@@ -20,7 +20,7 @@ export interface IPost extends Document {
   likedBy: string[];
   commentCount: number;
   viewCount: number;
-  viewHistory: IViewRecord[];
+  viewHistory?: IViewRecord[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -40,9 +40,13 @@ const PostSchema: Schema = new Schema({
   likedBy: [{ type: String }],
   commentCount: { type: Number, default: 0 },
   viewCount: { type: Number, default: 0 },
-  viewHistory: [{
-    viewedAt: { type: Date, default: Date.now }
-  }],
+  // Legacy field kept temporarily for backfill compatibility. New view writes use post_daily_stats.
+  viewHistory: {
+    type: [{
+      viewedAt: { type: Date, default: Date.now }
+    }],
+    default: undefined,
+  },
 }, {
   timestamps: true,
 });

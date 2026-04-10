@@ -1,5 +1,6 @@
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { buildUploadKey, type UploadScope } from "@/lib/upload-policy";
 
 const s3Client = new S3Client({
   region: process.env.AWS_REGION!,
@@ -9,9 +10,17 @@ const s3Client = new S3Client({
   },
 });
 
-export async function getPresignedUrl(fileName: string, contentType: string) {
+export async function getPresignedUrl({
+  contentType,
+  scope,
+  userId,
+}: {
+  contentType: string;
+  scope: UploadScope;
+  userId: string;
+}) {
   const bucketName = process.env.S3_BUCKET_NAME;
-  const key = `mabilife/uploads/${Date.now()}_${fileName}`;
+  const key = buildUploadKey({ contentType, scope, userId });
 
   const command = new PutObjectCommand({
     Bucket: bucketName,
