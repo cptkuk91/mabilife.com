@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import type { Browser, BrowserContext, Page } from 'puppeteer-core';
+import type { Browser, Page } from 'puppeteer-core';
 import { logger } from '@/lib/logger';
 
 const OFFICIAL_RANKING_URL = 'https://mabinogimobile.nexon.com/Ranking/List';
@@ -92,9 +92,14 @@ async function launchBrowser(): Promise<Browser> {
   });
 }
 
-async function createRankingPage(browser: Browser, rankingTypeCode: string): Promise<{ context: BrowserContext; page: Page }> {
-  const context = await browser.createBrowserContext();
-  const page = await context.newPage();
+async function createRankingPage(browser: Browser, rankingTypeCode: string): Promise<Page> {
+  let page: Page;
+  try {
+    page = await browser.newPage();
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    throw new Error(`[crawler] browser.newPage failed. type=${rankingTypeCode} err=${msg}`);
+  }
 
   await page.setViewport({ width: 1920, height: 1080 });
   await page.setUserAgent(USER_AGENT);
@@ -110,7 +115,7 @@ async function createRankingPage(browser: Browser, rankingTypeCode: string): Pro
 
   await page.waitForSelector('.pagination[data-mm-paging], .list .item', { timeout: 30000 });
 
-  return { context, page };
+  return page;
 }
 
 async function fetchRankingChunk(
@@ -258,7 +263,7 @@ export async function crawlRankingData(): Promise<RankingData[]> {
               ? Math.min(currentPage + PAGES_PER_SESSION - 1, totalPages)
               : currentPage + PAGES_PER_SESSION - 1;
 
-            const { context, page } = await createRankingPage(browser, rankingType.code);
+            const page = await createRankingPage(browser, rankingType.code);
 
             try {
               const result = await fetchRankingChunk(page, rankingType, server, currentPage, chunkEnd);
@@ -267,7 +272,7 @@ export async function crawlRankingData(): Promise<RankingData[]> {
               logger.debug(`  - Pages ${currentPage}-${Math.min(chunkEnd, totalPages)} fetched for ${server.name} (${rankingType.name})`);
               currentPage = chunkEnd + 1;
             } finally {
-              await context.close();
+              await page.close();
             }
           }
         }
